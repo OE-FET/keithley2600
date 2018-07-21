@@ -63,14 +63,14 @@ class MagicPropertyList(object):
         try:
             self._parent._write(value)
         except AttributeError:
-            print(value)
+            logger.debug(value)
             pass
 
     def _query(self, value):
         try:
             return self._parent._query(value)
         except AttributeError:
-            print('print(%s)' % value)
+            logger.debug('print(%s)' % value)
             return None
 
     def _convert_input(self, value):
@@ -197,14 +197,14 @@ class MagicClass(object):
         try:
             self._parent._write(value)
         except AttributeError:
-            print(value)
+            logger.debug(value)
             pass
 
     def _query(self, value):
         try:
             return self._parent._query(value)
         except AttributeError:
-            print('print(%s)' % value)
+            logger.debug('print(%s)' % value)
             return None
 
     def _convert_input(self, value):
@@ -349,7 +349,7 @@ class Keithley2600Base(MagicClass):
         """
         Writes text to Keithley. Input must be a string.
         """
-        # print(value)
+        logger.debug(value)
         self.connection.write(value)
 
     def _query(self, value):
@@ -359,7 +359,7 @@ class Keithley2600Base(MagicClass):
         with self._lock:
             r = self.connection.query('print(%s)' % value)
 
-        # print('print(%s)' % value)
+        logger.debug('print(%s)' % value)
         return self.parse_response(r)
 
     def parse_response(self, string):
