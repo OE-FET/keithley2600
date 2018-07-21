@@ -13,7 +13,7 @@ There are currntly no checks for allowed arguments in the base commands. See the
 
 *Usage:*
 
-Connect to keithlkey and perform some base commands:
+Connect to Keithley and perform some base commands:
 ```python
 >>> from keithley_driver import Keithley2600
 >>> k = Keithley2600('192.168.2.121')
