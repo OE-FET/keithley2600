@@ -27,7 +27,9 @@ Higher level commands defined in the driver:
 ```python
 >>> k.clearBuffers() # clears measurement buffers of all SMUs
 >>> data = k.readBuffer('smua.nvbuffer1') # reads out measurement data from buffer
->>> Vsweep, Isweep, Vfix, Ifix = k.voltageSweep(smu_sweep=k.smua, smu_fix=k.smub, VStart=0, VStop=-60, VStep=1, VFix=0, tInt=0.1, delay=-1, pulsed=True) # records IV curve
+>>> Vsweep, Isweep, Vfix, Ifix = k.voltageSweep(smu_sweep=k.smua, smu_fix=k.smub, VStart=0, VStop=-60,
+											 VStep=1, VFix=0, tInt=0.1, delay=-1,
+											 pulsed=True) # records IV curve
 >>> k.rampToVoltage(smu=k.smua, targetVolt=60, delay=0.1, stepSize=1) # ramps to voltage
 >>> k.outputMeasurement(...) # records output characteristics of a transistor 
 >>> k.transferMeasurement(...) # records transfer characteristics of a transistor 
