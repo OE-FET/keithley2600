@@ -12,7 +12,8 @@ There are currntly no checks for allowed arguments in the base commands. See the
 * All Keithley IV sweep commands. We implement our own in the Keithley2600 class.
 
 *Usage:*
-Some load keithlkey and perform some base commands:
+
+Connext to keithlkey and perform some base commands:
 ```python
 >>> from keithley_driver import Keithley2600
 >>> k = Keithley2600('192.168.2.121')
@@ -22,6 +23,7 @@ Some load keithlkey and perform some base commands:
 ```
 
 Higher level commands defined in the driver:
+
 ```python
 >>> k.clearBuffers() # clears measurement buffers of all SMUs
 >>> data = k.readBuffer('smua.nvbuffer1') # reads out measurement data from buffer
@@ -33,4 +35,5 @@ Higher level commands defined in the driver:
 
 
 *Documentation:*
+
 See the Keithley 2600 reference manual for all available commands and arguments.
