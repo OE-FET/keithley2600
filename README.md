@@ -6,14 +6,14 @@ Keithley driver with acccess to base functions and higher level functions such a
 
 *Warning:*
 
-There are currntly no checks for allowed arguments in the base commands. See the Keithley 2600 reference manual for all available commands and arguments. Almost all remotely accessible commands can be used with this driver. NOT SUPPORTED ARE:
+There are currntly no checks for allowed arguments in the base commands. See the Keithley 2600 reference manual for all available commands and arguments. Almost all remotely accessible commands can be used with this driver. Not supported are:
 
 * tspnet.excecute() # conflicts with Python's excecute command
 * All Keithley IV sweep commands. We implement our own in the Keithley2600 class.
 
 *Usage:*
 
-Connext to keithlkey and perform some base commands:
+Connect to keithlkey and perform some base commands:
 ```python
 >>> from keithley_driver import Keithley2600
 >>> k = Keithley2600('192.168.2.121')
@@ -22,7 +22,7 @@ Connext to keithlkey and perform some base commands:
 >>> volts = k.smua.measure.v()  # measures the smuA voltage
 ```
 
-Higher level commands defined in the driver:
+Some higher level commands defined in the driver:
 
 ```python
 >>> k.clearBuffers() # clears measurement buffers of all SMUs
