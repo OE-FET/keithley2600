@@ -323,7 +323,7 @@ class Keithley2600Base(MagicClass):
             self.connection = None
             self.connected = False
         except visa.VisaIOError:
-            logger.warning('Could not find Keithley.')
+            logger.info('Could not find Keithley.')
             Keithley2600Base.connected = False
 
     def disconnect(self):
