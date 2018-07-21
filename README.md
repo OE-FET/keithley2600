@@ -2,7 +2,7 @@
 Full Python driver for the Keithley 2600 series source measurement units.
 
 ## About
-Keithley driver for base functions. It replicates the functionality and syntax from the Keithley TSP commands, which have a syntax similar to python.
+Keithley driver with acccess to base functions and higher level functions such as IV measurements, tranfer and output curves, etc. Base command replicate the functionality and syntax from the Keithley TSP functions, which have a syntax similar to python.
 
 *Warning:*
 
