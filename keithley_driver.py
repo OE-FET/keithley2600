@@ -17,8 +17,7 @@ import numpy as np
 import time
 
 # local import
-from keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
-                                         PROPERTY_LISTS)
+from keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES, PROPERTY_LISTS)
 from sweep_data_class import SweepData
 
 logging.STATUS = 15
@@ -106,7 +105,7 @@ class MagicFunction(object):
         # Pass on to calls to self._write, store result in variable.
         # Querying results from function calls directly may result in
         # a VisaIOError timeout if the function does not return anything.
-        args_string = str(args).strip("(),").replace("'","")
+        args_string = str(args).strip("(),").replace("'", "")
         self._parent._write('result = %s(%s)' % (self._name, args_string))
         # query for result in second call
         return self._parent._query('result')
@@ -259,36 +258,36 @@ class Keithley2600Base(MagicClass):
     connected = None
     busy = False
 
-    OUTPUT_OFF = 0
-    OUTPUT_ON = 1
-    OUTPUT_HIGH_Z = 2
-
-    OUTPUT_DCAMPS = 0
-    OUTPUT_DCVOLTS = 1
-
-    MEASURE_DCAMPS = 0
-    MEASURE_DCVOLTS = 1
-    MEASURE_OHMS = 2
-    MEASURE_WATTS = 3
-
-    DISABLE = 0
-    ENABLE = 1
-
-    SENSE_LOCAL = 0
-    SENSE_REMOTE = 1
-    SENSE_CALA = 3
-
-    SMUA_BUFFER1 = 'smua.nvbuffer1'
-    SMUA_BUFFER2 = 'smua.nvbuffer2'
-    SMUB_BUFFER1 = 'smub.nvbuffer1'
-    SMUB_BUFFER2 = 'smub.nvbuffer2'
-
-    SOURCE_IDLE = 0
-    SOURCE_HOLD = 1
-
-    AUTORANGE_OFF = 0
-    AUTORANGE_ON = 1
-    AUTORANGE_FOLLOW_LIMIT = 2
+#    OUTPUT_OFF = 0
+#    OUTPUT_ON = 1
+#    OUTPUT_HIGH_Z = 2
+#
+#    OUTPUT_DCAMPS = 0
+#    OUTPUT_DCVOLTS = 1
+#
+#    MEASURE_DCAMPS = 0
+#    MEASURE_DCVOLTS = 1
+#    MEASURE_OHMS = 2
+#    MEASURE_WATTS = 3
+#
+#    DISABLE = 0
+#    ENABLE = 1
+#
+#    SENSE_LOCAL = 0
+#    SENSE_REMOTE = 1
+#    SENSE_CALA = 3
+#
+#    SMUA_BUFFER1 = 'smua.nvbuffer1'
+#    SMUA_BUFFER2 = 'smua.nvbuffer2'
+#    SMUB_BUFFER1 = 'smub.nvbuffer1'
+#    SMUB_BUFFER2 = 'smub.nvbuffer2'
+#
+#    SOURCE_IDLE = 0
+#    SOURCE_HOLD = 1
+#
+#    AUTORANGE_OFF = 0
+#    AUTORANGE_ON = 1
+#    AUTORANGE_FOLLOW_LIMIT = 2
 
 # =============================================================================
 # Connect to keithley
@@ -378,11 +377,6 @@ class Keithley2600Base(MagicClass):
         return r
 
     def _convert_input(self, value):
-        # wrap strings in "..."
-#        if isinstance(value, str):
-#            value = '"' + value + '"'
-
-        # covert bools to lower case strings
         if isinstance(value, bool):
             value = str(value).lower()
 
@@ -451,7 +445,7 @@ class Keithley2600(Keithley2600Base):
 
         self._check_smu(smu)
 
-        smu.source.output = self.OUTPUT_ON
+        smu.source.output = smu.OUTPUT_ON
         smu.source.levelv = voltage
 
     def applyCurrent(self, smu, curr):
@@ -461,7 +455,7 @@ class Keithley2600(Keithley2600Base):
         self._check_smu(smu)
 
         smu.source.leveli = curr
-        smu.source.output = self.OUTPUT_ON
+        smu.source.output = smu.OUTPUT_ON
 
     def setIntegrationTime(self, smu, tInt):
         """ Sets the integration time of SMU for measurements in sec. """
@@ -486,7 +480,7 @@ class Keithley2600(Keithley2600Base):
 
         logger.status('Setting %s voltage to %s V.'
                       % (self._get_smu_string(smu), targetVolt))
-        smu.source.output = self.OUTPUT_ON
+        smu.source.output = smu.OUTPUT_ON
 
         # get current voltage
         Vcurr = smu.source.levelv
@@ -494,8 +488,8 @@ class Keithley2600(Keithley2600Base):
             logger.status('Vg = %sV.' % targetVolt)
             return
 
-        self.display.smua.measure.func = self.MEASURE_DCVOLTS
-        self.display.smub.measure.func = self.MEASURE_DCVOLTS
+        self.display.smua.measure.func = self.smua.MEASURE_DCVOLTS
+        self.display.smub.measure.func = self.smub.MEASURE_DCVOLTS
 
         step = np.sign(targetVolt-Vcurr)*abs(stepSize)
 
@@ -562,17 +556,17 @@ class Keithley2600(Keithley2600Base):
 
         # setup smu_sweep to sweep votage linearly
         smu_sweep.trigger.source.linearv(VStart, VStop, numPoints)
-        smu_sweep.trigger.source.action = self.ENABLE
+        smu_sweep.trigger.source.action = smu_sweep.ENABLE
 
         if VFix == 'trailing':
             # setup smu_fix to sweep votage linearly
             smu_fix.trigger.source.linearv(VStart, VStop, numPoints)
-            smu_fix.trigger.source.action = self.ENABLE
+            smu_fix.trigger.source.action = smu_fix.ENABLE
 
         else:
             # setup smu_fix to remain at a constant voltage
             smu_fix.trigger.source.linearv(VFix, VFix, numPoints)
-            smu_fix.trigger.source.action = self.ENABLE
+            smu_fix.trigger.source.action = smu_fix.ENABLE
 
         # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
         nplc = tInt * self.localnode.linefreq
@@ -583,18 +577,18 @@ class Keithley2600(Keithley2600Base):
         smu_sweep.measure.delay = delay
         smu_fix.measure.delay = delay
 
-        smu_sweep.measure.autorangei = self.AUTORANGE_ON
-        smu_fix.measure.autorangei = self.AUTORANGE_ON
+        smu_sweep.measure.autorangei = smu_sweep.AUTORANGE_ON
+        smu_fix.measure.autorangei = smu_fix.AUTORANGE_ON
 
         smu_sweep.trigger.source.limiti = 0.1
         smu_fix.trigger.source.limiti = 0.1
 
-        smu_sweep.source.func = self.OUTPUT_DCVOLTS
-        smu_fix.source.func = self.OUTPUT_DCVOLTS
+        smu_sweep.source.func = smu_sweep.OUTPUT_DCVOLTS
+        smu_fix.source.func = smu_fix.OUTPUT_DCVOLTS
 
         # 2-wire measurement (use SENSE_REMOTE for 4-wire)
-        smu_sweep.sense = self.SENSE_LOCAL
-        smu_fix.sense = self.SENSE_LOCAL
+        smu_sweep.sense = smu_sweep.SENSE_LOCAL
+        smu_fix.sense = smu_fix.SENSE_LOCAL
 
         # clears SMU buffers
         smu_sweep.nvbuffer1.clear()
@@ -608,8 +602,8 @@ class Keithley2600(Keithley2600Base):
         smu_fix.nvbuffer2.clearcache()
 
         # diplay current values during measurement
-        self.display.smua.measure.func = self.MEASURE_DCAMPS
-        self.display.smub.measure.func = self.MEASURE_DCAMPS
+        self.display.smua.measure.func = self.smua.MEASURE_DCAMPS
+        self.display.smub.measure.func = self.smub.MEASURE_DCAMPS
 
         # SETUP TRIGGER ARM AND COUNTS
         # trigger count = number of data points in measurement
@@ -626,8 +620,8 @@ class Keithley2600(Keithley2600Base):
         # so the measurements occur at the same time.
 
         # enable smu
-        smu_sweep.trigger.measure.action = self.ENABLE
-        smu_fix.trigger.measure.action = self.ENABLE
+        smu_sweep.trigger.measure.action = smu_sweep.ENABLE
+        smu_fix.trigger.measure.action = smu_fix.ENABLE
         # measure current on trigger, store in buffer of smu
 
         buffer_sweep_1 = '%s.nvbuffer1' % self._get_smu_string(smu_sweep)
@@ -648,9 +642,9 @@ class Keithley2600(Keithley2600Base):
         # pulsed IV sweeps.
 
         if pulsed:
-            endPulseAction = self.SOURCE_IDLE
+            endPulseAction = 0  # SOURCE_IDLE
         elif not pulsed:
-            endPulseAction = self.SOURCE_HOLD
+            endPulseAction = 1  # SOURCE_HOLD
         else:
             raise TypeError("'pulsed' must be of type 'bool'.")
 
@@ -700,8 +694,8 @@ class Keithley2600(Keithley2600Base):
         smu_sweep.trigger.endpulse.stimulus = self.trigger.blender[2].EVENT_ID
 
         # TURN ON smu_sweep AND smu_fix
-        smu_sweep.source.output = self.OUTPUT_ON
-        smu_fix.source.output = self.OUTPUT_ON
+        smu_sweep.source.output = smu_sweep.OUTPUT_ON
+        smu_fix.source.output = smu_fix.OUTPUT_ON
 
         # INITIATE MEASUREMENT
         # prepare SMUs to wait for trigger
