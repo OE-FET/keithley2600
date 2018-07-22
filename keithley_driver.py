@@ -17,9 +17,9 @@ import numpy as np
 import time
 
 # local import
-from KeithleyDriver.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
+from keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
                                          PROPERTY_LISTS)
-from KeithleyDriver import SweepData
+from sweep_data_class import SweepData
 
 logging.STATUS = 15
 logging.addLevelName(logging.STATUS, 'STATUS')
