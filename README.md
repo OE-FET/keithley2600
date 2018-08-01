@@ -2,7 +2,7 @@
 Full Python driver for the Keithley 2600 series source measurement units.
 
 ## About
-Keithley driver with acccess to base functions and higher level functions such as IV measurements, tranfer and output curves, etc. Base command replicate the functionality and syntax from the Keithley TSP functions, which have a syntax similar to python.
+Keithley driver with acccess to base functions and higher level functions such as IV measurements, tranfer and output curves, etc. Base commands replicate the functionality and syntax from the Keithley TSP functions, which have a syntax similar to python.
 
 *Warning:*
 
@@ -30,8 +30,8 @@ Some higher level commands defined in the driver:
 >>> Vsweep, Isweep, Vfix, Ifix = k.voltageSweep(smu_sweep=k.smua, smu_fix=k.smub, VStart=0, VStop=-60,
 	VStep=1, VFix=0, tInt=0.1, delay=-1, pulsed=True) # records IV curve
 >>> k.rampToVoltage(smu=k.smua, targetVolt=60, delay=0.1, stepSize=1) # ramps to voltage
->>> k.outputMeasurement(...) # records output characteristics of a transistor
->>> k.transferMeasurement(...) # records transfer characteristics of a transistor
+>>> data1 = k.outputMeasurement(...) # records output characteristics of a transistor
+>>> data2 = k.transferMeasurement(...) # records transfer characteristics of a transistor
 ```
 
 
