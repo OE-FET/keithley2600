@@ -1,4 +1,4 @@
 # -*- coding: utf-8 -*-
 
-from sweep_data_class import SweepData
-from keithley_driver import Keithley2600
+from Keithley2600.sweep_data_class import SweepData
+from Keithley2600.keithley_driver import Keithley2600
