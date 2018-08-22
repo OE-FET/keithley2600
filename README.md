@@ -30,7 +30,8 @@ Higher level commands defined in the driver:
 >>> k.applyVoltage(k.smua, -60) # applies -60V to smuA
 >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
 >>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1)
->>> Vsweep, Isweep, Vfix, Ifix = k.voltageSweep(smu_sweep=k.smua, smu_fix=k.smub, VStart=0, VStop=-60, VStep=1, VFix=0, tInt=0.1, delay=-1, pulsed=True) # records an IV curve
+>>> Vsweep, Isweep, Vfix, Ifix = k.voltageSweep(smu_sweep=k.smua, smu_fix=k.smub, VStart=0, VStop=-60,
+               VStep=1, VFix=0, tInt=0.1, delay=-1, pulsed=True)# records an IV curve
 >>> data1 = k.outputMeasurement(...) # records an output curve of a transistor
 >>> data2 = k.transferMeasurement(...) # records a transfer curve of a transistor
 ```
