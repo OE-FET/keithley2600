@@ -258,37 +258,6 @@ class Keithley2600Base(MagicClass):
     connected = None
     busy = False
 
-#    OUTPUT_OFF = 0
-#    OUTPUT_ON = 1
-#    OUTPUT_HIGH_Z = 2
-#
-#    OUTPUT_DCAMPS = 0
-#    OUTPUT_DCVOLTS = 1
-#
-#    MEASURE_DCAMPS = 0
-#    MEASURE_DCVOLTS = 1
-#    MEASURE_OHMS = 2
-#    MEASURE_WATTS = 3
-#
-#    DISABLE = 0
-#    ENABLE = 1
-#
-#    SENSE_LOCAL = 0
-#    SENSE_REMOTE = 1
-#    SENSE_CALA = 3
-#
-#    SMUA_BUFFER1 = 'smua.nvbuffer1'
-#    SMUA_BUFFER2 = 'smua.nvbuffer2'
-#    SMUB_BUFFER1 = 'smub.nvbuffer1'
-#    SMUB_BUFFER2 = 'smub.nvbuffer2'
-#
-#    SOURCE_IDLE = 0
-#    SOURCE_HOLD = 1
-#
-#    AUTORANGE_OFF = 0
-#    AUTORANGE_ON = 1
-#    AUTORANGE_FOLLOW_LIMIT = 2
-
 # =============================================================================
 # Connect to keithley
 # =============================================================================
@@ -399,11 +368,31 @@ class Keithley2600(Keithley2600Base):
              * tspnet.excecute() # conflicts with Python's excecute command
              * All Keithley IV sweep commands. We implement our own here.
 
-    USAGE:
-        >>> keithley = Keithley2600('192.168.2.121')
-        >>> keithley.smua.measure.v()  # measures the smuA voltage
-        >>> keithley.smua.source.levelv = -40  # applies -40V to smuA
-        >>> keithley.transferMeasurement(...) # records a transfer curve
+    EXAMPLE USAGE:
+        Base commands from keithley TSP:
+
+        >>> k = Keithley2600('192.168.2.121')
+        >>> k.smua.measure.v()  # measures the smuA voltage
+        >>> k.smua.source.levelv = -40  # sets source level of smuA
+
+        New mid-level commands:
+
+        >>> data = k.readBuffer('smua.nvbuffer1')
+        >>> k.clearBuffers() # clears ALL smu buffers
+        >>> k.setIntegrationTime(k.smua, 0.001) # in sec
+
+        >>> k.applyVoltage(k.smua, -60) # applies -60V to smuA
+        >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
+        >>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1)
+
+        >>> k.voltageSweep(smu_sweep=k.smua, smu_fix=k.smub, VStart=0,
+                           VStop=-60, VStep=1, VFix=0, tInt=0.1, delay=-1,
+                           pulsed=True) # records IV curve
+
+        New high-level commands:
+
+        >>> data1 = k.outputMeasurement(...) # records output curve of a TFT
+        >>> data2 = k.transferMeasurement(...) # records transfer curve of a TFT
 
     """
 
@@ -427,6 +416,21 @@ class Keithley2600(Keithley2600Base):
 # Define lower level control functions
 # =============================================================================
 
+    def readBuffer(self, bufferName):
+        """
+        Reads buffer values and returns them as a list.
+        Clears buffer afterwards.
+        """
+        n = int(float(self._query('%s.n' % bufferName)))
+        list_out = [0.00] * n
+        for i in range(0, n):
+            list_out[i] = float(self._query('%s[%d]' % (bufferName, i+1)))
+
+        # clears buffer
+        self._write('%s.clear()' % bufferName)
+        self._write('%s.clearcache()' % bufferName)
+        return list_out
+
     def clearBuffers(self):
         """ Clears all SMU buffers."""
         for smu_string in self.SMU_LIST:
@@ -437,6 +441,15 @@ class Keithley2600(Keithley2600Base):
 
             smu.nvbuffer1.clearcache()
             smu.nvbuffer2.clearcache()
+
+    def setIntegrationTime(self, smu, tInt):
+        """ Sets the integration time of SMU for measurements in sec. """
+
+        self._check_smu(smu)
+
+        # determine number of power-line-cycles used for integration
+        nplc = tInt * self.localnode.linefreq
+        smu.measure.nplc = nplc
 
     def applyVoltage(self, smu, voltage):
         """
@@ -456,15 +469,6 @@ class Keithley2600(Keithley2600Base):
 
         smu.source.leveli = curr
         smu.source.output = smu.OUTPUT_ON
-
-    def setIntegrationTime(self, smu, tInt):
-        """ Sets the integration time of SMU for measurements in sec. """
-
-        self._check_smu(smu)
-
-        # determine number of power-line-cycles used for integration
-        nplc = tInt * self.localnode.linefreq
-        smu.measure.nplc = nplc
 
     def rampToVoltage(self, smu, targetVolt, delay=0.1, stepSize=1):
         """
@@ -502,21 +506,6 @@ class Keithley2600(Keithley2600Base):
         logger.info('Gate voltage set to Vg = %s V.' % round(targetVolt))
 
         self.beeper.beep(0.3, 2400)
-
-    def readBuffer(self, bufferName):
-        """
-        Reads buffer values and returns them as a list.
-        Clears buffer afterwards.
-        """
-        n = int(float(self._query('%s.n' % bufferName)))
-        list_out = [0.00] * n
-        for i in range(0, n):
-            list_out[i] = float(self._query('%s[%d]' % (bufferName, i+1)))
-
-        # clears buffer
-        self._write('%s.clear()' % bufferName)
-        self._write('%s.clearcache()' % bufferName)
-        return list_out
 
     def voltageSweep(self, smu_sweep, smu_fix, VStart, VStop, VStep, VFix,
                      tInt, delay, pulsed):
