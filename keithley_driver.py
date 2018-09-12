@@ -277,8 +277,7 @@ class Keithley2600Base(MagicClass):
         Connects to Keithley and opens pyvisa API.
         """
         try:
-            visaAddress = 'TCPIP0::%s::INSTR' % self.address
-            self.connection = self.rm.open_resource(visaAddress)
+            self.connection = self.rm.open_resource(self.address)
             self.connection.read_termination = read_term
             self.connection.baud_rate = bdrate
             Keithley2600Base.connected = True
@@ -391,8 +390,8 @@ class Keithley2600(Keithley2600Base):
 
         New high-level commands:
 
-        >>> data1 = k.outputMeasurement(...) # records output curve of a TFT
-        >>> data2 = k.transferMeasurement(...) # records transfer curve of a TFT
+        >>> data1 = k.outputMeasurement(...) # records output curve of a FET
+        >>> data2 = k.transferMeasurement(...) # records transfer curve of a FET
 
     """
 
