@@ -139,7 +139,7 @@ class MagicClass(object):
 
     """
 
-    address = ''
+    visa_address = ''
     _name = ''
     _parent = None
 
@@ -255,18 +255,18 @@ class Keithley2600Base(MagicClass):
     abort_event = threading.Event()
 
     connection = None
-    connected = None
+    connected = False
     busy = False
 
 # =============================================================================
 # Connect to keithley
 # =============================================================================
 
-    def __new__(cls, address):
-        cls.address = address
+    def __new__(cls, visa_address):
+        cls.visa_address = visa_address
         return super(Keithley2600Base, cls).__new__(cls)
 
-    def __init__(self, address):
+    def __init__(self, visa_address):
         MagicClass.__init__(self, '', parent=self)
         # open Keithley Visa resource
         self.rm = visa.ResourceManager()
@@ -277,7 +277,7 @@ class Keithley2600Base(MagicClass):
         Connects to Keithley and opens pyvisa API.
         """
         try:
-            self.connection = self.rm.open_resource(self.address)
+            self.connection = self.rm.open_resource(self.visa_address)
             self.connection.read_termination = read_term
             self.connection.baud_rate = bdrate
             Keithley2600Base.connected = True
@@ -397,12 +397,12 @@ class Keithley2600(Keithley2600Base):
 
     SMU_LIST = ['smua', 'smub']
 
-    def __new__(cls, address):
-        cls.address = address
-        return super(Keithley2600, cls).__new__(cls, address)
+    def __new__(cls, visa_address):
+        cls.visa_address = visa_address
+        return super(Keithley2600, cls).__new__(cls, visa_address)
 
-    def __init__(self, address):
-        Keithley2600Base.__init__(self, address)
+    def __init__(self, visa_address):
+        Keithley2600Base.__init__(self, visa_address)
 
     def _check_smu(self, smu):
         """Check if selected smu is indeed present."""
