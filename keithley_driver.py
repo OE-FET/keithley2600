@@ -36,7 +36,7 @@ class MagicPropertyList(object):
     from _query. Calls accept aribitrary arguments, as long as _query can
     handle them.
 
-    This class is designed to look like a  Keithley TSP script method, forward
+    This class is designed to look like a  Keithley TSP "attribute", forward
     function calls to the Keithley, and return the results.
 
     """
@@ -90,7 +90,7 @@ class MagicFunction(object):
     from _query. Calls accept aribitrary arguments, as long as _query can
     handle them.
 
-    This class is designed to look like a  Keithley TSP script method, forward
+    This class is designed to look like a  Keithley TSP function, forward
     function calls to the Keithley, and return the results.
 
     """
@@ -126,7 +126,7 @@ class MagicClass(object):
     MagicFunction, new classes are created as instances of MagicClass.
 
     MagicClass is designed to mimic a Keithley TSP command group with
-    functions, properties, and subordinate command groups.
+    functions, attributes, and subordinate command groups.
 
     USAGE:
         inst = MagicClass('keithley')
