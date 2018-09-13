@@ -241,7 +241,7 @@ class Keithley2600Base(MagicClass):
                Keithley2600 class.
 
     USAGE:
-        >>> keithley = Keithley2600Base('192.168.2.121')
+        >>> keithley = Keithley2600Base('TCPIP0::192.168.2.121::INSTR')
         >>> keithley.smua.measure.v()  # measures the smuA voltage
         >>> keithley.smua.source.levelv = -40  # applies -40V to smuA
 
@@ -370,7 +370,7 @@ class Keithley2600(Keithley2600Base):
     EXAMPLE USAGE:
         Base commands from keithley TSP:
 
-        >>> k = Keithley2600('192.168.2.121')
+        >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
         >>> k.smua.measure.v()  # measures the smuA voltage
         >>> k.smua.source.levelv = -40  # sets source level of smuA
 
