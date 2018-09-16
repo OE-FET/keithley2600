@@ -269,7 +269,7 @@ class Keithley2600Base(MagicClass):
     def __init__(self, visa_address):
         MagicClass.__init__(self, '', parent=self)
         # open Keithley Visa resource
-        self.rm = visa.ResourceManager()
+        self.rm = visa.ResourceManager('@py')
         self.connect()
 
     def connect(self, read_term='\n', bdrate=57600):
