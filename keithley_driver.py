@@ -279,7 +279,6 @@ class Keithley2600Base(MagicClass):
         try:
             self.connection = self.rm.open_resource(self.visa_address)
             self.connection.read_termination = read_term
-            self.connection.baud_rate = bdrate
             Keithley2600Base.connected = True
 
             self.beeper.beep(0.3, 1046.5)
