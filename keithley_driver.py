@@ -272,13 +272,13 @@ class Keithley2600Base(MagicClass):
         self.rm = visa.ResourceManager('@py')
         self.connect()
 
-    def connect(self, read_term='\n', bdrate=57600):
+    def connect(self):
         """
         Connects to Keithley and opens pyvisa API.
         """
         try:
             self.connection = self.rm.open_resource(self.visa_address)
-            self.connection.read_termination = read_term
+            self.connection.read_termination = '\n'
             Keithley2600Base.connected = True
 
             self.beeper.beep(0.3, 1046.5)
