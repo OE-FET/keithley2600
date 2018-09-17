@@ -284,12 +284,11 @@ class Keithley2600Base(MagicClass):
             self.beeper.beep(0.3, 1046.5)
             self.beeper.beep(0.3, 1318.5)
             self.beeper.beep(0.3, 1568)
-        except OSError:
-            logger.warning('NI Visa is not installed.')
+        except:
+            # TODO: catch specific error once implemented in pyvisa-py
+            logger.info('Could not connect to Keithley.')
             self.connection = None
             self.connected = False
-        except visa.VisaIOError:
-            logger.info('Could not find Keithley.')
             Keithley2600Base.connected = False
 
     def disconnect(self):
