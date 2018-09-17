@@ -288,7 +288,6 @@ class Keithley2600Base(MagicClass):
             # TODO: catch specific error once implemented in pyvisa-py
             logger.info('Could not connect to Keithley.')
             self.connection = None
-            self.connected = False
             Keithley2600Base.connected = False
 
     def disconnect(self):
