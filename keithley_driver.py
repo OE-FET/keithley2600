@@ -32,8 +32,8 @@ class MagicPropertyList(object):
     """
 
     Class which mimics a property and can be dynamically created. It fowards
-    all calls to the _query method of the parent class and returns the result
-    from _query. Calls accept aribitrary arguments, as long as _query can
+    all calls to the _read method of the parent class and assignments to the
+    _write method. Aribitrary values can be assigned, as long as _write can
     handle them.
 
     This class is designed to look like a  Keithley TSP "attribute", forward
