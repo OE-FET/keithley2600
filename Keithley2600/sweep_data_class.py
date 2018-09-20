@@ -7,6 +7,12 @@ Created on Tue Aug 23 20:19:05 2016
 (c) Sam Schott; This work is licensed under a Creative Commons
 Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
 
+TODO:
+* Remove QtPy and matplotlib dependencies, adjust CustomXepr code 
+  to handle file selection and plotting.
+* Include measurement parameters, e.g., integration time, as
+  instance variables and in saved file
+
 """
 import re
 import time

@@ -2,13 +2,13 @@
 Full Python driver for the Keithley 2600 series source measurement units.
 
 ## About
-Keithley driver with acccess to base functions and higher level functions such as IV measurements, tranfer and output curves, etc. Base commands replicate the functionality and syntax from the Keithley TSP functions, which have a syntax similar to python.
+Keithley driver with access to base functions and higher level functions such as IV measurements, transfer and output curves, etc. Base commands replicate the functionality and syntax from the Keithley TSP functions, which have a syntax similar to python.
 
 *Warning:*
 
-There are currntly no checks for allowed arguments in the base commands. See the Keithley 2600 reference manual for all available commands and arguments. Almost all remotely accessible commands can be used with this driver. Not supported are:
+There are currently no checks for allowed arguments in the base commands. See the [Keithley 2600 reference manual](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8) for all available commands and arguments. Almost all remotely accessible commands can be used with this driver. Not supported are:
 
-* tspnet.excecute() # conflicts with Python's excecute command
+* tspnet.excecute() # conflicts with Python's execute command
 * All Keithley IV sweep commands. We implement our own in the Keithley2600 class.
 
 *Usage:*
@@ -39,4 +39,4 @@ Higher level commands defined in the driver:
 
 *Documentation:*
 
-See the Keithley 2600 reference manual for all available commands and arguments.
+See the Keithley 2600 reference manual [here](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8) for all available commands and arguments.
