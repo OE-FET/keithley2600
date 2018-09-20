@@ -12,7 +12,6 @@ setup(name="Keithley2600",
       install_requires=[
           'PyVISA',
           'pyvisa-py',
-          'QtPy',
           'setuptools',
           'numpy',
           'matplotlib',

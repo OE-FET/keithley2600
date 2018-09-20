@@ -8,7 +8,7 @@ Created on Tue Aug 23 20:19:05 2016
 Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
 
 TODO:
-* Remove QtPy and matplotlib dependencies, adjust CustomXepr code 
+* Remove QtPy and matplotlib dependencies, adjust CustomXepr code
   to handle file selection and plotting.
 * Include measurement parameters, e.g., integration time, as
   instance variables and in saved file
@@ -17,7 +17,6 @@ TODO:
 import re
 import time
 import matplotlib.pyplot as plt
-from qtpy import QtWidgets
 import numpy as np
 
 
@@ -146,11 +145,9 @@ class SweepData(object):
 
             fig1.canvas.draw()
 
-    def save(self, filepath=None):
+    def save(self, filepath):
         """
-        Saves the votage sweep data as a text file with headers. If no filepath
-        is given, the user is promted to select a location and name through a
-        user interface.
+        Saves the votage sweep data as a text file with headers.
         """
         # create header and title for file
         header = []
@@ -174,64 +171,50 @@ class SweepData(object):
         self.header = '\t'.join(header)
 
         # save to file
-        if filepath is None:
-            text = 'Please select file for sweep data:'
-            filepath = QtWidgets.QFileDialog.getSaveFileName(caption=text)
-            filepath = filepath[0]
-
-        if len(filepath) > 4:
-            np.savetxt(filepath, data_matrix, fmt='%.9E', delimiter='\t',
-                       newline='\n', header=self.header, comments=title)
+        np.savetxt(filepath, data_matrix, fmt='%.9E', delimiter='\t',
+                   newline='\n', header=self.header, comments=title)
 
         return filepath
 
-    def load(self, filepath=None):
+    def load(self, filepath):
         """
-        Loads the votage sweep data from a text file. If no filepath is given,
-        the user is promted to select a file through a GUI.
+        Loads the votage sweep data from a text file.
         """
 
-        if filepath is None:
-            text = 'Please select file with mode IV curve data:'
-            filepath = QtWidgets.QFileDialog.getOpenFileName(caption=text)
-            filepath = filepath[0]
+        # get info string and header
+        with open(filepath) as f:
+            info_string = f.readline().strip()
+            header = f.readline().strip()
 
-        if len(filepath) > 4:
+        # read in data
+        data_matrix = np.loadtxt(filepath, skiprows=2)
 
-            # get info string and header
-            with open(filepath) as f:
-                info_string = f.readline().strip()
-                header = f.readline().strip()
+        # determine scweep type (transfer / output), proceed accordingly
+        if info_string.find('transfer') > 0:
+            self.sweepType = 'transfer'
+            number_of_sweeps = (data_matrix.shape[1] - 1)/2
+            voltages = self._find_numbers(header)
+            Vg = data_matrix[:, 0]
 
-            # read in data
-            data_matrix = np.loadtxt(filepath, skiprows=2)
+            for i in range(0, number_of_sweeps):
+                Id = data_matrix[:, i + 1]
+                Ig = data_matrix[:, i + 1 + number_of_sweeps]
+                Vd = np.ones(len(data_matrix)) * voltages[i]
+                self.append(Vg, Vd, Ig, Id)
 
-            # determine scweep type (transfer / output), proceed accordingly
-            if info_string.find('transfer') > 0:
-                self.sweepType = 'transfer'
-                number_of_sweeps = (data_matrix.shape[1] - 1)/2
-                voltages = self._find_numbers(header)
-                Vg = data_matrix[:, 0]
+        elif info_string.find('output') > 0:
+            self.sweepType = 'output'
+            number_of_sweeps = (data_matrix.shape[1] - 1)/2
+            voltages = self._find_numbers(header)
+            Vd = data_matrix[:, 0]
 
-                for i in range(0, number_of_sweeps):
-                    Id = data_matrix[:, i + 1]
-                    Ig = data_matrix[:, i + 1 + number_of_sweeps]
-                    Vd = np.ones(len(data_matrix)) * voltages[i]
-                    self.append(Vg, Vd, Ig, Id)
+            for i in range(0, number_of_sweeps):
+                Id = data_matrix[:, i + 1]
+                Ig = data_matrix[:, i + 1 + number_of_sweeps]
+                Vg = np.ones(len(data_matrix)) * voltages[i]
+                self.append(Vg, Vd, Ig, Id)
 
-            elif info_string.find('output') > 0:
-                self.sweepType = 'output'
-                number_of_sweeps = (data_matrix.shape[1] - 1)/2
-                voltages = self._find_numbers(header)
-                Vd = data_matrix[:, 0]
-
-                for i in range(0, number_of_sweeps):
-                    Id = data_matrix[:, i + 1]
-                    Ig = data_matrix[:, i + 1 + number_of_sweeps]
-                    Vg = np.ones(len(data_matrix)) * voltages[i]
-                    self.append(Vg, Vd, Ig, Id)
-
-            self._updateVstep()
+        self._updateVstep()
 
     def _find_numbers(self, string):
         """
