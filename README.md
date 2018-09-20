@@ -16,22 +16,24 @@ There are currntly no checks for allowed arguments in the base commands. See the
 Connect to the Keithley 2600 and perform some base commands:
 ```python
 >>> from keithley_driver import Keithley2600
->>> k = Keithley2600('192.168.2.121')
+>>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
 >>> k.smua.source.output = k.smua.OUTPUT_ON  # turn on smuA
->>> k.smua.source.levelv = -40  # applies -40V to smuA
+>>> k.smua.source.levelv = -40  # sets smuA source level -40V without turning the smu on or off
 >>> volts = k.smua.measure.v()  # measures the smuA voltage
 ```
-
-Some higher level commands defined in the driver:
+Higher level commands defined in the driver:
 
 ```python
->>> k.clearBuffers() # clears measurement buffers of all SMUs
->>> data = k.readBuffer('smua.nvbuffer1') # reads out measurement data from buffer
+>>> data = k.readBuffer('smua.nvbuffer1')
+>>> k.clearBuffers() # clears ALL smu buffers
+>>> k.setIntegrationTime(k.smua, 0.001) # sets integration time to 0.001 sec
+>>> k.applyVoltage(k.smua, -60) # applies -60V to smuA
+>>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
+>>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1)
 >>> Vsweep, Isweep, Vfix, Ifix = k.voltageSweep(smu_sweep=k.smua, smu_fix=k.smub, VStart=0, VStop=-60,
-	VStep=1, VFix=0, tInt=0.1, delay=-1, pulsed=True) # records IV curve
->>> k.rampToVoltage(smu=k.smua, targetVolt=60, delay=0.1, stepSize=1) # ramps to voltage
->>> data1 = k.outputMeasurement(...) # records output characteristics of a transistor
->>> data2 = k.transferMeasurement(...) # records transfer characteristics of a transistor
+               VStep=1, VFix=0, tInt=0.1, delay=-1, pulsed=True)# records an IV curve
+>>> data1 = k.outputMeasurement(...) # records an output curve of a transistor
+>>> data2 = k.transferMeasurement(...) # records a transfer curve of a transistor
 ```
 
 

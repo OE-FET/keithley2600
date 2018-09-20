@@ -32,11 +32,11 @@ class MagicPropertyList(object):
     """
 
     Class which mimics a property and can be dynamically created. It fowards
-    all calls to the _query method of the parent class and returns the result
-    from _query. Calls accept aribitrary arguments, as long as _query can
+    all calls to the _read method of the parent class and assignments to the
+    _write method. Aribitrary values can be assigned, as long as _write can
     handle them.
 
-    This class is designed to look like a  Keithley TSP script method, forward
+    This class is designed to look like a  Keithley TSP "attribute", forward
     function calls to the Keithley, and return the results.
 
     """
@@ -90,7 +90,7 @@ class MagicFunction(object):
     from _query. Calls accept aribitrary arguments, as long as _query can
     handle them.
 
-    This class is designed to look like a  Keithley TSP script method, forward
+    This class is designed to look like a  Keithley TSP function, forward
     function calls to the Keithley, and return the results.
 
     """
@@ -126,7 +126,7 @@ class MagicClass(object):
     MagicFunction, new classes are created as instances of MagicClass.
 
     MagicClass is designed to mimic a Keithley TSP command group with
-    functions, properties, and subordinate command groups.
+    functions, attributes, and subordinate command groups.
 
     USAGE:
         inst = MagicClass('keithley')
@@ -139,7 +139,7 @@ class MagicClass(object):
 
     """
 
-    address = ''
+    visa_address = ''
     _name = ''
     _parent = None
 
@@ -241,7 +241,7 @@ class Keithley2600Base(MagicClass):
                Keithley2600 class.
 
     USAGE:
-        >>> keithley = Keithley2600Base('192.168.2.121')
+        >>> keithley = Keithley2600Base('TCPIP0::192.168.2.121::INSTR')
         >>> keithley.smua.measure.v()  # measures the smuA voltage
         >>> keithley.smua.source.levelv = -40  # applies -40V to smuA
 
@@ -255,74 +255,39 @@ class Keithley2600Base(MagicClass):
     abort_event = threading.Event()
 
     connection = None
-    connected = None
+    connected = False
     busy = False
-
-#    OUTPUT_OFF = 0
-#    OUTPUT_ON = 1
-#    OUTPUT_HIGH_Z = 2
-#
-#    OUTPUT_DCAMPS = 0
-#    OUTPUT_DCVOLTS = 1
-#
-#    MEASURE_DCAMPS = 0
-#    MEASURE_DCVOLTS = 1
-#    MEASURE_OHMS = 2
-#    MEASURE_WATTS = 3
-#
-#    DISABLE = 0
-#    ENABLE = 1
-#
-#    SENSE_LOCAL = 0
-#    SENSE_REMOTE = 1
-#    SENSE_CALA = 3
-#
-#    SMUA_BUFFER1 = 'smua.nvbuffer1'
-#    SMUA_BUFFER2 = 'smua.nvbuffer2'
-#    SMUB_BUFFER1 = 'smub.nvbuffer1'
-#    SMUB_BUFFER2 = 'smub.nvbuffer2'
-#
-#    SOURCE_IDLE = 0
-#    SOURCE_HOLD = 1
-#
-#    AUTORANGE_OFF = 0
-#    AUTORANGE_ON = 1
-#    AUTORANGE_FOLLOW_LIMIT = 2
 
 # =============================================================================
 # Connect to keithley
 # =============================================================================
 
-    def __new__(cls, address):
-        cls.address = address
+    def __new__(cls, visa_address):
+        cls.visa_address = visa_address
         return super(Keithley2600Base, cls).__new__(cls)
 
-    def __init__(self, address):
+    def __init__(self, visa_address):
         MagicClass.__init__(self, '', parent=self)
         # open Keithley Visa resource
-        self.rm = visa.ResourceManager()
+        self.rm = visa.ResourceManager('@py')
         self.connect()
 
-    def connect(self, read_term='\n', bdrate=57600):
+    def connect(self):
         """
         Connects to Keithley and opens pyvisa API.
         """
         try:
-            visaAddress = 'TCPIP0::%s::INSTR' % self.address
-            self.connection = self.rm.open_resource(visaAddress)
-            self.connection.read_termination = read_term
-            self.connection.baud_rate = bdrate
+            self.connection = self.rm.open_resource(self.visa_address)
+            self.connection.read_termination = '\n'
             Keithley2600Base.connected = True
 
             self.beeper.beep(0.3, 1046.5)
             self.beeper.beep(0.3, 1318.5)
             self.beeper.beep(0.3, 1568)
-        except OSError:
-            logger.warning('NI Visa is not installed.')
+        except:
+            # TODO: catch specific error once implemented in pyvisa-py
+            logger.info('Could not connect to Keithley.')
             self.connection = None
-            self.connected = False
-        except visa.VisaIOError:
-            logger.info('Could not find Keithley.')
             Keithley2600Base.connected = False
 
     def disconnect(self):
@@ -399,22 +364,42 @@ class Keithley2600(Keithley2600Base):
              * tspnet.excecute() # conflicts with Python's excecute command
              * All Keithley IV sweep commands. We implement our own here.
 
-    USAGE:
-        >>> keithley = Keithley2600('192.168.2.121')
-        >>> keithley.smua.measure.v()  # measures the smuA voltage
-        >>> keithley.smua.source.levelv = -40  # applies -40V to smuA
-        >>> keithley.transferMeasurement(...) # records a transfer curve
+    EXAMPLE USAGE:
+        Base commands from keithley TSP:
+
+        >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
+        >>> k.smua.measure.v()  # measures the smuA voltage
+        >>> k.smua.source.levelv = -40  # sets source level of smuA
+
+        New mid-level commands:
+
+        >>> data = k.readBuffer('smua.nvbuffer1')
+        >>> k.clearBuffers() # clears ALL smu buffers
+        >>> k.setIntegrationTime(k.smua, 0.001) # in sec
+
+        >>> k.applyVoltage(k.smua, -60) # applies -60V to smuA
+        >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
+        >>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1)
+
+        >>> k.voltageSweep(smu_sweep=k.smua, smu_fix=k.smub, VStart=0,
+                           VStop=-60, VStep=1, VFix=0, tInt=0.1, delay=-1,
+                           pulsed=True) # records IV curve
+
+        New high-level commands:
+
+        >>> data1 = k.outputMeasurement(...) # records output curve of a FET
+        >>> data2 = k.transferMeasurement(...) # records transfer curve of a FET
 
     """
 
     SMU_LIST = ['smua', 'smub']
 
-    def __new__(cls, address):
-        cls.address = address
-        return super(Keithley2600, cls).__new__(cls, address)
+    def __new__(cls, visa_address):
+        cls.visa_address = visa_address
+        return super(Keithley2600, cls).__new__(cls, visa_address)
 
-    def __init__(self, address):
-        Keithley2600Base.__init__(self, address)
+    def __init__(self, visa_address):
+        Keithley2600Base.__init__(self, visa_address)
 
     def _check_smu(self, smu):
         """Check if selected smu is indeed present."""
@@ -427,6 +412,21 @@ class Keithley2600(Keithley2600Base):
 # Define lower level control functions
 # =============================================================================
 
+    def readBuffer(self, bufferName):
+        """
+        Reads buffer values and returns them as a list.
+        Clears buffer afterwards.
+        """
+        n = int(float(self._query('%s.n' % bufferName)))
+        list_out = [0.00] * n
+        for i in range(0, n):
+            list_out[i] = float(self._query('%s[%d]' % (bufferName, i+1)))
+
+        # clears buffer
+        self._write('%s.clear()' % bufferName)
+        self._write('%s.clearcache()' % bufferName)
+        return list_out
+
     def clearBuffers(self):
         """ Clears all SMU buffers."""
         for smu_string in self.SMU_LIST:
@@ -437,6 +437,15 @@ class Keithley2600(Keithley2600Base):
 
             smu.nvbuffer1.clearcache()
             smu.nvbuffer2.clearcache()
+
+    def setIntegrationTime(self, smu, tInt):
+        """ Sets the integration time of SMU for measurements in sec. """
+
+        self._check_smu(smu)
+
+        # determine number of power-line-cycles used for integration
+        nplc = tInt * self.localnode.linefreq
+        smu.measure.nplc = nplc
 
     def applyVoltage(self, smu, voltage):
         """
@@ -456,15 +465,6 @@ class Keithley2600(Keithley2600Base):
 
         smu.source.leveli = curr
         smu.source.output = smu.OUTPUT_ON
-
-    def setIntegrationTime(self, smu, tInt):
-        """ Sets the integration time of SMU for measurements in sec. """
-
-        self._check_smu(smu)
-
-        # determine number of power-line-cycles used for integration
-        nplc = tInt * self.localnode.linefreq
-        smu.measure.nplc = nplc
 
     def rampToVoltage(self, smu, targetVolt, delay=0.1, stepSize=1):
         """
@@ -502,21 +502,6 @@ class Keithley2600(Keithley2600Base):
         logger.info('Gate voltage set to Vg = %s V.' % round(targetVolt))
 
         self.beeper.beep(0.3, 2400)
-
-    def readBuffer(self, bufferName):
-        """
-        Reads buffer values and returns them as a list.
-        Clears buffer afterwards.
-        """
-        n = int(float(self._query('%s.n' % bufferName)))
-        list_out = [0.00] * n
-        for i in range(0, n):
-            list_out[i] = float(self._query('%s[%d]' % (bufferName, i+1)))
-
-        # clears buffer
-        self._write('%s.clear()' % bufferName)
-        self._write('%s.clearcache()' % bufferName)
-        return list_out
 
     def voltageSweep(self, smu_sweep, smu_fix, VStart, VStop, VStep, VFix,
                      tInt, delay, pulsed):

@@ -39,7 +39,7 @@ class SweepData(object):
         if sweepType in TYPELIST:
             self.sweepType = sweepType
         else:
-            raise Exception('"sweepType" must be "transfer" or "output".')
+            raise RuntimeError('"sweepType" must be "transfer" or "output".')
 
         self.Vg = Vg
         self.Vd = Vd
