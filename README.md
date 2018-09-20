@@ -15,7 +15,7 @@ There are currntly no checks for allowed arguments in the base commands. See the
 
 Connect to the Keithley 2600 and perform some base commands:
 ```python
->>> from keithley_driver import Keithley2600
+>>> from Keithley2600 import Keithley2600
 >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
 >>> k.smua.source.output = k.smua.OUTPUT_ON  # turn on smuA
 >>> k.smua.source.levelv = -40  # sets smuA source level -40V without turning the smu on or off
