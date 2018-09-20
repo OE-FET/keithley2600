@@ -2,7 +2,7 @@ from setuptools import setup, find_packages
 
 setup(name="Keithley2600",
       version="0.1.0",
-      description="An opinionated, minimal cookiecutter template for Python packages",
+      description="Full Python driver for the Keithley 2600 series.",
       url="https://github.com/OE-FET/Keithley2600-driver.git",
       author="Sam Schott",
       author_email="ss2151@cam.ac.uk",
@@ -11,6 +11,7 @@ setup(name="Keithley2600",
       packages=find_packages(),
       install_requires=[
           'PyVISA',
+          'pyvisa-py',
           'QtPy',
           'setuptools',
           'numpy',
