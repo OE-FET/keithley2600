@@ -18,7 +18,7 @@ Connect to the Keithley 2600 and perform some base commands:
 >>> from Keithley2600 import Keithley2600
 >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
 >>> k.smua.source.output = k.smua.OUTPUT_ON  # turn on smuA
->>> k.smua.source.levelv = -40  # sets smuA source level -40V without turning the smu on or off
+>>> k.smua.source.levelv = -40  # sets smuA source level to -40V without turning the smu on or off
 >>> volts = k.smua.measure.v()  # measures the smuA voltage
 ```
 Higher level commands defined in the driver:
