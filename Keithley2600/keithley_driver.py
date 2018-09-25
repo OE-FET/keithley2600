@@ -17,15 +17,11 @@ import numpy as np
 import time
 
 # local import
-from Keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES, PROPERTY_LISTS)
+from Keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
+                                       PROPERTY_LISTS)
 from Keithley2600.sweep_data_class import SweepData
 
-logging.STATUS = 15
-logging.addLevelName(logging.STATUS, 'STATUS')
 logger = logging.getLogger(__name__)
-logger.setLevel(logging.STATUS)
-setattr(logger, 'status', lambda message,
-        *args: logger._log(logging.STATUS, message, args))
 
 
 class MagicPropertyList(object):
@@ -286,7 +282,7 @@ class Keithley2600Base(MagicClass):
             self.beeper.beep(0.3, 1568)
         except:
             # TODO: catch specific error once implemented in pyvisa-py
-            logger.info('Could not connect to Keithley.')
+            logger.warning('Could not connect to Keithley.')
             self.connection = None
             Keithley2600Base.connected = False
 
@@ -387,8 +383,8 @@ class Keithley2600(Keithley2600Base):
 
         New high-level commands:
 
-        >>> data1 = k.outputMeasurement(...) # records output curve of a FET
-        >>> data2 = k.transferMeasurement(...) # records transfer curve of a FET
+        >>> data1 = k.outputMeasurement(...) # records output curve
+        >>> data2 = k.transferMeasurement(...) # records transfer curve
 
     """
 
@@ -478,18 +474,15 @@ class Keithley2600(Keithley2600Base):
 
         self._check_smu(smu)
 
-        logger.status('Setting %s voltage to %s V.'
-                      % (self._get_smu_string(smu), targetVolt))
         smu.source.output = smu.OUTPUT_ON
 
         # get current voltage
         Vcurr = smu.source.levelv
         if Vcurr == targetVolt:
-            logger.status('Vg = %sV.' % targetVolt)
             return
 
-        self.display.smua.measure.func = self.smua.MEASURE_DCVOLTS
-        self.display.smub.measure.func = self.smub.MEASURE_DCVOLTS
+        self.display.smua.measure.func = self.display.MEASURE_DCVOLTS
+        self.display.smub.measure.func = self.display.MEASURE_DCVOLTS
 
         step = np.sign(targetVolt-Vcurr)*abs(stepSize)
 
@@ -587,8 +580,8 @@ class Keithley2600(Keithley2600Base):
         smu_fix.nvbuffer2.clearcache()
 
         # diplay current values during measurement
-        self.display.smua.measure.func = self.smua.MEASURE_DCAMPS
-        self.display.smub.measure.func = self.smub.MEASURE_DCAMPS
+        self.display.smua.measure.func = self.display.MEASURE_DCAMPS
+        self.display.smub.measure.func = self.display.MEASURE_DCAMPS
 
         # SETUP TRIGGER ARM AND COUNTS
         # trigger count = number of data points in measurement
@@ -740,16 +733,12 @@ class Keithley2600(Keithley2600Base):
                 self.beeper.beep(0.3, 2400)
                 return self.sweepData
 
-            logger.status('Vd = %sV.' % Vdrain)
             # conduct forward and reverse sweeps
-            logger.status('Forward sweep.')
-
             VgFWD, IgFWD, VdFWD, IdFWD = self.voltageSweep(smu_gate, smu_drain,
                                                            VgStart, VgStop,
                                                            -abs(VgStep),
                                                            Vdrain, tInt, delay,
                                                            pulsed)
-            logger.status('Backward sweep.')
 
             VgRVS, IgRVS, VdRVS, IdRVS = self.voltageSweep(smu_gate, smu_drain,
                                                            VgStop, VgStart,
@@ -788,17 +777,11 @@ class Keithley2600(Keithley2600Base):
                 self.beeper.beep(0.3, 2400)
                 return self.sweepData
 
-            logger.status('Vg = %sV.' % Vgate)
             # conduct forward and reverse sweeps
-            logger.status('Forward sweep.')
-
             VgFWD, IgFWD, VdFWD, IdFWD = self.voltageSweep(smu_drain, smu_gate,
                                                            VdStart, VdStop,
                                                            -abs(VdStep), Vgate,
                                                            tInt, delay, pulsed)
-
-            logger.status('Backward sweep.')
-
             VgRVS, VdRVS, IgRVS, IdRVS = self.voltageSweep(smu_drain, smu_gate,
                                                            VdStop, VdStart,
                                                            abs(VdStep), Vgate,
