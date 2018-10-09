@@ -19,7 +19,7 @@ import time
 # local import
 from Keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
                                        PROPERTY_LISTS)
-from Keithley2600.sweep_data_class import SweepData
+from Keithley2600.sweep_data_class import TransistorSweepData
 
 logger = logging.getLogger(__name__)
 
@@ -716,7 +716,8 @@ class Keithley2600(Keithley2600Base):
                             VdList, tInt, delay, pulsed):
 
         """
-        Records a transfer curve and saves the results in a SweepData instance.
+        Records a transfer curve and saves the results in a TransistorSweepData
+        instance.
         """
         self.busy = True
         self.abort_event.clear()
@@ -724,14 +725,14 @@ class Keithley2600(Keithley2600Base):
                % (VgStart, VgStop, VdList))
         logger.info(msg)
 
-        # create SweepData instance
-        self.sweepData = SweepData(sweepType='transfer')
+        # create TransistorSweepData instance
+        sd = TransistorSweepData(sweepType='transfer')
 
         for Vdrain in VdList:
             if self.abort_event.is_set():
                 self.reset()
                 self.beeper.beep(0.3, 2400)
-                return self.sweepData
+                return sd
 
             # conduct forward and reverse sweeps
             VgFWD, IgFWD, VdFWD, IdFWD = self.voltageSweep(smu_gate, smu_drain,
@@ -746,21 +747,22 @@ class Keithley2600(Keithley2600Base):
                                                            tInt, delay, pulsed)
 
             if not self.abort_event.is_set():
-                # add data to SweepData instance
+                # add data to TransistorSweepData instance
                 # discard data if aborted by user
-                self.sweepData.append(VgFWD, VdFWD, IgFWD, IdFWD)
-                self.sweepData.append(VgRVS, VdRVS, IgRVS, IdRVS)
+                sd.append(vFix=Vdrain, vSweep=VgFWD, iDrain=IdFWD, iGate=IdFWD)
+                sd.append(vFix=Vdrain, vSweep=VgRVS, iDrain=IgRVS, iGate=IdRVS)
 
         self.reset()
         self.beeper.beep(0.3, 2400)
 
         self.busy = False
-        return self.sweepData
+        return sd
 
     def outputMeasurement(self, smu_gate, smu_drain, VdStart, VdStop, VdStep,
                           VgList, tInt, delay, pulsed):
         """
-        Records a output curve and saves the results in a SweepData instance.
+        Records a output curve and saves the results in a TransistorSweepData
+        instance.
         """
         self.busy = True
         self.abort_event.clear()
@@ -768,14 +770,14 @@ class Keithley2600(Keithley2600Base):
                % (VdStart, VdStop, VgList))
         logger.info(msg)
 
-        # create SweepData instance
-        self.sweepData = SweepData(sweepType='output')
+        # create TransistorSweepData instance
+        sd = TransistorSweepData(sweepType='output')
 
         for Vgate in VgList:
             if self.abort_event.is_set():
                 self.reset()
                 self.beeper.beep(0.3, 2400)
-                return self.sweepData
+                return sd
 
             # conduct forward and reverse sweeps
             VgFWD, IgFWD, VdFWD, IdFWD = self.voltageSweep(smu_drain, smu_gate,
@@ -788,16 +790,16 @@ class Keithley2600(Keithley2600Base):
                                                            tInt, delay, pulsed)
 
             if not self.abort_event.is_set():
-                # add data to SweepData instance
+                # add data to TransistorSweepData instance
                 # discard data if aborted by user
-                self.sweepData.append(VgFWD, VdFWD, IgFWD, IdFWD)
-                self.sweepData.append(VgRVS, VdRVS, IgRVS, IdRVS)
+                sd.append(vFix=Vgate, vSweep=VdFWD, iDrain=IdFWD, iGate=IgFWD)
+                sd.append(vFix=Vgate, vSweep=VdRVS, iDrain=IdRVS, iGate=IgRVS)
 
         self.reset()
         self.beeper.beep(0.3, 2400)
 
         self.busy = False
-        return self.sweepData
+        return sd
 
     def playChord(self, direction='up'):
 

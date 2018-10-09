@@ -8,10 +8,8 @@ Created on Tue Aug 23 20:19:05 2016
 Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
 
 TODO:
-* Remove QtPy and matplotlib dependencies, adjust CustomXepr code
-  to handle file selection and plotting.
 * Include measurement parameters, e.g., integration time, as
-  instance variables and in saved file
+  instance variables and in saved file?
 
 """
 import re
@@ -20,110 +18,125 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
-class SweepData(object):
+class TransistorSweepData(object):
     """
-    Class to handle and store two terminal transfer and ouput voltage sweep
-    data. The raw data is stored as numpy vectors:
+    Class to handle, store and load transfer and ouput characteristic data of
+    FETs. The data is stored in dictionaries of numpy arrays with entries
+    named after the fixed voltage:
 
-        self.Vg - gate voltage
-        self.Vd - drain voltage
-        self.Ig - gate current
-        self.Id - drain current
+        self.vSweep - dictionary of voltages on sweep SMU
+        self.iSource - dictionary of source SMU currrents for all sweeps
+        self.iDrain - dictionary of drain SMU currrents for all sweeps
+        self.iGate - dictionary of gate SMU currrents for all sweeps
 
     The following metadata is accessible:
 
-        self.sweepType -    string that describes the sweep type, can be
-                            'transfer' or 'output'
-        self.vStep     -    stepped voltages (dynamically updated)
-        self.nStep     -    number of voltage steps (dynamically updated)
+        self.sweepType   - string that describes the sweep type, can be
+                           'transfer' or 'output'
+        self.step_list() - returns list of stepped voltages
+        self.n_steps()   - returns number of fixed voltage steps
 
     """
 
-    def __init__(self, sweepType='transfer', Vg=[], Vd=[], Ig=[], Id=[]):
-        TYPELIST = ['transfer', 'output']
-        if sweepType in TYPELIST:
+    TYPELIST = ['transfer', 'output']
+
+    def __init__(self, sweepType='transfer', vSweep={}, iSource={}, iDrain={},
+                 iGate={}):
+
+        if sweepType in self.TYPELIST:
             self.sweepType = sweepType
         else:
             raise RuntimeError('"sweepType" must be "transfer" or "output".')
 
-        self.Vg = Vg
-        self.Vd = Vd
-        self.Ig = Ig
-        self.Id = Id
+        self.vSweep = vSweep
+        self.iSource, self.iDrain, self.iGate = iSource, iDrain, iGate
 
-        self._updateVstep()
+        # perform checks on data
+        assert self.iSource.keys() == self.vSweep.keys()
+        assert self.iDrain.keys() == self.vSweep.keys()
+        assert self.iGate.keys() == self.vSweep.keys()
 
-    def append(self, Vg, Vd, Ig, Id):
+    def step_list(self):
+        return list(self.vSweep.keys())
+
+    def n_steps(self):
+        return len(self.step_list())
+
+    def append(self, vFix, vSweep, iSource=np.array([]), iDrain=np.array([]),
+               iGate=np.array([])):
         """
-        Appends new voltage sweep data to the numpy vectors.
+        Appends new voltage sweep data to the numpy vectors. Calculates missing
+        currents if necessary.
         """
-        self.Vg = np.append(self.Vg, Vg)
-        self.Vd = np.append(self.Vd, Vd)
-        self.Ig = np.append(self.Ig, Ig)
-        self.Id = np.append(self.Id, Id)
+        if not iSource.size:
+            iSource = np.array(iGate) + np.array(iDrain)
 
-        self._updateVstep()
-
-    def _updateVstep(self):
-        # use rounded values
-        VgRound = np.round(self.Vg, 1)
-        VdRound = np.round(self.Vd, 1)
-
-        if self.sweepType == 'transfer':
-            unq, idx, counts = np.unique(VdRound, return_index=True,
-                                         return_counts=True)
-            self.vStep = unq[counts > 2].tolist()
-            if any(counts == 2):
-                self.vStep.append('Vg')
-        elif self.sweepType == 'output':
-            _, idx = np.unique(VgRound, return_index=True)
-            self.vStep = VgRound[np.sort(idx)].tolist()
-
-        self.nStep = len(self.vStep)
+        if vFix in self.vSweep.keys():
+            # Append to existing sweep data if step already voltage exists
+            self.vSweep[vFix] = np.append(self.vSweep[vFix], vSweep)
+            self.iSource[vFix] = np.append(self.iSource[vFix], iSource)
+            self.iDrain[vFix] = np.append(self.iDrain[vFix], iDrain)
+            self.iGate[vFix] = np.append(self.iGate[vFix], iGate)
+        else:
+            # Create new entries for new step voltages
+            self.vSweep[vFix] = np.array(vSweep)
+            self.iSource[vFix] = np.array(iSource)
+            self.iDrain[vFix] = np.array(iDrain)
+            self.iGate[vFix] = np.array(iGate)
 
     def get_data_matrix(self):
         """
         Returns the voltage sweep data as a matrix of the form:
-        [V_sweep, Id (step1), Ig (step1), Id (setp2), Ig (setp2), ...]
+        [V_sweep, Is (step1), Id (step1), Ig (step1), Is (setp2), ...]
         """
-        VgMatrix = np.reshape(self.Vg, (-1, self.nStep), order='F')
-        VdMatrix = np.reshape(self.Vd, (-1, self.nStep), order='F')
-        IgMatrix = np.reshape(self.Ig, (-1, self.nStep), order='F')
-        IdMatrix = np.reshape(self.Id, (-1, self.nStep), order='F')
 
-        if self.sweepType == 'transfer':
-            Vg = VgMatrix[:, 0]
-            matrix = np.concatenate((Vg[:, np.newaxis], IdMatrix, IgMatrix),
-                                    axis=1)
-        elif self.sweepType == 'output':
-            Vd = VdMatrix[:, 0]
-            matrix = np.concatenate((Vd[:, np.newaxis], IdMatrix, IgMatrix),
-                                    axis=1)
+        vSweepMatrix = np.array(list(self.vSweep.values()))
+
+        iSMatrix = np.array(list(self.iSource.values()))
+        iDMatrix = np.array(list(self.iDrain.values()))
+        iGMatrix = np.array(list(self.iGate.values()))
+
+        for m in (iSMatrix, iDMatrix, iGMatrix):
+            m = self._pad2shape(m, vSweepMatrix.shape)
+
+        vSweep0 = vSweepMatrix[:, 0]
+
+        matrix = np.concatenate((vSweep0[:, np.newaxis], iSMatrix,
+                                 iDMatrix, iGMatrix), axis=1)
+
         return matrix
+
+    def _pad2shape(self, array, shape):
+        """Pads numpy array with NaN until shape is reached."""
+
+        padded = np.empty(shape) * np.NaN
+        padded[:array.shape[0], :array.shape[1]] = array
+
+        return padded
 
     def plot(self):
         """
-        Plots the transfer or output curves in a PyQt window. Do not call this
-        function from within a thread.
+        Plots the transfer or output curves. This method is not thread safe.
         """
         if self.sweepType == 'transfer':
-            fig1 = plt.figure(1)
-            plt.clf()
-            fig2 = plt.figure(2)
-            plt.clf()
+            fig1, fig2 = plt.figure(1), plt.figure(2)
+            fig1.clf()
+            fig2.clf()
 
-            for i in range(0, self.nStep):
-                nPoints = len(self.Vg)/self.nStep
-                select = slice(i*nPoints, (i+1)*nPoints)
+            for v in self.vSweep.keys():
+                # log plot
                 plt.figure(1)
-                plt.semilogy(self.Vg[select], abs(self.Id[select]), '-',
-                             label='Drain current, Vd = %s' % self.vStep[i])
-                plt.semilogy(self.Vg[select], abs(self.Ig[select]), '--',
-                             label='Gate current, Vd = %s' % self.vStep[i])
+                plt.semilogy(self.vSweep[v], abs(self.iSource[v]), '-',
+                             label='Source current, Vd = %s' % v)
+                plt.semilogy(self.vSweep[v], abs(self.iDrain[v]), '-',
+                             label='Drain current, Vd = %s' % v)
+                plt.semilogy(self.vSweep[v], abs(self.iGate[v]), '--',
+                             label='Gate current, Vd = %s' % v)
                 plt.legend(loc=3)
 
+                # sqrt(I) plot
                 plt.figure(2)
-                plt.plot(self.Vg[select], np.sqrt(abs(self.Id[select])))
+                plt.plot(self.vSweep[v], np.sqrt(abs(self.iDrain[v])))
 
             plt.show()
             fig1.canvas.draw()
@@ -133,14 +146,15 @@ class SweepData(object):
             fig1 = plt.figure(1)
             plt.clf()
 
-            for i in range(0, self.nStep):
-                nPoints = len(self.Vg)/self.nStep
-                select = slice(i*nPoints, (i+1)*nPoints)
+            for v in self.vSweep.keys():
+                # linear plot
                 plt.figure(1)
-                plt.plot(self.Vd[select], abs(self.Id[select]), '-',
-                         label='Drain current, Vg = %s' % self.vStep[i])
-                plt.plot(self.Vd[select], abs(self.Ig[select]), '--',
-                         label='Gate current, Vg = %s' % self.vStep[i])
+                plt.plot(self.vSweep[v], abs(self.iSource[v]), '-',
+                         label='Source current, Vg = %s' % v)
+                plt.plot(self.vSweep[v], abs(self.iDrain[v]), '--',
+                         label='Drain current, Vg = %s' % v)
+                plt.plot(self.vSweep[v], abs(self.iGate[v]), '--',
+                         label='Gate current, Vg = %s' % v)
                 plt.legend()
 
             fig1.canvas.draw()
@@ -150,29 +164,28 @@ class SweepData(object):
         Saves the votage sweep data as a text file with headers.
         """
         # create header and title for file
-        header = []
         time_str = time.strftime('%H:%M, %d/%m/%Y')
-        if self.sweepType == 'output':
+
+        if self.sweepType is 'output':
             title = '# output curve, recorded at %s\n' % time_str
-            header.append('Vd /V')
-            for i in range(0, self.nStep):
-                header.append('Isd (Vg=%dV) /A' % self.vStep[i])
-            for i in xrange(0, self.nStep):
-                header.append('Ig (Vg=%dV) /A' % self.vStep[i])
-        elif self.sweepType == 'transfer':
+            header = ['Vd /V']
+            vFixName = 'Vg'
+
+        elif self.sweepType is 'transfer':
             title = '# transfer curve, recorded at %s\n' % time_str
-            header.append('Vg /V')
-            for i in range(0, self.nStep):
-                header.append('Isd (Vd=%sV) /A' % self.vStep[i])
-            for i in range(0, self.nStep):
-                header.append('Ig (Vd=%sV) /A' % self.vStep[i])
+            header = ['Vg /V']
+            vFixName = 'Vd'
+
+        for i in ('Is', 'Id', 'Ig'):
+            for v in self.vSweep.keys():
+                header += ['%s (%s=%dV) /A' % (i, vFixName, v)]
 
         data_matrix = self.get_data_matrix()
-        self.header = '\t'.join(header)
+        header = '\t'.join(header)
 
         # save to file
         np.savetxt(filepath, data_matrix, fmt='%.9E', delimiter='\t',
-                   newline='\n', header=self.header, comments=title)
+                   newline='\n', header=header, comments=title)
 
         return filepath
 
@@ -180,41 +193,39 @@ class SweepData(object):
         """
         Loads the votage sweep data from a text file.
         """
+        # reset to empty values
+        self.__init__()
 
-        # get info string and header
+        # read info string and header
         with open(filepath) as f:
             info_string = f.readline().strip()
             header = f.readline().strip()
 
-        # read in data
-        data_matrix = np.loadtxt(filepath, skiprows=2)
+        # read data as 2D numpy array
+        m = np.loadtxt(filepath, skiprows=2)
 
-        # determine scweep type (transfer / output), proceed accordingly
+        # process information
+        clm_hdrs = header.split('\t')
+        v_fix_list = list(set(self._find_numbers(header)))  # get voltage steps
+
+        # determine sweep type (transfer / output), proceed accordingly
         if info_string.find('transfer') > 0:
             self.sweepType = 'transfer'
-            number_of_sweeps = (data_matrix.shape[1] - 1)/2
-            voltages = self._find_numbers(header)
-            Vg = data_matrix[:, 0]
-
-            for i in range(0, number_of_sweeps):
-                Id = data_matrix[:, i + 1]
-                Ig = data_matrix[:, i + 1 + number_of_sweeps]
-                Vd = np.ones(len(data_matrix)) * voltages[i]
-                self.append(Vg, Vd, Ig, Id)
-
         elif info_string.find('output') > 0:
             self.sweepType = 'output'
-            number_of_sweeps = (data_matrix.shape[1] - 1)/2
-            voltages = self._find_numbers(header)
-            Vd = data_matrix[:, 0]
+        else:
+            raise RuntimeError('File type not recognized. Please check if ' +
+                               'the file contains valid sweep data')
 
-            for i in range(0, number_of_sweeps):
-                Id = data_matrix[:, i + 1]
-                Ig = data_matrix[:, i + 1 + number_of_sweeps]
-                Vg = np.ones(len(data_matrix)) * voltages[i]
-                self.append(Vg, Vd, Ig, Id)
-
-        self._updateVstep()
+        for v in v_fix_list:
+            lookup = str(int(v))
+            idx = [i for (i, x) in enumerate(clm_hdrs) if x.find(lookup) > 0]
+            if len(idx) == 2:
+                self.append(vFix=v, vSweep=m[:, 0], iSource=np.array([]),
+                            iDrain=m[:, idx[0]], iGate=m[:, idx[1]])
+            elif len(idx) == 3:
+                self.append(vFix=v, vSweep=m[:, 0], iSource=m[:, idx[0]],
+                            iDrain=m[:, idx[1]], iGate=m[:, idx[2]])
 
     def _find_numbers(self, string):
         """
