@@ -178,7 +178,7 @@ class TransistorSweepData(object):
 
         for i in ('Is', 'Id', 'Ig'):
             for v in self.vSweep.keys():
-                header += ['%s (%s=%dV) /A' % (i, vFixName, v)]
+                header += ['%s (%s=%sV) /A' % (i, vFixName, v)]
 
         data_matrix = self.get_data_matrix()
         header = '\t'.join(header)
@@ -229,9 +229,10 @@ class TransistorSweepData(object):
 
     def _find_numbers(self, string):
         """
-        Finds all numbers in a string, for example in a header from a txt file.
+        Finds all numbers in a string and returns them in a list.
         """
-        fmt = '[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
+
+        fmt = r'[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
         string_list = re.findall(fmt, string)
         float_list = [float(s) for s in string_list]
 
