@@ -99,12 +99,12 @@ class TransistorSweepData(object):
         for m in (iSMatrix, iDMatrix, iGMatrix):
             m = self._pad2shape(m, vSweepMatrix.shape)
 
-        vSweep0 = vSweepMatrix[:, 0]
+        vSweep0 = vSweepMatrix[0, :]
 
-        matrix = np.concatenate((vSweep0[:, np.newaxis], iSMatrix,
-                                 iDMatrix, iGMatrix), axis=1)
+        matrix = np.concatenate((vSweep0[np.newaxis, :], iSMatrix,
+                                 iDMatrix, iGMatrix))
 
-        return matrix
+        return matrix.transpose()
 
     def _pad2shape(self, array, shape):
         """Pads numpy array with NaN until shape is reached."""
@@ -170,7 +170,6 @@ class TransistorSweepData(object):
             title = '# output curve, recorded at %s\n' % time_str
             header = ['Vd /V']
             vFixName = 'Vg'
-
         elif self.sweepType is 'transfer':
             title = '# transfer curve, recorded at %s\n' % time_str
             header = ['Vg /V']
