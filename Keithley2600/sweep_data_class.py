@@ -161,7 +161,13 @@ class TransistorSweepData(object):
 
     def save(self, filepath):
         """
-        Saves the votage sweep data as a text file with headers.
+        Saves the votage sweep data from a text file. The exepected file is:
+            * The header contains the sweep type (transfer / output) and date
+              saved.
+            * Tab delimited columns of transfer or output sweep currents.
+            * Fixed voltage steps are provided in the column titles.
+            * The first column contains voltages of the sweep SMU.
+            * Currents are saved in the order [Is, ... , Id, ... , Ig, ... ].
         """
         # create header and title for file
         time_str = time.strftime('%H:%M, %d/%m/%Y')
@@ -190,7 +196,13 @@ class TransistorSweepData(object):
 
     def load(self, filepath):
         """
-        Loads the votage sweep data from a text file.
+        Loads the votage sweep data from a text file. The exepected file format
+        is:
+            * The header contains the sweep type (transfer / output).
+            * Tab delimited columns of transfer or output sweep currents
+            * Fixed voltage steps must be provided in the column titles.
+            * The first column must contain the sweep voltage.
+            * Last columns are expected to contain the gate currents.
         """
         # reset to empty values
         self.__init__()
@@ -204,8 +216,8 @@ class TransistorSweepData(object):
         m = np.loadtxt(filepath, skiprows=2)
 
         # process information
-        clm_hdrs = header.split('\t')
-        v_fix_list = list(set(self._find_numbers(header)))  # get voltage steps
+        column_title_volts = enumerate(self._find_numbers(header))
+        v_fix_list = list(set(column_title_volts))  # get voltage steps
 
         # determine sweep type (transfer / output), proceed accordingly
         if info_string.find('transfer') > 0:
@@ -217,8 +229,9 @@ class TransistorSweepData(object):
                                'the file contains valid sweep data')
 
         for v in v_fix_list:
-            lookup = str(int(v))
-            idx = [i for (i, x) in enumerate(clm_hdrs) if x.find(lookup) > 0]
+            # find indices of columns that belong to the same sweep
+            idx = [i + 1 for (i, x) in enumerate(column_title_volts) if x == v]
+            # check if Id + Ig or Is + Id + Ig currets are provided
             if len(idx) == 2:
                 self.append(vFix=v, vSweep=m[:, 0], iSource=np.array([]),
                             iDrain=m[:, idx[0]], iGate=m[:, idx[1]])
