@@ -735,7 +735,7 @@ class Keithley2600(Keithley2600Base):
                 return sd
 
             # conduct forward and reverse sweeps
-            VgFWD, IgFWD, VdFWD, IdFWD = self.voltageSweep(smu_gate, smu_drain,
+            VsFWD, IsFWD, VfFWD, IfFWD = self.voltageSweep(smu_gate, smu_drain,
                                                            VgStart, VgStop,
                                                            -abs(VgStep),
                                                            Vdrain, tInt, delay,
@@ -744,9 +744,9 @@ class Keithley2600(Keithley2600Base):
             if not self.abort_event.is_set():
                 # add data to TransistorSweepData instance
                 # discard data if aborted by user
-                sd.append(vFix=Vdrain, vSweep=VgFWD, iDrain=IdFWD, iGate=IdFWD)
+                sd.append(vFix=Vdrain, vSweep=VsFWD, iDrain=IfFWD, iGate=IsFWD)
 
-            VgRVS, IgRVS, VdRVS, IdRVS = self.voltageSweep(smu_gate, smu_drain,
+            VsRVS, IsRVS, VfRVS, IfRVS = self.voltageSweep(smu_gate, smu_drain,
                                                            VgStop, VgStart,
                                                            abs(VgStep), Vdrain,
                                                            tInt, delay, pulsed)
@@ -754,7 +754,7 @@ class Keithley2600(Keithley2600Base):
             if not self.abort_event.is_set():
                 # add data to TransistorSweepData instance
                 # discard data if aborted by user
-                sd.append(vFix=Vdrain, vSweep=VgRVS, iDrain=IgRVS, iGate=IdRVS)
+                sd.append(vFix=Vdrain, vSweep=VsRVS, iDrain=IfRVS, iGate=IsRVS)
 
         self.reset()
         self.beeper.beep(0.3, 2400)
@@ -784,16 +784,16 @@ class Keithley2600(Keithley2600Base):
                 return sd
 
             # conduct forward and reverse sweeps
-            VgFWD, IgFWD, VdFWD, IdFWD = self.voltageSweep(smu_drain, smu_gate,
+            VsFWD, IsFWD, VfFWD, IfFWD = self.voltageSweep(smu_drain, smu_gate,
                                                            VdStart, VdStop,
                                                            -abs(VdStep), Vgate,
                                                            tInt, delay, pulsed)
             if not self.abort_event.is_set():
                 # add data to TransistorSweepData instance
                 # discard data if aborted by user
-                sd.append(vFix=Vgate, vSweep=VdFWD, iDrain=IdFWD, iGate=IgFWD)
+                sd.append(vFix=Vgate, vSweep=VsFWD, iDrain=IsFWD, iGate=IfFWD)
 
-            VgRVS, IgRVS, VdRVS, IdRVS = self.voltageSweep(smu_drain, smu_gate,
+            VsRVS, IsRVS, VfRVS, IfRVS = self.voltageSweep(smu_drain, smu_gate,
                                                            VdStop, VdStart,
                                                            abs(VdStep), Vgate,
                                                            tInt, delay, pulsed)
@@ -801,7 +801,7 @@ class Keithley2600(Keithley2600Base):
             if not self.abort_event.is_set():
                 # add data to TransistorSweepData instance
                 # discard data if aborted by user
-                sd.append(vFix=Vgate, vSweep=VdRVS, iDrain=IdRVS, iGate=IgRVS)
+                sd.append(vFix=Vgate, vSweep=VsRVS, iDrain=IsRVS, iGate=IfRVS)
 
         self.reset()
         self.beeper.beep(0.3, 2400)
