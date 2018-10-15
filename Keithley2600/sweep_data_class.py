@@ -210,7 +210,10 @@ class TransistorSweepData(object):
             * Last columns are expected to contain the gate currents.
         """
         # reset to empty values
-        self.vSweep, self.iSource, self.iDrain, self.iGate = {}, {}, {}, {}
+        self.vSweep = {}
+        self.iSource = {}
+        self.iDrain = {}
+        self.iGate = {}
 
         # read info string and header
         with open(filepath) as f:
