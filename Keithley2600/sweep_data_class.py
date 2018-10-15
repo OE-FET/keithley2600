@@ -40,18 +40,16 @@ class TransistorSweepData(object):
 
     TYPELIST = ['transfer', 'output']
 
-    def __init__(self, sweepType='transfer', vSweep={}, iSource={}, iDrain={},
-                 iGate={}):
+    def __init__(self, sweepType='transfer', vSweep=None, iSource=None,
+                 iDrain=None, iGate=None):
 
         if sweepType in self.TYPELIST:
             self.sweepType = sweepType
         else:
             raise RuntimeError('"sweepType" must be "transfer" or "output".')
 
-        self.vSweep = vSweep
-        self.iSource = iSource
-        self.iDrain = iDrain
-        self.iGate = iGate
+        if vSweep is None:
+            self.vSweep, self.iSource, self.iDrain, self.iGate = {}, {}, {}, {}
 
         # perform checks on data
         assert self.iSource.keys() == self.vSweep.keys()
@@ -70,9 +68,6 @@ class TransistorSweepData(object):
         Appends new voltage sweep data to the numpy vectors. Calculates missing
         currents if necessary.
         """
-        print('Currents steps: %s.' % self.step_list())
-        print('Adding data for %s sweep.' % vFix)
-
         if not iSource.size:
             iSource = np.array(iGate) + np.array(iDrain)
 
@@ -210,10 +205,7 @@ class TransistorSweepData(object):
             * Last columns are expected to contain the gate currents.
         """
         # reset to empty values
-        self.vSweep = {}
-        self.iSource = {}
-        self.iDrain = {}
-        self.iGate = {}
+        self.vSweep, self.iSource, self.iDrain, self.iGate = {}, {}, {}, {}
 
         # read info string and header
         with open(filepath) as f:
