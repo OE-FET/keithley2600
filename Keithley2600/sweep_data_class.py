@@ -72,7 +72,7 @@ class TransistorSweepData(object):
             iSource = np.array(iGate) + np.array(iDrain)
 
         if vFix in self.vSweep.keys():
-            # Append to existing sweep data if step already voltage exists
+            # Append to existing sweep data if voltage step already exists
             self.vSweep[vFix] = np.append(self.vSweep[vFix], vSweep)
             self.iSource[vFix] = np.append(self.iSource[vFix], iSource)
             self.iDrain[vFix] = np.append(self.iDrain[vFix], iDrain)
@@ -205,7 +205,7 @@ class TransistorSweepData(object):
             * Last columns are expected to contain the gate currents.
         """
         # reset to empty values
-        self.__init__()
+        self.vSweep, self.iSource, self.iDrain, self.iGate = {}, {}, {}, {}
 
         # read info string and header
         with open(filepath) as f:
@@ -216,7 +216,7 @@ class TransistorSweepData(object):
         m = np.loadtxt(filepath, skiprows=2)
 
         # process information
-        column_title_volts = enumerate(self._find_numbers(header))
+        column_title_volts = self._find_numbers(header)
         v_fix_list = list(set(column_title_volts))  # get voltage steps
 
         # determine sweep type (transfer / output), proceed accordingly
