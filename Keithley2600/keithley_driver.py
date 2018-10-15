@@ -741,6 +741,11 @@ class Keithley2600(Keithley2600Base):
                                                            Vdrain, tInt, delay,
                                                            pulsed)
 
+            if not self.abort_event.is_set():
+                # add data to TransistorSweepData instance
+                # discard data if aborted by user
+                sd.append(vFix=Vdrain, vSweep=VgFWD, iDrain=IdFWD, iGate=IdFWD)
+
             VgRVS, IgRVS, VdRVS, IdRVS = self.voltageSweep(smu_gate, smu_drain,
                                                            VgStop, VgStart,
                                                            abs(VgStep), Vdrain,
@@ -749,7 +754,6 @@ class Keithley2600(Keithley2600Base):
             if not self.abort_event.is_set():
                 # add data to TransistorSweepData instance
                 # discard data if aborted by user
-                sd.append(vFix=Vdrain, vSweep=VgFWD, iDrain=IdFWD, iGate=IdFWD)
                 sd.append(vFix=Vdrain, vSweep=VgRVS, iDrain=IgRVS, iGate=IdRVS)
 
         self.reset()
@@ -784,7 +788,12 @@ class Keithley2600(Keithley2600Base):
                                                            VdStart, VdStop,
                                                            -abs(VdStep), Vgate,
                                                            tInt, delay, pulsed)
-            VgRVS, VdRVS, IgRVS, IdRVS = self.voltageSweep(smu_drain, smu_gate,
+            if not self.abort_event.is_set():
+                # add data to TransistorSweepData instance
+                # discard data if aborted by user
+                sd.append(vFix=Vgate, vSweep=VdFWD, iDrain=IdFWD, iGate=IgFWD)
+
+            VgRVS, IgRVS, VdRVS, IdRVS = self.voltageSweep(smu_drain, smu_gate,
                                                            VdStop, VdStart,
                                                            abs(VdStep), Vgate,
                                                            tInt, delay, pulsed)
@@ -792,7 +801,6 @@ class Keithley2600(Keithley2600Base):
             if not self.abort_event.is_set():
                 # add data to TransistorSweepData instance
                 # discard data if aborted by user
-                sd.append(vFix=Vgate, vSweep=VdFWD, iDrain=IdFWD, iGate=IgFWD)
                 sd.append(vFix=Vgate, vSweep=VdRVS, iDrain=IdRVS, iGate=IgRVS)
 
         self.reset()
