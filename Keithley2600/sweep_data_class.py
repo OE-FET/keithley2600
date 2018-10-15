@@ -49,7 +49,9 @@ class TransistorSweepData(object):
             raise RuntimeError('"sweepType" must be "transfer" or "output".')
 
         self.vSweep = vSweep
-        self.iSource, self.iDrain, self.iGate = iSource, iDrain, iGate
+        self.iSource = iSource
+        self.iDrain = iDrain
+        self.iGate = iGate
 
         # perform checks on data
         assert self.iSource.keys() == self.vSweep.keys()
@@ -68,8 +70,8 @@ class TransistorSweepData(object):
         Appends new voltage sweep data to the numpy vectors. Calculates missing
         currents if necessary.
         """
-        print('Adding data for %s sweep.' % vFix)
         print('Currents steps: %s.' % self.step_list())
+        print('Adding data for %s sweep.' % vFix)
 
         if not iSource.size:
             iSource = np.array(iGate) + np.array(iDrain)
