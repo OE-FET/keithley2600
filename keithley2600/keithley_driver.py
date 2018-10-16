@@ -1,11 +1,11 @@
 # -*- coding: utf-8 -*-
+#
+# Copyright © keithley2600 Project Contributors
+# Licensed under the terms of the MIT License
+# (see keithley2600/__init__.py for details)
+
 """
-Created on Tue Aug 23 20:19:05 2016
-
-@author: Sam Schott (ss2151@cam.ac.uk)
-
-(c) Sam Schott; This work is licensed under a Creative Commons
-Attribution-NonCommercial-NoDerivs 2.0 UK: England & Wales License.
+Core driver with the low level functions
 
 """
 
