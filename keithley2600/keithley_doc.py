@@ -1,10 +1,9 @@
-#!/usr/bin/env python2
 # -*- coding: utf-8 -*-
-"""
-Created on Thu Jul 19 11:18:02 2018
+#
+# Copyright © keithley2600 Project Contributors
+# Licensed under the terms of the MIT License
+# (see keithley2600/__init__.py for details)
 
-@author: samschott
-"""
 
 # Warning: PROPERTIES, CONSATNTS, FUNCTIONS and SUBCLASSES must be mutually
 # exclusive. A string used for a PROPERTY cannot be used to create a class
