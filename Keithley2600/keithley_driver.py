@@ -17,9 +17,9 @@ import numpy as np
 import time
 
 # local import
-from Keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
+from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
                                        PROPERTY_LISTS)
-from Keithley2600.sweep_data_class import TransistorSweepData
+from keithley2600.sweep_data_class import TransistorSweepData
 
 logger = logging.getLogger(__name__)
 
