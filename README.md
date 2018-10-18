@@ -37,13 +37,13 @@ Higher level commands defined in the driver:
 ```
 
 
-*Installation:*
+## Installation
 Download or clone the repository. Install the package by running 
 ```console
 $ pip install /path/to/folder
 ```
 where "/path/to/folder" is the path to the folder containing setup.py. 
 
-*Documentation:*
+##  Documentation
 
 See the Keithley 2600 reference manual [here](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8) for all available commands and arguments.
