@@ -220,9 +220,9 @@ class TransistorSweepData(object):
         v_fix_list = list(set(column_title_volts))  # get voltage steps
 
         # determine sweep type (transfer / output), proceed accordingly
-        if info_string.find('transfer') > 0:
+        if 'transfer' in info_string:
             self.sweepType = 'transfer'
-        elif info_string.find('output') > 0:
+        elif 'output' in info_string:
             self.sweepType = 'output'
         else:
             raise RuntimeError('File type not recognized. Please check if ' +
