@@ -1,3 +1,5 @@
+[![Build Status](https://travis-ci.org/OE-FET/keithley2600.svg?branch=master)](https://travis-ci.org/OE-FET/keithley2600)
+
 # keithley2600
 Full Python driver for the Keithley 2600 series source measurement units.
 
