@@ -18,6 +18,112 @@ import matplotlib.pyplot as plt
 import numpy as np
 
 
+class IVSweepData(object):
+    """
+    Class to store, load, save, and plot data from a simple IV sweep. The data
+    is stored in two numpy arrays of voltage and current.
+    """
+
+    TYPELIST = ['iv', ]
+
+    def __init__(self, v=None, i=None):
+
+        self.sweepType = 'iv'
+
+        if v is None:
+            self.v, self.i = np.array([]), np.array([])
+        else:
+            self.v, self.i = np.array(v), np.array(i)
+
+        assert len(self.v) == len(self.i)
+
+    def get_data_matrix(self):
+        """ Returns matrix with columns (v, i)."""
+
+        m = np.array([self.v, self.i])
+
+        return m.transpose()
+
+    def append(self, v, i):
+
+        assert len(i) == len(v)
+
+        self.v = np.append(self.v, v)
+        self.i = np.append(self.v, i)
+
+    def plot(self, log=False):
+        """Plots the IV data on a linear (default) or semilog scale. """
+
+        fig1 = plt.figure(1)
+        plt.clf()
+        plt.figure(1)
+
+        if log:
+            plt.semilogy(self.v, self.i, '-')
+        else:
+            plt.plot(self.v, self.i, '-')
+
+        fig1.canvas.draw()
+
+    def save(self, filepath):
+        """
+        Saves the votage sweep data to a text file. The file format is:
+            * The header contains the sweep type (iv) and date saved.
+            * Tab delimited columns contain voltage and current data.
+            * The first column contains voltages of the sweep SMU.
+        """
+        # create header and title for file
+        time_str = time.strftime('%H:%M, %d/%m/%Y')
+
+        title = '# iv curve, recorded at %s\n' % time_str
+        header = ['V /V', 'I /A']
+
+        data_matrix = self.get_data_matrix()
+        header = '\t'.join(header)
+
+        # save to file
+        np.savetxt(filepath, data_matrix, fmt='%.9E', delimiter='\t',
+                   newline='\n', header=header, comments=title)
+
+        return filepath
+
+    def load(self, filepath):
+        """
+        Loads the votage sweep data from a text file. The expected format is:
+            * The header contains the sweep type (iv) and date saved.
+            * Tab delimited columns contain voltage and current data.
+            * The first column contains voltages of the sweep SMU.
+        """
+        # reset to empty values
+        self.v, self.i = np.array([]), np.array([])
+
+        # read info string and header
+        with open(filepath) as f:
+            info_string = f.readline().strip()
+            header = f.readline().strip()
+
+        # read data as 2D numpy array
+        m = np.loadtxt(filepath, skiprows=2)
+
+        # check file format
+        headers = header.split('\t')
+        if len(headers) != 2 or m.shape[1] != 2:
+            raise RuntimeError('2 columns expected but %s ' % len(headers) +
+                               'columns found. Please check file format.')
+
+        # determine sweep type (transfer / output), proceed accordingly
+        types_in_head = [t for t in self.TYPELIST if (t in info_string)]
+
+        if len(types_in_head) == 1:
+            self.sweepType = types_in_head[0]
+        else:
+            raise RuntimeError('File type not recognized. Please check if ' +
+                               'the file contains valid IV sweep data.')
+
+        self.v = m[:, 0]
+        self.i = m[:, 1]
+
+
 class TransistorSweepData(object):
     """
     Class to handle, store and load transfer and ouput characteristic data of
@@ -46,10 +152,14 @@ class TransistorSweepData(object):
         if sweepType in self.TYPELIST:
             self.sweepType = sweepType
         else:
-            raise RuntimeError('"sweepType" must be "transfer" or "output".')
+            raise RuntimeError('"sweepType" must be "transfer", "output".')
 
         if vSweep is None:
-            self.vSweep, self.iSource, self.iDrain, self.iGate = {}, {}, {}, {}
+            self.vSweep = {}
+            self.iSource, self.iDrain, self.iGate = {}, {}, {}
+        else:
+            self.vSweep = vSweep
+            self.iSource, self.iDrain, self.iGate = iSource, iDrain, iGate
 
         # perform checks on data
         assert self.iSource.keys() == self.vSweep.keys()
@@ -161,7 +271,7 @@ class TransistorSweepData(object):
 
     def save(self, filepath):
         """
-        Saves the votage sweep data from a text file. The exepected file is:
+        Saves the votage sweep data to a text file. The file format is:
             * The header contains the sweep type (transfer / output) and date
               saved.
             * Tab delimited columns of transfer or output sweep currents.
@@ -220,13 +330,13 @@ class TransistorSweepData(object):
         v_fix_list = list(set(column_title_volts))  # get voltage steps
 
         # determine sweep type (transfer / output), proceed accordingly
-        if info_string.find('transfer') > 0:
-            self.sweepType = 'transfer'
-        elif info_string.find('output') > 0:
-            self.sweepType = 'output'
+        types_in_head = [t for t in self.TYPELIST if (t in info_string)]
+
+        if len(types_in_head) == 1:
+            self.sweepType = types_in_head[0]
         else:
             raise RuntimeError('File type not recognized. Please check if ' +
-                               'the file contains valid sweep data')
+                               'the file contains valid sweep data.')
 
         for v in v_fix_list:
             # find indices of columns that belong to the same sweep

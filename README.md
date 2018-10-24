@@ -1,4 +1,4 @@
-# Keithley2600
+# keithley2600
 Full Python driver for the Keithley 2600 series source measurement units.
 
 ## About
@@ -15,7 +15,7 @@ There are currently no checks for allowed arguments in the base commands. See th
 
 Connect to the Keithley 2600 and perform some base commands:
 ```python
->>> from Keithley2600 import Keithley2600
+>>> from keithley2600 import Keithley2600
 >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
 >>> k.smua.source.output = k.smua.OUTPUT_ON  # turn on smuA
 >>> k.smua.source.levelv = -40  # sets smuA source level to -40V without turning the smu on or off
@@ -37,6 +37,13 @@ Higher level commands defined in the driver:
 ```
 
 
-*Documentation:*
+## Installation
+Download or clone the repository. Install the package by running 
+```console
+$ pip install /path/to/folder
+```
+where "/path/to/folder" is the path to the folder containing setup.py. 
+
+##  Documentation
 
 See the Keithley 2600 reference manual [here](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8) for all available commands and arguments.
