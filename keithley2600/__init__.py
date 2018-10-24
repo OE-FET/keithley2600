@@ -23,5 +23,5 @@ FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR
 OTHER DEALINGS IN THE SOFTWARE.
 """
 
-from keithley2600.sweep_data_class import TransistorSweepData
+from keithley2600.sweep_data_class import TransistorSweepData, IVSweepData
 from keithley2600.keithley_driver import Keithley2600
