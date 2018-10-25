@@ -561,15 +561,15 @@ class Keithley2600(Keithley2600Base):
         smu_sweep.measure.autorangei = smu_sweep.AUTORANGE_ON
         smu_fix.measure.autorangei = smu_fix.AUTORANGE_ON
 
-        smu_sweep.trigger.source.limiti = 0.1
-        smu_fix.trigger.source.limiti = 0.1
+        # smu_sweep.trigger.source.limiti = 0.1
+        # smu_fix.trigger.source.limiti = 0.1
 
         smu_sweep.source.func = smu_sweep.OUTPUT_DCVOLTS
         smu_fix.source.func = smu_fix.OUTPUT_DCVOLTS
 
         # 2-wire measurement (use SENSE_REMOTE for 4-wire)
-        smu_sweep.sense = smu_sweep.SENSE_LOCAL
-        smu_fix.sense = smu_fix.SENSE_LOCAL
+        # smu_sweep.sense = smu_sweep.SENSE_LOCAL
+        # smu_fix.sense = smu_fix.SENSE_LOCAL
 
         # clears SMU buffers
         smu_sweep.nvbuffer1.clear()
