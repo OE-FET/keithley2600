@@ -268,6 +268,9 @@ class Keithley2600Base(MagicClass):
         self.rm = visa.ResourceManager('@py')
         self.connect()
 
+    def list_resources(self):
+        return self.rm.list_resources()
+
     def connect(self):
         """
         Connects to Keithley and opens pyvisa API.
