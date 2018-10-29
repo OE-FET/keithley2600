@@ -32,7 +32,7 @@ Higher level commands defined in the driver:
 >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from k.smub
 >>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1) # ramps k.smua to 10V in 1V steps
 
->>> k.voltageSweepSingleSMU(smu=k.smua, sweep_list=list(range(0, 61)),
+>>> k.voltageSweepSingleSMU(smu=k.smua, smu_sweeplist=list(range(0, 61)),
                             tInt=0.1, delay=-1, pulsed=False)  # records single SMU IV curve
 >>> k.voltageSweepDualSMU(smu1=k.smua, smu2=k.smub, smu1_sweeplist=list(range(0, 61)),
                           smu2_sweeplist=list(range(0, 61)), tInt=0.1, delay=-1,
@@ -41,7 +41,7 @@ Higher level commands defined in the driver:
 
 
 ## Installation
-Download or clone the repository. Install the package by running 
+Download or clone the repository. Install the package by running
 ```console
 $ pip git+https://github.com/OE-FET/keithley2600
 ```
