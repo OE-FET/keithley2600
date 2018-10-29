@@ -210,6 +210,10 @@ class MagicClass(object):
         pass
 
 
+class KeithleyIOError(Exception):
+    pass
+
+
 class Keithley2600Base(MagicClass):
     """
 
@@ -278,7 +282,7 @@ class Keithley2600Base(MagicClass):
             self.beeper.beep(0.3, 1568)
         except:
             # TODO: catch specific error once implemented in pyvisa-py
-            logger.warning('Could not connect to Keithley.')
+            logger.warning('Could not connect to Keithley at %s.' % self.visa_address)
             self.connection = None
             self.connected = False
             self.rm.close()
@@ -314,7 +318,7 @@ class Keithley2600Base(MagicClass):
         if self.connection:
             self.connection.write(value)
         else:
-            raise OSError('No keithley connected.')
+            raise KeithleyIOError('No connection to keithley present. Try to call connect().')
 
     def _query(self, value):
         """
@@ -328,7 +332,7 @@ class Keithley2600Base(MagicClass):
 
             return self.parse_response(r)
         else:
-            raise OSError('No keithley connected.')
+            raise KeithleyIOError('No connection to keithley present. Try to call connect().')
 
     def parse_response(self, string):
         try:
