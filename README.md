@@ -9,7 +9,7 @@ Keithley driver with access to base functions and higher level functions such as
 There are currently no checks for allowed arguments in the base commands. See the [Keithley 2600 reference manual](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8) for all available commands and arguments. Almost all remotely accessible commands can be used with this driver. Not supported are:
 
 * tspnet.excecute() # conflicts with Python's execute command
-* lan.trigger[N].connected # conflicts with connected attribute of Keithley2600Base
+* lan.trigger[N].connected # conflicts with the connected attribute of Keithley2600Base
 * All Keithley IV sweep commands. We implement our own in the Keithley2600 class.
 
 *Usage:*

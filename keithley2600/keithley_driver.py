@@ -223,7 +223,7 @@ class Keithley2600Base(MagicClass):
         commands and arguments. Almost all remotely accessible commands can be
         used with this driver. NOT SUPPORTED ARE:
              * tspnet.excecute() # conflicts with Python's excecute command
-             * lan.trigger[N].connected # conflicts with connected attribute of Keithley2600Base
+             * lan.trigger[N].connected # conflicts with the connected attribute of Keithley2600Base
              * All Keithley IV sweep commands. We implement our own in the
                Keithley2600 class.
 
