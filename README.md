@@ -40,9 +40,8 @@ Higher level commands defined in the driver:
 ## Installation
 Download or clone the repository. Install the package by running 
 ```console
-$ pip install /path/to/folder
+$ pip git+https://github.com/OE-FET/keithley2600
 ```
-where "/path/to/folder" is the path to the folder containing setup.py. 
 
 ##  Documentation
 
