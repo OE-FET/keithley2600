@@ -25,15 +25,18 @@ Higher level commands defined in the driver:
 
 ```python
 >>> data = k.readBuffer('smua.nvbuffer1')
->>> k.clearBuffers() # clears ALL smu buffers
->>> k.setIntegrationTime(k.smua, 0.001) # sets integration time to 0.001 sec
->>> k.applyVoltage(k.smua, -60) # applies -60V to smuA
->>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
->>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1)
->>> Vsweep, Isweep, Vfix, Ifix = k.voltageSweep(smu_sweep=k.smua, smu_fix=k.smub, VStart=0, VStop=-60,
-               VStep=1, VFix=0, tInt=0.1, delay=-1, pulsed=True)# records an IV curve
->>> data1 = k.outputMeasurement(...) # records an output curve of a transistor
->>> data2 = k.transferMeasurement(...) # records a transfer curve of a transistor
+>>> k.clearBuffer(k.sma) # clears buffer of k.smua
+>>> k.setIntegrationTime(k.smua, 0.001) # in sec
+
+>>> k.applyVoltage(k.smua, -60) # applies -60V to k.smua
+>>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from k.smub
+>>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1) # ramps k.smua to 10V in 1V steps
+
+>>> k.voltageSweepSingleSMU(smu=k.smua, sweep_list=list(range(0, 61)),
+                            tInt=0.1, delay=-1, pulsed=False)  # records single SMU IV curve
+>>> k.voltageSweepDualSMU(smu1=k.smua, smu2=k.smub, smu1_sweeplist=list(range(0, 61)),
+                          smu2_sweeplist=list(range(0, 61)), tInt=0.1, delay=-1,
+                          pulsed=False)  # records dual SMU IV curve
 ```
 
 
