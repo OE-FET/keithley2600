@@ -390,11 +390,11 @@ class Keithley2600(Keithley2600Base):
         >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
         >>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1)
 
-        >>> k.voltageSweepSingleSMU(smu=k.smua, sweep_list=range(0,61),
-                                    tInt=0.1, delay=-1, pulsed=True) # records single SMU IV curve
-        >>> k.voltageSweepDualSMU(smu_1=k.smua, smu_2=k.smub, sweep_list_1=range(0,61),
-                                  sweep_list_2=[0]*10, tInt=0.1, delay=-1,
-                                  pulsed=True) # records dual SMU IV curve
+        >>> k.voltageSweepSingleSMU(smu=k.smua, sweep_list=list(range(0, 61)),
+                                    tInt=0.1, delay=-1, pulsed=False)  # records single SMU IV curve
+        >>> k.voltageSweepDualSMU(smu1=k.smua, smu2=k.smub, smu1_sweeplist=list(range(0, 61)),
+                                  smu2_sweeplist=list(range(0, 61)), tInt=0.1, delay=-1,
+                                  pulsed=False)  # records dual SMU IV curve
 
         New high-level commands:
 
@@ -507,57 +507,55 @@ class Keithley2600(Keithley2600Base):
 
         self.beeper.beep(0.3, 2400)
 
-    def voltageSweepSingleSMU(self, smu1, smu1_sweeplist, tInt, delay, pulsed):
+    def voltageSweepSingleSMU(self, smu, smu_sweeplist, tInt, delay, pulsed):
         """
         Sweeps voltage at one SMU. Measures and returns current and voltage during sweep.
 
         INPUTS:
-            smu1 - 1st SMU to be sweept
-            smu1_sweeplist - array of voltages to sweep
+            smu - 1st SMU to be sweept
+            smu_sweeplist - voltages to sweep, must be a list, tuple, or numpy array
             tInt - integration time per data point (float)
             delay - settling delay before measurement (float)
             pulsed - continous or pulsed sweep (bool)
         """
 
         # input checks
-        self._check_smu(smu1)
+        self._check_smu(smu)
 
         # set state to busy
         self.busy = True
         # Define lists containing results. If we abort early, we have something to return.
-        v_smu1, i_smu1 = [], []
+        v_smu, i_smu = [], []
 
         if self.abort_event.is_set():
             self.busy = False
-            return v_smu1, i_smu1
+            return v_smu, i_smu
 
-        # setup smu1 to sweep through list on trigger
-        smu1.trigger.source.listv(smu1_sweeplist)
-        smu1.trigger.source.action = smu1.ENABLE
+        # setup smu to sweep through list on trigger
+        smu.trigger.source.listv(smu_sweeplist)
+        smu.trigger.source.action = smu.ENABLE
 
         # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
         nplc = tInt * self.localnode.linefreq
-        smu1.measure.nplc = nplc
+        smu.measure.nplc = nplc
 
         # CONFIGURE SETTLING TIME FOR GATE VOLTAGE, I-LIMIT, ETC...
-        smu1.measure.delay = delay
-        smu1.measure.autorangei = smu1.AUTORANGE_ON
+        smu.measure.delay = delay
+        smu.measure.autorangei = smu.AUTORANGE_ON
 
-        # smu1.trigger.source.limiti = 0.1
-        # smu2.trigger.source.limiti = 0.1
+        # smu.trigger.source.limiti = 0.1
 
-        smu1.source.func = smu1.OUTPUT_DCVOLTS
+        smu.source.func = smu.OUTPUT_DCVOLTS
 
         # 2-wire measurement (use SENSE_REMOTE for 4-wire)
-        # smu1.sense = smu1.SENSE_LOCAL
-        # smu2.sense = smu2.SENSE_LOCAL
+        # smu.sense = smu.SENSE_LOCAL
 
         # clears SMU buffers
-        smu1.nvbuffer1.clear()
-        smu1.nvbuffer2.clear()
+        smu.nvbuffer1.clear()
+        smu.nvbuffer2.clear()
 
-        smu1.nvbuffer1.clearcache()
-        smu1.nvbuffer2.clearcache()
+        smu.nvbuffer1.clearcache()
+        smu.nvbuffer2.clearcache()
 
         # diplay current values during measurement
         self.display.smua.measure.func = self.display.MEASURE_DCAMPS
@@ -567,8 +565,8 @@ class Keithley2600(Keithley2600Base):
         # trigger count = number of data points in measurement
         # arm count = number of times the measurement is repeated (set to 1)
 
-        npts = len(smu1_sweeplist)
-        smu1.trigger.count = npts
+        npts = len(smu_sweeplist)
+        smu.trigger.count = npts
 
         # SET THE MEASUREMENT TRIGGER ON BOTH SMU'S
         # Set measurment to trigger once a change in the gate value on
@@ -578,16 +576,16 @@ class Keithley2600(Keithley2600Base):
         # so the measurements occur at the same time.
 
         # enable smu
-        smu1.trigger.measure.action = smu1.ENABLE
+        smu.trigger.measure.action = smu.ENABLE
 
         # measure current on trigger, store in buffer of smu
-        buffer_smu1_1 = '%s.nvbuffer1' % self._get_smu_string(smu1)
-        buffer_smu1_2 = '%s.nvbuffer2' % self._get_smu_string(smu1)
+        buffer_smu_1 = '%s.nvbuffer1' % self._get_smu_string(smu)
+        buffer_smu_2 = '%s.nvbuffer2' % self._get_smu_string(smu)
 
-        smu1.trigger.measure.iv(buffer_smu1_1, buffer_smu1_2)
+        smu.trigger.measure.iv(buffer_smu_1, buffer_smu_2)
 
         # initiate measure trigger when source is complete
-        smu1.trigger.measure.stimulus = smu1.trigger.SOURCE_COMPLETE_EVENT_ID
+        smu.trigger.measure.stimulus = smu.trigger.SOURCE_COMPLETE_EVENT_ID
 
         # SET THE ENDPULSE ACTION TO HOLD
         # Options are SOURCE_HOLD AND SOURCE_IDLE, hold maintains same voltage
@@ -601,19 +599,19 @@ class Keithley2600(Keithley2600Base):
         else:
             raise TypeError("'pulsed' must be of type 'bool'.")
 
-        smu1.trigger.endpulse.action = endPulseAction
+        smu.trigger.endpulse.action = endPulseAction
 
         # SET THE ENDSWEEP ACTION TO HOLD IF NOT PULSED
         # Output voltage will be held after sweep is done!
 
-        smu1.trigger.endsweep.action = endPulseAction
+        smu.trigger.endsweep.action = endPulseAction
 
         # SET THE EVENT TO TRIGGER THE SMU'S TO THE ARM LAYER
         # A typical measurement goes from idle -> arm -> trigger.
         # The 'trigger.event_id' option sets the transition arm -> trigger
         # to occur after sending *trg to the instrument.
 
-        smu1.trigger.arm.stimulus = self.trigger.EVENT_ID
+        smu.trigger.arm.stimulus = self.trigger.EVENT_ID
 
         # Prepare an event blender (blender #1) that triggers when
         # the smua enters the trigger layer or reaches the end of a
@@ -621,16 +619,16 @@ class Keithley2600(Keithley2600Base):
 
         # triggers when either of the stimuli are true ('or enable')
         self.trigger.blender[1].orenable = True
-        self.trigger.blender[1].stimulus[1] = smu1.trigger.ARMED_EVENT_ID
-        self.trigger.blender[1].stimulus[2] = smu1.trigger.PULSE_COMPLETE_EVENT_ID
+        self.trigger.blender[1].stimulus[1] = smu.trigger.ARMED_EVENT_ID
+        self.trigger.blender[1].stimulus[2] = smu.trigger.PULSE_COMPLETE_EVENT_ID
 
-        # SET THE smu1 SOURCE STIMULUS TO BE EVENT BLENDER #1
+        # SET THE smu SOURCE STIMULUS TO BE EVENT BLENDER #1
         # A source measure cycle within the trigger layer will occur when
         # either the trigger layer is entered (termed 'armed event') for the
         # first time or a single cycle of the trigger layer is complete (termed
         # 'pulse complete event').
 
-        smu1.trigger.source.stimulus = self.trigger.blender[1].EVENT_ID
+        smu.trigger.source.stimulus = self.trigger.blender[1].EVENT_ID
 
         # PREPARE AN EVENT BLENDER (blender #2) THAT TRIGGERS WHEN BOTH SMU'S
         # HAVE COMPLETED A MEASUREMENT.
@@ -638,17 +636,17 @@ class Keithley2600(Keithley2600Base):
         # before the measurement on both channels is complete.
 
         self.trigger.blender[2].orenable = True  # triggers when both stimuli are true
-        self.trigger.blender[2].stimulus[1] = smu1.trigger.MEASURE_COMPLETE_EVENT_ID
+        self.trigger.blender[2].stimulus[1] = smu.trigger.MEASURE_COMPLETE_EVENT_ID
 
-        # SET THE smu1 ENDPULSE STIMULUS TO BE EVENT BLENDER #2
-        smu1.trigger.endpulse.stimulus = self.trigger.blender[2].EVENT_ID
+        # SET THE smu ENDPULSE STIMULUS TO BE EVENT BLENDER #2
+        smu.trigger.endpulse.stimulus = self.trigger.blender[2].EVENT_ID
 
-        # TURN ON smu1 AND smu2
-        smu1.source.output = smu1.OUTPUT_ON
+        # TURN ON smu
+        smu.source.output = smu.OUTPUT_ON
 
         # INITIATE MEASUREMENT
         # prepare SMUs to wait for trigger
-        smu1.trigger.initiate()
+        smu.trigger.initiate()
 
         # send trigger
         self._write('*trg')
@@ -669,14 +667,14 @@ class Keithley2600(Keithley2600Base):
 
         # EXTRACT DATA FROM SMU BUFFERS
 
-        v_smu1 = self.readBuffer(buffer_smu1_2)
-        i_smu1 = self.readBuffer(buffer_smu1_1)
+        v_smu = self.readBuffer(buffer_smu_2)
+        i_smu = self.readBuffer(buffer_smu_1)
 
-        self.clearBuffer(smu1)
+        self.clearBuffer(smu)
 
         self.busy = False
 
-        return v_smu1, i_smu1
+        return v_smu, i_smu
 
     def voltageSweepDualSMU(self, smu1, smu2, smu1_sweeplist, smu2_sweeplist, tInt, delay, pulsed):
         """
