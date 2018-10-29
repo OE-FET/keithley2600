@@ -140,6 +140,7 @@ class MagicClass(object):
 
     """
 
+    visa_library = ''
     visa_address = ''
     _name = ''
     _parent = None
@@ -265,14 +266,15 @@ class Keithley2600Base(MagicClass):
 # Connect to keithley
 # =============================================================================
 
-    def __new__(cls, visa_address):
+    def __new__(cls, visa_address, visa_library):
         cls.visa_address = visa_address
+        cls.visa_library = visa_library
         return super(Keithley2600Base, cls).__new__(cls)
 
-    def __init__(self, visa_address):
+    def __init__(self, visa_address, visa_library):
         MagicClass.__init__(self, '', parent=self)
         # open Keithley Visa resource
-        self.rm = visa.ResourceManager('@py')
+        self.rm = visa.ResourceManager(self.visa_library)
         self.connect()
 
     def connect(self):
@@ -404,12 +406,13 @@ class Keithley2600(Keithley2600Base):
 
     SMU_LIST = ['smua', 'smub']
 
-    def __new__(cls, visa_address):
+    def __new__(cls, visa_address, visa_library='@py'):
         cls.visa_address = visa_address
-        return super(Keithley2600, cls).__new__(cls, visa_address)
+        cls.visa_library = visa_library
+        return super(Keithley2600, cls).__new__(cls, visa_address, visa_library)
 
-    def __init__(self, visa_address):
-        Keithley2600Base.__init__(self, visa_address)
+    def __init__(self, visa_address, visa_library='@py'):
+        Keithley2600Base.__init__(self, visa_address, visa_library)
 
     def _check_smu(self, smu):
         """Check if selected smu is indeed present."""
