@@ -436,12 +436,21 @@ class Keithley2600(Keithley2600Base):
 
     def clearBuffer(self, smu):
         """ Clears buffer of given smu."""
+<<<<<<< HEAD
 
         self._check_smu(smu)
 
         smu.nvbuffer1.clear()
         smu.nvbuffer2.clear()
 
+=======
+
+        self._check_smu(smu)
+
+        smu.nvbuffer1.clear()
+        smu.nvbuffer2.clear()
+
+>>>>>>> accc766c6a70058cae775e69d918809977c4640a
         smu.nvbuffer1.clearcache()
         smu.nvbuffer2.clearcache()
 
@@ -544,6 +553,7 @@ class Keithley2600(Keithley2600Base):
         smu.measure.autorangei = smu.AUTORANGE_ON
 
         # smu.trigger.source.limiti = 0.1
+<<<<<<< HEAD
 
         smu.source.func = smu.OUTPUT_DCVOLTS
 
@@ -584,6 +594,48 @@ class Keithley2600(Keithley2600Base):
 
         smu.trigger.measure.iv(buffer_smu_1, buffer_smu_2)
 
+=======
+
+        smu.source.func = smu.OUTPUT_DCVOLTS
+
+        # 2-wire measurement (use SENSE_REMOTE for 4-wire)
+        # smu.sense = smu.SENSE_LOCAL
+
+        # clears SMU buffers
+        smu.nvbuffer1.clear()
+        smu.nvbuffer2.clear()
+
+        smu.nvbuffer1.clearcache()
+        smu.nvbuffer2.clearcache()
+
+        # diplay current values during measurement
+        self.display.smua.measure.func = self.display.MEASURE_DCAMPS
+        self.display.smub.measure.func = self.display.MEASURE_DCAMPS
+
+        # SETUP TRIGGER ARM AND COUNTS
+        # trigger count = number of data points in measurement
+        # arm count = number of times the measurement is repeated (set to 1)
+
+        npts = len(smu_sweeplist)
+        smu.trigger.count = npts
+
+        # SET THE MEASUREMENT TRIGGER ON BOTH SMU'S
+        # Set measurment to trigger once a change in the gate value on
+        # sweep smu is complete, i.e., a measurment will occur
+        # after the voltage is stepped.
+        # Both channels should be set to trigger on the sweep smu event
+        # so the measurements occur at the same time.
+
+        # enable smu
+        smu.trigger.measure.action = smu.ENABLE
+
+        # measure current on trigger, store in buffer of smu
+        buffer_smu_1 = '%s.nvbuffer1' % self._get_smu_string(smu)
+        buffer_smu_2 = '%s.nvbuffer2' % self._get_smu_string(smu)
+
+        smu.trigger.measure.iv(buffer_smu_1, buffer_smu_2)
+
+>>>>>>> accc766c6a70058cae775e69d918809977c4640a
         # initiate measure trigger when source is complete
         smu.trigger.measure.stimulus = smu.trigger.SOURCE_COMPLETE_EVENT_ID
 
@@ -928,11 +980,19 @@ class Keithley2600(Keithley2600Base):
 
             if not self.abort_event.is_set():
                 sd.append(vFix=Vdrain, vSweep=vg_fwd, iDrain=id_fwd, iGate=ig_fwd)
+<<<<<<< HEAD
 
             # conduct backward sweep
             sweeplist_gate = np.flip(sweeplist_gate)
             sweeplist_drain = np.flip(sweeplist_drain)
 
+=======
+
+            # conduct backward sweep
+            sweeplist_gate = np.flip(sweeplist_gate)
+            sweeplist_drain = np.flip(sweeplist_drain)
+
+>>>>>>> accc766c6a70058cae775e69d918809977c4640a
             vg_rvs, ig_rvs, vd_rvs, id_rvs = self.voltageSweepDualSMU(
                     smu_gate, smu_drain, sweeplist_gate, sweeplist_drain, tInt, delay, pulsed
                     )
