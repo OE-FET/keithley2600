@@ -390,7 +390,7 @@ class Keithley2600(Keithley2600Base):
         >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
         >>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1)
 
-        >>> k.voltageSweepSingleSMU(smu=k.smua, sweep_list=list(range(0, 61)),
+        >>> k.voltageSweepSingleSMU(smu=k.smua, smu_sweeplist=list(range(0, 61)),
                                     tInt=0.1, delay=-1, pulsed=False)  # records single SMU IV curve
         >>> k.voltageSweepDualSMU(smu1=k.smua, smu2=k.smub, smu1_sweeplist=list(range(0, 61)),
                                   smu2_sweeplist=list(range(0, 61)), tInt=0.1, delay=-1,
