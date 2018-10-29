@@ -314,7 +314,7 @@ PROPERTIES = [
             'speed',
             'subnetmask',
             'timedwait',
-            'connected',
+            # 'connected', # TODO: conflicts with connected attribute of Keithley2600Base
             'ipaddress',
             'mode',
             'overrun',
@@ -666,7 +666,7 @@ ALL = [
  'lan.trigger.disconnect',
  'lan.trigger.wait',
  'lan.trigger[N].EVENT_ID',
- 'lan.trigger[N].connected',
+ # 'lan.trigger[N].connected',  # TODO: conflicts with connected attribute of Keithley2600Base
  'lan.trigger[N].ipaddress',
  'lan.trigger[N].mode',
  'lan.trigger[N].overrun',
