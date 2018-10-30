@@ -471,6 +471,8 @@ CLASSES = [
             'measurement',
             'measuring',
             'node',
+            'nvbuffer1',
+            'nvbuffer1',
             'operation',
             'os',
             'over_temperature',
