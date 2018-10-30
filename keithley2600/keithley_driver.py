@@ -17,8 +17,7 @@ import numpy as np
 import time
 
 # local import
-from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
-                                       PROPERTY_LISTS)
+from keithley2600.keithley_doc import CONSTANTS, FUNCTIONS, PROPERTIES, CLASSES, PROPERTY_LISTS
 from keithley2600.sweep_data_class import TransistorSweepData
 
 logger = logging.getLogger(__name__)
@@ -55,18 +54,10 @@ class MagicPropertyList(object):
         return self
 
     def _write(self, value):
-        try:
-            self._parent._write(value)
-        except AttributeError:
-            logger.debug(value)
-            pass
+        self._parent._write(value)
 
     def _query(self, value):
-        try:
-            return self._parent._query(value)
-        except AttributeError:
-            logger.debug('print(%s)' % value)
-            return None
+        return self._parent._query(value)
 
     def _convert_input(self, value):
         try:
@@ -126,16 +117,15 @@ class MagicClass(object):
 
     USAGE:
         inst = MagicClass('keithley')
-        inst.reset() - dynamically creates a new attribute 'reset' and sets it
-                       to a MagicFunction instance. Then calls it.
-        inst.beeper  - dynamically creats new attribute 'beeper' and sets it to
+        inst.reset() - Dynamically creates a new attribute 'reset' as an instance
+                       of MagicFunction, then calls it.
+        inst.beeper  - Dynamically creats new attribute 'beeper' and sets it to
                        a new MagicClass instance.
-        newclass.beeper.enable - fakes the property 'enable' of 'beeper'
+        newclass.beeper.enable - Fakes the property 'enable' of 'beeper'
                                  with _write as setter and _query as getter.
 
     """
 
-    visa_address = ''
     _name = ''
     _parent = None
 
@@ -148,10 +138,10 @@ class MagicClass(object):
     def __getattr__(self, attr):
         try:
             try:
-                # check if attribute already exists
+                # check if attribute already exists. return attr if yes.
                 return object.__getattr__(self, attr)
             except AttributeError:
-                # check if key already exists
+                # check if key already exists. return value if yes.
                 return self.__dict__[attr]
         except KeyError:
             # handle if not
@@ -172,9 +162,12 @@ class MagicClass(object):
             else:
                 handler = self._query(new_name)
 
-        else:
+        elif name in CLASSES:
             handler = MagicClass(new_name, parent=self)
             self.__dict__[new_name] = handler
+
+        else:
+            raise AttributeError("'%s' object has no attribute '%s'" % (type(self), name))
 
         return handler
 
@@ -189,18 +182,10 @@ class MagicClass(object):
             self.__dict__[attr] = value
 
     def _write(self, value):
-        try:
-            self._parent._write(value)
-        except AttributeError:
-            logger.debug(value)
-            pass
+        self._parent._write(value)
 
     def _query(self, value):
-        try:
-            return self._parent._query(value)
-        except AttributeError:
-            logger.debug('print(%s)' % value)
-            return None
+        return self._parent._query(value)
 
     def _convert_input(self, value):
         try:
@@ -233,6 +218,7 @@ class Keithley2600Base(MagicClass):
         commands and arguments. Almost all remotely accessible commands can be
         used with this driver. NOT SUPPORTED ARE:
              * tspnet.excecute() # conflicts with Python's excecute command
+             * lan.trigger[N].connected # conflicts with connected attribute of Keithley2600Base
              * All Keithley IV sweep commands. We implement our own in the
                Keithley2600 class.
 
@@ -258,14 +244,12 @@ class Keithley2600Base(MagicClass):
 # Connect to keithley
 # =============================================================================
 
-    def __new__(cls, visa_address):
-        cls.visa_address = visa_address
-        return super(Keithley2600Base, cls).__new__(cls)
+    def __init__(self, visa_address, visa_library):
+        MagicClass.__init__(self, name='', parent=self)
 
-    def __init__(self, visa_address):
-        MagicClass.__init__(self, '', parent=self)
-        # open Keithley Visa resource
-        self.rm = visa.ResourceManager('@py')
+        self.visa_address = visa_address
+        self.visa_library = visa_library
+
         self.connect()
 
     def list_resources(self):
@@ -275,10 +259,15 @@ class Keithley2600Base(MagicClass):
         """
         Connects to Keithley and opens pyvisa API.
         """
+
+        # open visa resource manager with selected library / backend
+        self.rm = visa.ResourceManager(self.visa_library)
+
+        # try to connect to keithley
         try:
             self.connection = self.rm.open_resource(self.visa_address)
             self.connection.read_termination = '\n'
-            Keithley2600Base.connected = True
+            self.connected = True
 
             self.beeper.beep(0.3, 1046.5)
             self.beeper.beep(0.3, 1318.5)
@@ -287,22 +276,26 @@ class Keithley2600Base(MagicClass):
             # TODO: catch specific error once implemented in pyvisa-py
             logger.warning('Could not connect to Keithley.')
             self.connection = None
-            Keithley2600Base.connected = False
+            self.connected = False
+            self.rm.close()
 
     def disconnect(self):
         """ Disconnect from Keithley """
-        if self.connected:
+        if self.connection:
             try:
                 self.beeper.beep(0.3, 1568)
                 self.beeper.beep(0.3, 1318.5)
                 self.beeper.beep(0.3, 1046.5)
 
                 self.connection.close()
-                Keithley2600Base.connected = False
+                self.connection = None
+                self.connected = False
                 del self.connection
             except AttributeError:
-                Keithley2600Base.connected = False
+                self.connected = False
                 pass
+
+        self.rm.close()
 
 # =============================================================================
 # Define I/O
@@ -313,17 +306,25 @@ class Keithley2600Base(MagicClass):
         Writes text to Keithley. Input must be a string.
         """
         logger.debug(value)
-        self.connection.write(value)
+
+        if self.connection:
+            self.connection.write(value)
+        else:
+            raise OSError('No keithley connected.')
 
     def _query(self, value):
         """
         Queries and expects response from Keithley. Input must be a string.
         """
-        with self._lock:
-            r = self.connection.query('print(%s)' % value)
-
         logger.debug('print(%s)' % value)
-        return self.parse_response(r)
+
+        if self.connection:
+            with self._lock:
+                r = self.connection.query('print(%s)' % value)
+
+            return self.parse_response(r)
+        else:
+            raise OSError('No keithley connected.')
 
     def parse_response(self, string):
         try:
@@ -393,12 +394,8 @@ class Keithley2600(Keithley2600Base):
 
     SMU_LIST = ['smua', 'smub']
 
-    def __new__(cls, visa_address):
-        cls.visa_address = visa_address
-        return super(Keithley2600, cls).__new__(cls, visa_address)
-
-    def __init__(self, visa_address):
-        Keithley2600Base.__init__(self, visa_address)
+    def __init__(self, visa_address, visa_library='@py'):
+        Keithley2600Base.__init__(self, visa_address, visa_library)
 
     def _check_smu(self, smu):
         """Check if selected smu is indeed present."""
