@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 MIT License
+===========
 Copyright (c) 2009- keithley2600 Project Contributors
 Permission is hereby granted, free of charge, to any person
 obtaining a copy of this software and associated documentation
