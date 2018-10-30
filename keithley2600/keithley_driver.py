@@ -259,7 +259,6 @@ class Keithley2600Base(MagicClass):
         """
         Connects to Keithley and opens pyvisa API.
         """
-        self.connection = self.rm.open_resource(self.visa_address)
         try:
             self.connection = self.rm.open_resource(self.visa_address)
             self.connection.read_termination = '\n'
