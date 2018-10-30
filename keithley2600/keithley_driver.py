@@ -250,17 +250,16 @@ class Keithley2600Base(MagicClass):
         self.visa_address = visa_address
         self.visa_library = visa_library
 
+        # open visa resource manager with selected library / backend
+        self.rm = visa.ResourceManager(self.visa_library)
+        # connect to keithley
         self.connect()
 
     def connect(self):
         """
         Connects to Keithley and opens pyvisa API.
         """
-
-        # open visa resource manager with selected library / backend
-        self.rm = visa.ResourceManager(self.visa_library)
-
-        # try to connect to keithley
+        self.connection = self.rm.open_resource(self.visa_address)
         try:
             self.connection = self.rm.open_resource(self.visa_address)
             self.connection.read_termination = '\n'
@@ -270,11 +269,10 @@ class Keithley2600Base(MagicClass):
             self.beeper.beep(0.3, 1318.5)
             self.beeper.beep(0.3, 1568)
         except:
-            # TODO: catch specific error once implemented in pyvisa-py
+            # TODO: catch specific errors once implemented in pyvisa-py
             logger.warning('Could not connect to Keithley.')
             self.connection = None
             self.connected = False
-            self.rm.close()
 
     def disconnect(self):
         """ Disconnect from Keithley """
@@ -291,8 +289,6 @@ class Keithley2600Base(MagicClass):
             except AttributeError:
                 self.connected = False
                 pass
-
-        self.rm.close()
 
 # =============================================================================
 # Define I/O
@@ -391,7 +387,7 @@ class Keithley2600(Keithley2600Base):
 
     SMU_LIST = ['smua', 'smub']
 
-    def __init__(self, visa_address, visa_library='@py'):
+    def __init__(self, visa_address, visa_library=''):
         Keithley2600Base.__init__(self, visa_address, visa_library)
 
     def _check_smu(self, smu):
