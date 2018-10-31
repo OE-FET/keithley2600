@@ -404,7 +404,7 @@ class Keithley2600(Keithley2600Base):
 
     SMU_LIST = ['smua', 'smub']
 
-    def __init__(self, visa_address, visa_library=''):
+    def __init__(self, visa_address, visa_library='@py'):
         Keithley2600Base.__init__(self, visa_address, visa_library)
 
     def _check_smu(self, smu):
