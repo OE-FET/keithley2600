@@ -248,7 +248,7 @@ class Keithley2600Base(MagicClass):
     TO_TSP_LIST = (list, np.ndarray, tuple, set)
 
 # =============================================================================
-# Connect to keithley
+# Instance creation
 # =============================================================================
 
     def __new__(cls, visa_address, *args, **kwargs):
@@ -256,6 +256,7 @@ class Keithley2600Base(MagicClass):
         Create new instance for a new visa_address, otherwise return existing instance.
         """
         if visa_address in cls._instances.keys():
+            logger.debug('Instance with address %s already exists.' % visa_address)
             logger.debug('Returning existing instance with address %s.' % visa_address)
             return cls._instances[visa_address]
         else:
@@ -285,6 +286,10 @@ class Keithley2600Base(MagicClass):
         self.rm = visa.ResourceManager(self.visa_library)
         # connect to keithley
         self.connect()
+
+# =============================================================================
+# Connect to keithley
+# =============================================================================
 
     def connect(self):
         """
