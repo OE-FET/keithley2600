@@ -241,22 +241,42 @@ class Keithley2600Base(MagicClass):
         arguments.
 
     """
+    # dictionary with all instances
+    _instances = {}
 
-    _lock = threading.RLock()
-    abort_event = threading.Event()
-
-    connection = None
-    connected = False
-    busy = False
-
+    # input types that will be accepted as TSP lists by keithley
     TO_TSP_LIST = (list, np.ndarray, tuple, set)
 
 # =============================================================================
 # Connect to keithley
 # =============================================================================
 
-    def __init__(self, visa_address, visa_library):
+    def __new__(cls, visa_address, *args, **kwargs):
+        """
+        Create new instance for a new visa_address, otherwise return existing instance.
+        """
+        if visa_address in cls._instances.keys():
+            logger.debug('Returning existing instance with address %s.' % visa_address)
+            return cls._instances[visa_address]
+        else:
+            instance = object.__new__(cls)
+            cls._instances[visa_address] = instance
+            instance._init(visa_address, *args, **kwargs)
+            logger.debug('Creating new instance with address %s.' % visa_address)
+            return instance
+
+    def __repr__(self):
+        return '<%s(%s)>' % (self.__class__.__name__, self.visa_address)
+
+    def _init(self, visa_address, visa_library='@py'):
         MagicClass.__init__(self, name='', parent=self)
+
+        self._lock = threading.RLock()
+        self.abort_event = threading.Event()
+
+        self.connection = None
+        self.connected = False
+        self.busy = False
 
         self.visa_address = visa_address
         self.visa_library = visa_library
@@ -404,8 +424,8 @@ class Keithley2600(Keithley2600Base):
 
     SMU_LIST = ['smua', 'smub']
 
-    def __init__(self, visa_address, visa_library='@py'):
-        Keithley2600Base.__init__(self, visa_address, visa_library)
+    def __new__(self, visa_address, visa_library='@py'):
+        return super(Keithley2600, self).__new__(self, visa_address, visa_library)
 
     def _check_smu(self, smu):
         """Check if selected smu is indeed present."""
