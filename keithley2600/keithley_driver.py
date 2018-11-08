@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 class MagicPropertyList(object):
     """
 
-    Class which mimics a property and can be dynamically created. It fowards
+    Class which mimics a property list and can be dynamically created. It fowards
     all calls to the _read method of the parent class and assignments to the
     _write method. Aribitrary values can be assigned, as long as _write can
     handle them.
@@ -298,10 +298,7 @@ class Keithley2600Base(MagicClass):
             self.connection = self.rm.open_resource(self.visa_address)
             self.connection.read_termination = '\n'
             self.connected = True
-
-            self.beeper.beep(0.3, 1046.5)
-            self.beeper.beep(0.3, 1318.5)
-            self.beeper.beep(0.3, 1568)
+            logger.debug('Connected to Keithley at %s.' % self.visa_address)
         except:
             # TODO: catch specific error once implemented in pyvisa-py
             logger.warning('Could not connect to Keithley at %s.' % self.visa_address)
@@ -312,14 +309,11 @@ class Keithley2600Base(MagicClass):
         """ Disconnect from Keithley """
         if self.connection:
             try:
-                self.beeper.beep(0.3, 1568)
-                self.beeper.beep(0.3, 1318.5)
-                self.beeper.beep(0.3, 1046.5)
-
                 self.connection.close()
                 self.connection = None
                 self.connected = False
                 del self.connection
+                logger.debug('Disconnected from Keithley at %s.' % self.visa_address)
             except AttributeError:
                 self.connected = False
                 pass
@@ -886,9 +880,11 @@ class Keithley2600(Keithley2600Base):
         status = 0
         while status == 0:  # while loop that runs until the sweep begins
             status = self.status.operation.sweeping.condition
+            time.sleep(0.1)
 
         while status > 0:  # while loop that runs until the sweep ends
             status = self.status.operation.sweeping.condition
+            time.sleep(0.1)
 
         # EXTRACT DATA FROM SMU BUFFERS
 

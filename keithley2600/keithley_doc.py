@@ -5,7 +5,7 @@
 # (see keithley2600/__init__.py for details)
 
 
-# Warning: PROPERTIES, CONSATNTS, FUNCTIONS and SUBCLASSES must be mutually
+# Warning: PROPERTIES, CONSTANTS, FUNCTIONS and CLASSES must be mutually
 # exclusive. A string used for a PROPERTY cannot be used to create a class
 # later, when the property already exists (and vice versa).
 
@@ -119,7 +119,7 @@ FUNCTIONS = [
             'flush',
             'input',
             'open',
-            'output',
+            # 'output',  # XXX: not supported because of conflict with smuX.source.output
             'read',
             'type',
             'write',
@@ -319,7 +319,7 @@ PROPERTIES = [
             'speed',
             'subnetmask',
             'timedwait',
-            # 'connected', # TODO: conflicts with connected attribute of Keithley2600Base
+            # 'connected', # XXX: conflicts with connected attribute of Keithley2600Base
             'ipaddress',
             'mode',
             'overrun',
@@ -631,7 +631,7 @@ ALL = [
  'io.flush',
  'io.input',
  'io.open',
- 'io.output',
+ #  'io.output', # XXX: not supported because of conflict with smuX.source.output
  'io.read',
  'io.type',
  'io.write',
@@ -673,7 +673,7 @@ ALL = [
  'lan.trigger.disconnect',
  'lan.trigger.wait',
  'lan.trigger[N].EVENT_ID',
- # 'lan.trigger[N].connected',  # TODO: conflicts with connected attribute of Keithley2600Base
+ # 'lan.trigger[N].connected',  # XXX: conflicts with connected attribute of Keithley2600Base
  'lan.trigger[N].ipaddress',
  'lan.trigger[N].mode',
  'lan.trigger[N].overrun',
