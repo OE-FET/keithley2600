@@ -260,20 +260,20 @@ class Keithley2600Base(MagicClass):
         """
         if visa_address in cls._instances.keys():
             logger.debug('Returning existing instance with address %s.' % visa_address)
-            return cls._instances[visa_address]
+            return cls._instances[visa_address]  # this will call __init__ again
         else:
             instance = object.__new__(cls)
             cls._instances[visa_address] = instance
             instance._init(visa_address, *args, **kwargs)
             logger.debug('Creating new instance with address %s.' % visa_address)
-            return instance
+            return instance   # this will call __init__ of class
 
     def __repr__(self):
         return '<%s(%s)>' % (type(self).__name__, self.visa_address)
 
     def _init(self, visa_address, visa_library='@py'):
-        super(self.__class__, self).__init__(self, name='', parent=self)
-        self._name = ''
+        MagicClass.__init__(self, name='', parent=self)
+        self._name = ''  # visa_address will
 
         self.abort_event = threading.Event()
 
