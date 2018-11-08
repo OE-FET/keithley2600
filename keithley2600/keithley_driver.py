@@ -248,43 +248,18 @@ class Keithley2600Base(MagicClass):
     """
 
     _lock = threading.RLock()
-
-    # dictionary with all instances
-    _instances = {}
+    connection = False
+    connected = False
+    busy = False
 
     # input types that will be accepted as TSP lists by keithley
     TO_TSP_LIST = (list, np.ndarray, tuple, set)
 
-# =============================================================================
-# Instance creation
-# =============================================================================
-
-    def __new__(cls, visa_address, *args, **kwargs):
-        """
-        Create new instance for a new visa_address, otherwise return existing instance.
-        """
-        if visa_address in cls._instances.keys():
-            logger.debug('Returning existing instance with address %s.' % visa_address)
-            return cls._instances[visa_address]  # this will call __init__ again
-        else:
-            instance = object.__new__(cls)
-            cls._instances[visa_address] = instance
-            instance._init(visa_address, *args, **kwargs)
-            logger.debug('Creating new instance with address %s.' % visa_address)
-            return instance   # this will call __init__ of class
-
-    def __repr__(self):
-        return '<%s(%s)>' % (type(self).__name__, self.visa_address)
-
-    def _init(self, visa_address, visa_library='@py'):
+    def __init__(self, visa_address, visa_library='@py'):
         MagicClass.__init__(self, name='', parent=self)
         self._name = ''  # visa_address will
 
         self.abort_event = threading.Event()
-
-        self.connection = False
-        self.connected = False
-        self.busy = False
 
         self.visa_address = visa_address
         self.visa_library = visa_library
@@ -293,6 +268,9 @@ class Keithley2600Base(MagicClass):
         self.rm = visa.ResourceManager(self.visa_library)
         # connect to keithley
         self.connect()
+
+    def __repr__(self):
+        return '<%s(%s)>' % (type(self).__name__, self.visa_address)
 
 # =============================================================================
 # Connect to keithley
@@ -382,7 +360,7 @@ class Keithley2600Base(MagicClass):
         return value
 
 
-class Keithley2600(Keithley2600Base):
+class Keithley2600lib(Keithley2600Base):
     """
 
     Keithley driver with acccess to base functions and higher level functions
@@ -430,8 +408,8 @@ class Keithley2600(Keithley2600Base):
 
     SMU_LIST = ['smua', 'smub']
 
-    def __new__(self, visa_address, visa_library='@py'):
-        return super(Keithley2600, self).__new__(self, visa_address, visa_library)
+    def __init__(self, visa_address, visa_library='@py'):
+        Keithley2600Base.__init__(self, visa_address, visa_library)
 
     def __repr__(self):
         return '<%s(%s)>' % (type(self).__name__, self.visa_address)
@@ -1042,3 +1020,21 @@ class Keithley2600(Keithley2600Base):
         else:
             self.beeper.beep(0.2, 1046.5)
             self.beeper.beep(0.1, 1046.5)
+
+
+class Keithley2600(object):
+
+    _instances = {}
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Create new instance for a new visa_address, otherwise return existing instance.
+        """
+        if args[0] in cls._instances.keys():
+            logger.debug('Returning existing instance with address %s.' % args[0])
+            return cls._instances[args[0]]  # this will call __init__ again
+        else:
+            instance = Keithley2600lib(*args, **kwargs)
+            cls._instances[args[0]] = instance
+            logger.debug('Creating new instance with address %s.' % args[0])
+            return instance   # this will call __init__ of class
