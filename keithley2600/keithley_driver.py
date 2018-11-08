@@ -10,6 +10,7 @@ Core driver with the low level functions
 """
 
 # system imports
+from __future__ import division, unicode_literals, print_function, absolute_import
 import visa
 import logging
 import threading
