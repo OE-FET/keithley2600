@@ -256,7 +256,6 @@ class Keithley2600Base(MagicClass):
         Create new instance for a new visa_address, otherwise return existing instance.
         """
         if visa_address in cls._instances.keys():
-            logger.debug('Instance with address %s already exists.' % visa_address)
             logger.debug('Returning existing instance with address %s.' % visa_address)
             return cls._instances[visa_address]
         else:
@@ -267,7 +266,7 @@ class Keithley2600Base(MagicClass):
             return instance
 
     def __repr__(self):
-        return '<%s(%s)>' % (self.__class__.__name__, self.visa_address)
+        return '<%s(%s)>' % (type(self).__name__, self.visa_address)
 
     def _init(self, visa_address, visa_library='@py'):
         MagicClass.__init__(self, name='', parent=self)

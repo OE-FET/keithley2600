@@ -9,6 +9,11 @@
 # exclusive. A string used for a PROPERTY cannot be used to create a class
 # later, when the property already exists (and vice versa).
 
+"""
+Submodule listing accepted keithley TSP commands.
+
+"""
+
 WARNING = """Warning: PROPERTIES, CONSATNTS, FUNCTIONS must
 not contain elements from and CLASSES. E.g., once a property is created,
 it cannot be used as a class anymore"""
