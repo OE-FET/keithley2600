@@ -282,7 +282,7 @@ class Keithley2600Base(MagicClass):
 
         self.abort_event = threading.Event()
 
-        self.connection = None
+        self.connection = False
         self.connected = False
         self.busy = False
 
@@ -310,7 +310,7 @@ class Keithley2600Base(MagicClass):
         except:
             # TODO: catch specific error once implemented in pyvisa-py
             logger.warning('Could not connect to Keithley at %s.' % self.visa_address)
-            self.connection = None
+            self.connection = False
             self.connected = False
 
     def disconnect(self):
@@ -318,7 +318,7 @@ class Keithley2600Base(MagicClass):
         if self.connection:
             try:
                 self.connection.close()
-                self.connection = None
+                self.connection = False
                 self.connected = False
                 del self.connection
                 logger.debug('Disconnected from Keithley at %s.' % self.visa_address)
