@@ -241,6 +241,9 @@ class Keithley2600Base(MagicClass):
         arguments.
 
     """
+
+    _lock = threading.RLock()
+
     # dictionary with all instances
     _instances = {}
 
@@ -271,7 +274,6 @@ class Keithley2600Base(MagicClass):
     def _init(self, visa_address, visa_library='@py'):
         MagicClass.__init__(self, name='', parent=self)
 
-        self._lock = threading.RLock()
         self.abort_event = threading.Event()
 
         self.connection = None
@@ -424,6 +426,9 @@ class Keithley2600(Keithley2600Base):
 
     def __new__(self, visa_address, visa_library='@py'):
         return super(Keithley2600, self).__new__(self, visa_address, visa_library)
+
+    def __repr__(self):
+        return '<%s(%s)>' % (type(self).__name__, self.visa_address)
 
     def _check_smu(self, smu):
         """Check if selected smu is indeed present."""
