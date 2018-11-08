@@ -5,10 +5,7 @@
 # (see keithley2600/__init__.py for details)
 
 """
-
-TODO:
-* Include measurement parameters, e.g., integration time, as
-  instance variables and in saved file?
+Submodule defining classes to hold, plot, and save IV and FET sweep data.
 
 """
 

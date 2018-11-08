@@ -22,11 +22,16 @@ from keithley2600.sweep_data_class import TransistorSweepData
 
 logger = logging.getLogger(__name__)
 
+try:
+    basestring
+except NameError:
+    basestring = str
+
 
 class MagicPropertyList(object):
     """
 
-    Class which mimics a property and can be dynamically created. It fowards
+    Class which mimics a property list and can be dynamically created. It fowards
     all calls to the _read method of the parent class and assignments to the
     _write method. Aribitrary values can be assigned, as long as _write can
     handle them.
@@ -37,7 +42,7 @@ class MagicPropertyList(object):
     """
 
     def __init__(self, name, parent):
-        if type(name) is not str:
+        if not isinstance(name, basestring):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
@@ -83,13 +88,13 @@ class MagicFunction(object):
     """
 
     def __init__(self, name, parent):
-        if type(name) is not str:
+        if not isinstance(name, basestring):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
 
     def __call__(self, *args, **kwargs):
-        """ Pass on calls to self._write, store result in variable.
+        """Pass on calls to self._write, store result in variable.
         Querying results from function calls directly may result in
         a VisaIOError timeout if the function does not return anything."""
 
@@ -135,7 +140,7 @@ class MagicClass(object):
     _parent = None
 
     def __init__(self, name, parent=None):
-        if type(name) is not str:
+        if not isinstance(name, basestring):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
@@ -243,20 +248,18 @@ class Keithley2600Base(MagicClass):
     """
 
     _lock = threading.RLock()
-    abort_event = threading.Event()
-
-    connection = None
+    connection = False
     connected = False
     busy = False
 
+    # input types that will be accepted as TSP lists by keithley
     TO_TSP_LIST = (list, np.ndarray, tuple, set)
 
-# =============================================================================
-# Connect to keithley
-# =============================================================================
-
-    def __init__(self, visa_address, visa_library):
+    def __init__(self, visa_address, visa_library='@py'):
         MagicClass.__init__(self, name='', parent=self)
+        self._name = ''  # visa_address will
+
+        self.abort_event = threading.Event()
 
         self.visa_address = visa_address
         self.visa_library = visa_library
@@ -266,8 +269,12 @@ class Keithley2600Base(MagicClass):
         # connect to keithley
         self.connect()
 
-    def list_resources(self):
-        return self.rm.list_resources()
+    def __repr__(self):
+        return '<%s(%s)>' % (type(self).__name__, self.visa_address)
+
+# =============================================================================
+# Connect to keithley
+# =============================================================================
 
     def connect(self):
         """
@@ -277,28 +284,22 @@ class Keithley2600Base(MagicClass):
             self.connection = self.rm.open_resource(self.visa_address)
             self.connection.read_termination = '\n'
             self.connected = True
-
-            self.beeper.beep(0.3, 1046.5)
-            self.beeper.beep(0.3, 1318.5)
-            self.beeper.beep(0.3, 1568)
+            logger.debug('Connected to Keithley at %s.' % self.visa_address)
         except:
             # TODO: catch specific error once implemented in pyvisa-py
             logger.warning('Could not connect to Keithley at %s.' % self.visa_address)
-            self.connection = None
+            self.connection = False
             self.connected = False
 
     def disconnect(self):
         """ Disconnect from Keithley """
         if self.connection:
             try:
-                self.beeper.beep(0.3, 1568)
-                self.beeper.beep(0.3, 1318.5)
-                self.beeper.beep(0.3, 1046.5)
-
                 self.connection.close()
-                self.connection = None
+                self.connection = False
                 self.connected = False
                 del self.connection
+                logger.debug('Disconnected from Keithley at %s.' % self.visa_address)
             except AttributeError:
                 self.connected = False
                 pass
@@ -409,6 +410,9 @@ class Keithley2600(Keithley2600Base):
 
     def __init__(self, visa_address, visa_library='@py'):
         Keithley2600Base.__init__(self, visa_address, visa_library)
+
+    def __repr__(self):
+        return '<%s(%s)>' % (type(self).__name__, self.visa_address)
 
     def _check_smu(self, smu):
         """Check if selected smu is indeed present."""
@@ -865,9 +869,11 @@ class Keithley2600(Keithley2600Base):
         status = 0
         while status == 0:  # while loop that runs until the sweep begins
             status = self.status.operation.sweeping.condition
+            time.sleep(0.1)
 
         while status > 0:  # while loop that runs until the sweep ends
             status = self.status.operation.sweeping.condition
+            time.sleep(0.1)
 
         # EXTRACT DATA FROM SMU BUFFERS
 
@@ -1014,3 +1020,22 @@ class Keithley2600(Keithley2600Base):
         else:
             self.beeper.beep(0.2, 1046.5)
             self.beeper.beep(0.1, 1046.5)
+
+
+class Keithley2600Factory(object):
+
+    _instances = {}
+    SMU_LIST = Keithley2600.SMU_LIST
+
+    def __new__(cls, *args, **kwargs):
+        """
+        Create new instance for a new visa_address, otherwise return existing instance.
+        """
+        if args[0] in cls._instances.keys():
+            logger.debug('Returning existing instance with address %s.' % args[0])
+            return cls._instances[args[0]]
+        else:
+            instance = Keithley2600(*args, **kwargs)
+            cls._instances[args[0]] = instance
+            logger.debug('Creating new instance with address %s.' % args[0])
+            return instance
