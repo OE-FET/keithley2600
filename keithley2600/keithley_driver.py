@@ -10,7 +10,6 @@ Core driver with the low level functions
 """
 
 # system imports
-from __future__ import division, unicode_literals, print_function, absolute_import
 import visa
 import logging
 import threading
@@ -25,9 +24,9 @@ logger = logging.getLogger(__name__)
 
 
 try:
-  basestring  # for Python 2
+    basestring  # for Python 2
 except NameError:
-  basestring = str  # for Python 3
+    basestring = str  # for Python 3
 
 
 class MagicPropertyList(object):
