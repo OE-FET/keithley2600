@@ -38,7 +38,7 @@ class MagicPropertyList(object):
     """
 
     def __init__(self, name, parent):
-        if type(name) is not str:
+        if not isinstance(name, str):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
