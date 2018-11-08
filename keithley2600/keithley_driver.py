@@ -24,6 +24,12 @@ from keithley2600.sweep_data_class import TransistorSweepData
 logger = logging.getLogger(__name__)
 
 
+try:
+  basestring  # for Python 2
+except NameError:
+  basestring = str  # for Python 3
+
+
 class MagicPropertyList(object):
     """
 
@@ -38,7 +44,7 @@ class MagicPropertyList(object):
     """
 
     def __init__(self, name, parent):
-        if not isinstance(name, str):
+        if not isinstance(name, basestring):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
@@ -84,7 +90,7 @@ class MagicFunction(object):
     """
 
     def __init__(self, name, parent):
-        if not isinstance(name, str):
+        if not isinstance(name, basestring):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
@@ -136,7 +142,7 @@ class MagicClass(object):
     _parent = None
 
     def __init__(self, name, parent=None):
-        if not isinstance(name, str):
+        if not isinstance(name, basestring):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
