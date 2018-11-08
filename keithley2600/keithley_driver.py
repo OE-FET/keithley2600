@@ -23,12 +23,6 @@ from keithley2600.sweep_data_class import TransistorSweepData
 logger = logging.getLogger(__name__)
 
 
-try:
-    basestring  # for Python 2
-except NameError:
-    basestring = str  # for Python 3
-
-
 class MagicPropertyList(object):
     """
 
@@ -43,7 +37,7 @@ class MagicPropertyList(object):
     """
 
     def __init__(self, name, parent):
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
@@ -89,13 +83,13 @@ class MagicFunction(object):
     """
 
     def __init__(self, name, parent):
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
 
     def __call__(self, *args, **kwargs):
-        """ Pass on calls to self._write, store result in variable.
+        """Pass on calls to self._write, store result in variable.
         Querying results from function calls directly may result in
         a VisaIOError timeout if the function does not return anything."""
 
@@ -141,7 +135,7 @@ class MagicClass(object):
     _parent = None
 
     def __init__(self, name, parent=None):
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
@@ -278,7 +272,8 @@ class Keithley2600Base(MagicClass):
         return '<%s(%s)>' % (type(self).__name__, self.visa_address)
 
     def _init(self, visa_address, visa_library='@py'):
-        MagicClass.__init__(self, name='', parent=self)
+        super(self.__class__, self).__init__(self, name='', parent=self)
+        self._name = ''
 
         self.abort_event = threading.Event()
 
