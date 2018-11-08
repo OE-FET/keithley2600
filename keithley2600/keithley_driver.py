@@ -1033,9 +1033,9 @@ class Keithley2600Factory(object):
         """
         if args[0] in cls._instances.keys():
             logger.debug('Returning existing instance with address %s.' % args[0])
-            return cls._instances[args[0]]  # this will call __init__ again
+            return cls._instances[args[0]]
         else:
             instance = Keithley2600(*args, **kwargs)
             cls._instances[args[0]] = instance
             logger.debug('Creating new instance with address %s.' % args[0])
-            return instance   # this will call __init__ of class
+            return instance
