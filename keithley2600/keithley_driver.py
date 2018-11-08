@@ -360,7 +360,7 @@ class Keithley2600Base(MagicClass):
         return value
 
 
-class Keithley2600lib(Keithley2600Base):
+class Keithley2600(Keithley2600Base):
     """
 
     Keithley driver with acccess to base functions and higher level functions
@@ -1022,9 +1022,10 @@ class Keithley2600lib(Keithley2600Base):
             self.beeper.beep(0.1, 1046.5)
 
 
-class Keithley2600(object):
+class Keithley2600Factory(object):
 
     _instances = {}
+    SMU_LIST = Keithley2600.SMU_LIST
 
     def __new__(cls, *args, **kwargs):
         """
@@ -1034,7 +1035,7 @@ class Keithley2600(object):
             logger.debug('Returning existing instance with address %s.' % args[0])
             return cls._instances[args[0]]  # this will call __init__ again
         else:
-            instance = Keithley2600lib(*args, **kwargs)
+            instance = Keithley2600(*args, **kwargs)
             cls._instances[args[0]] = instance
             logger.debug('Creating new instance with address %s.' % args[0])
             return instance   # this will call __init__ of class
