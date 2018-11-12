@@ -346,7 +346,8 @@ class TransistorSweepData(object):
                 self.append(vFix=v, vSweep=m[:, 0], iSource=m[:, idx[0]],
                             iDrain=m[:, idx[1]], iGate=m[:, idx[2]])
 
-    def _find_numbers(self, string):
+    @staticmethod
+    def _find_numbers(string):
         """
         Finds all numbers in a string and returns them in a list.
         """

@@ -140,3 +140,10 @@ Temporary Items
 # measurement scripts
 ESR measurement scripts/*
 !ESR measurement scripts/FI_ESR_template.py
+.idea/dictionaries/samschott.xml
+.idea/inspectionProfiles/Project_Default.xml
+.idea/keithley2600.iml
+.idea/misc.xml
+.idea/modules.xml
+.idea/vcs.xml
+.idea/workspace.xml

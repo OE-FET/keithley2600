@@ -24,9 +24,9 @@ from keithley2600.sweep_data_class import TransistorSweepData
 logger = logging.getLogger(__name__)
 
 try:
-    basestring
+    basestring  # in Python 3
 except NameError:
-    basestring = str
+    basestring = str  # in Python 2
 
 
 class MagicPropertyList(object):
@@ -92,7 +92,7 @@ class MagicPropertyList(object):
         except AttributeError:
             return value
 
-    def getdoc():
+    def getdoc(self):
         """Prevent pydoc from trying to document this class. This could
         conflict with on-demand creation of attributes."""
         pass
@@ -277,7 +277,7 @@ class MagicClass(object):
     def __iter__(self):
         return self
 
-    def getdoc():
+    def getdoc(self):
         """Prevent pydoc from trying to document this class. This could
         conflict with on-demand creation of attributes."""
         pass
