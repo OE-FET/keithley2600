@@ -262,6 +262,7 @@ PROPERTIES = [
             'measurefunctions',
             'measureranges',
             'n',
+            'readings',
             'sourcefunctions',
             'sourceoutputstates',
             'sourceranges',
