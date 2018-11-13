@@ -540,7 +540,7 @@ class Keithley2600(Keithley2600Base):
         Reads buffer values and returns them as a list.
         """
         list_out = []
-        for i in range(0, buffer.n):
+        for i in range(0, int(buffer.n)):
             list_out.append(buffer.readings[i+1])
 
         return list_out
