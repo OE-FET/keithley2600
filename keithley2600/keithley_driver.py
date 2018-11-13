@@ -230,6 +230,9 @@ class MagicClass(object):
             handler = MagicFunction(new_name, parent=self)
             self.__dict__[new_name] = handler
 
+        elif attr_name in PROPERTY_LISTS:
+            handler = MagicPropertyList(new_name, parent=self)
+
         elif attr_name in PROPERTIES or attr_name in CONSTANTS:
             if new_name in PROPERTY_LISTS:
                 handler = MagicPropertyList(new_name, parent=self)
