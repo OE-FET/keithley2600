@@ -262,7 +262,6 @@ PROPERTIES = [
             'measurefunctions',
             'measureranges',
             'n',
-            'readings',
             'sourcefunctions',
             'sourceoutputstates',
             'sourceranges',
@@ -1051,6 +1050,7 @@ ALL = [
 PROPERTY_LISTS = [
         'trigger.blender[1].stimulus',
         'trigger.blender[2].stimulus',
+        'readings',
         ]
 
 
