@@ -392,6 +392,8 @@ class Keithley2600Base(MagicClass):
             self.connection.read_termination = '\n'
             self.connected = True
             logger.debug('Connected to Keithley at %s.' % self.visa_address)
+        except ValueError:
+            raise
         except:
             # TODO: catch specific error once implemented in pyvisa-py
             logger.warning('Could not connect to Keithley at %s.' % self.visa_address)
