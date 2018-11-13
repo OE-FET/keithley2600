@@ -20,13 +20,15 @@ Connect to the Keithley 2600 and perform some base commands:
 >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
 >>> k.smua.source.output = k.smua.OUTPUT_ON  # turn on smuA
 >>> k.smua.source.levelv = -40  # sets smuA source level to -40V without turning the smu on or off
->>> volts = k.smua.measure.v()  # measures the smuA voltage
+>>> volts = k.smua.measure.v()  # measures and returns the smuA voltage
+>>> k.smua.measure.v(k.smua.nvbuffer1)  # measures the smuA voltage, stores the result in the given buffer
+>>> k.smua.nvbuffer1.clear()  # clears nvbuffer1 of smuA
 ```
 Higher level commands defined in the driver:
 
 ```python
->>> data = k.readBuffer('smua.nvbuffer1')
->>> k.clearBuffer(k.sma) # clears buffer of k.smua
+>>> data = k.readBuffer(k.smua.nvbuffer1)  # reads entries from nvbuffer1 of smuA
+>>> k.clearBuffer(k.smua) # clears buffer of k.smua
 >>> k.setIntegrationTime(k.smua, 0.001) # in sec
 
 >>> k.applyVoltage(k.smua, -60) # applies -60V to k.smua

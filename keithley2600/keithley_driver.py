@@ -7,6 +7,24 @@
 """
 Core driver with the low level functions
 
+Changes in 0.3.0:
+
+    - Keithley functions now accecpt Keithley objects as arguments, for
+      instance
+          >>> k.smua.measureiv(k.smua.nvbuffer1, k.smua.nvbuffer2)
+      is now possible instead of
+          >>> k.smua.measureiv('smua.nvbuffer1', 'smua.nvbuffer2')
+
+    - Code simplifications resulting from the above.
+
+    - `k.clearBuffers(...)` now raises a deprecation warning and will be
+      removed in v1.0. Clear the buffers directly with `buffer.clear()` instead.
+
+    - Keyword aruments can now be given to `Keithley2600()` and will be passed
+      on to the visa resource (e.g., `baud_rate=9600`)
+
+    - `k.readBuffer(buffer)` no longer clears the given buffer.
+
 """
 
 # system imports
@@ -330,7 +348,7 @@ class Keithley2600Base(MagicClass):
     # input types that will be accepted as TSP lists by keithley
     TO_TSP_LIST = (list, np.ndarray, tuple, set)
 
-    def __init__(self, visa_address, visa_library='@py'):
+    def __init__(self, visa_address, visa_library='@py', **kwargs):
         """Initializes driver, connects to Keithley
 
         Args:
@@ -353,7 +371,7 @@ class Keithley2600Base(MagicClass):
         # open visa resource manager with selected library / backend
         self.rm = visa.ResourceManager(self.visa_library)
         # connect to keithley
-        self.connect()
+        self.connect(**kwargs)
 
     def __repr__(self):
         return '<%s(%s)>' % (type(self).__name__, self.visa_address)
@@ -362,12 +380,12 @@ class Keithley2600Base(MagicClass):
 # Connect to keithley
 # =============================================================================
 
-    def connect(self):
+    def connect(self, **kwargs):
         """
         Connects to Keithley and opens pyvisa API.
         """
         try:
-            self.connection = self.rm.open_resource(self.visa_address)
+            self.connection = self.rm.open_resource(self.visa_address, **kwargs)
             self.connection.read_termination = '\n'
             self.connected = True
             logger.debug('Connected to Keithley at %s.' % self.visa_address)
@@ -435,14 +453,18 @@ class Keithley2600Base(MagicClass):
         return r
 
     def _convert_input(self, value):
-        """ Convert bools to lower case strings and lists / tuples to comma delimted strings
-        enclosed by curly brackets."""
+        """ Convert bools to lower case strings and lists / tuples to comma
+        delimted strings enclosed by curly brackets."""
         if isinstance(value, bool):
             # convert bool True to string 'true'
             value = str(value).lower()
         elif isinstance(value, self.TO_TSP_LIST):
             # convert some iterables to a TSP type list '{1,2,3,4}'
             value = '{%s}' % ', '.join(map(str, value))
+        elif isinstance(value, MagicClass):
+            # convert keithley object to string with its name
+            value = value._name
+
         return value
 
 
@@ -466,13 +488,13 @@ class Keithley2600(Keithley2600Base):
         Base commands from keithley TSP:
 
         >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
-        >>> k.smua.measure.v()  # measures the smuA voltage
+        >>> volts = k.smua.measure.v()  # measures and returns the smuA voltage
         >>> k.smua.source.levelv = -40  # sets source level of smuA
+        >>> k.smua.nvbuffer1.clear()  # clears nvbuffer1 of smuA
 
         New mid-level commands:
 
-        >>> data = k.readBuffer('smua.nvbuffer1')
-        >>> k.clearBuffer(k.sma) # clears buffer of smuA
+        >>> data = k.readBuffer(k.smua.nvbuffer1)
         >>> k.setIntegrationTime(k.smua, 0.001) # in sec
 
         >>> k.applyVoltage(k.smua, -60) # applies -60V to smuA
@@ -496,8 +518,8 @@ class Keithley2600(Keithley2600Base):
 
     SMU_LIST = ['smua', 'smub']
 
-    def __init__(self, visa_address, visa_library='@py'):
-        Keithley2600Base.__init__(self, visa_address, visa_library)
+    def __init__(self, visa_address, visa_library='@py', **kwargs):
+        Keithley2600Base.__init__(self, visa_address, visa_library, **kwargs)
 
     def __repr__(self):
         return '<%s(%s)>' % (type(self).__name__, self.visa_address)
@@ -513,23 +535,22 @@ class Keithley2600(Keithley2600Base):
 # Define lower level control functions
 # =============================================================================
 
-    def readBuffer(self, bufferName):
+    def readBuffer(self, buffer):
         """
         Reads buffer values and returns them as a list.
-        Clears buffer afterwards.
         """
-        n = int(float(self._query('%s.n' % bufferName)))
-        list_out = [0.00] * n
-        for i in range(0, n):
-            list_out[i] = float(self._query('%s[%d]' % (bufferName, i+1)))
+        list_out = []
+        for i in range(0, buffer.n):
+            list_out.append(buffer.readings[i+1])
 
-        # clears buffer
-        self._write('%s.clear()' % bufferName)
-        self._write('%s.clearcache()' % bufferName)
         return list_out
 
     def clearBuffer(self, smu):
         """Clears buffer of a given smu."""
+
+        print('"clearBuffer()" will be deprecated in future versions of this driver. ' +
+              'Please use buffer.clear() and buffer.clearcache() instead where buffer ' +
+              'is a Keithley2600 buffer instance such as k.smua.nvbuffer1.')
 
         self._check_smu(smu)
 
@@ -689,11 +710,8 @@ class Keithley2600(Keithley2600Base):
         # enable smu
         smu.trigger.measure.action = smu.ENABLE
 
-        # measure current on trigger, store in buffer of smu
-        buffer_smu_1 = '%s.nvbuffer1' % self._get_smu_string(smu)
-        buffer_smu_2 = '%s.nvbuffer2' % self._get_smu_string(smu)
-
-        smu.trigger.measure.iv(buffer_smu_1, buffer_smu_2)
+        # measure current and voltage on trigger, store in buffer of smu
+        smu.trigger.measure.iv(smu.nvbuffer1, smu.nvbuffer2)
 
         # initiate measure trigger when source is complete
         smu.trigger.measure.stimulus = smu.trigger.SOURCE_COMPLETE_EVENT_ID
@@ -772,16 +790,21 @@ class Keithley2600(Keithley2600Base):
         status = 0
         while status == 0:  # while loop that runs until the sweep begins
             status = self.status.operation.sweeping.condition
+            time.sleep(0.1)
 
         while status > 0:  # while loop that runs until the sweep ends
             status = self.status.operation.sweeping.condition
+            time.sleep(0.1)
 
         # EXTRACT DATA FROM SMU BUFFERS
+        i_smu = self.readBuffer(smu.nvbuffer1)
+        v_smu = self.readBuffer(smu.nvbuffer2)
 
-        v_smu = self.readBuffer(buffer_smu_2)
-        i_smu = self.readBuffer(buffer_smu_1)
+        smu.nvbuffer1.clear()
+        smu.nvbuffer2.clear()
 
-        self.clearBuffer(smu)
+        smu.nvbuffer1.clearcache()
+        smu.nvbuffer2.clearcache()
 
         self.busy = False
 
@@ -859,16 +882,12 @@ class Keithley2600(Keithley2600Base):
         # smu1.sense = smu1.SENSE_LOCAL
         # smu2.sense = smu2.SENSE_LOCAL
 
-        # clears SMU buffers
-        smu1.nvbuffer1.clear()
-        smu1.nvbuffer2.clear()
-        smu2.nvbuffer1.clear()
-        smu2.nvbuffer2.clear()
-
-        smu1.nvbuffer1.clearcache()
-        smu1.nvbuffer2.clearcache()
-        smu2.nvbuffer1.clearcache()
-        smu2.nvbuffer2.clearcache()
+        # CLEAR BUFFERS
+        for smu in [smu1, smu2]:
+            smu.nvbuffer1.clear()
+            smu.nvbuffer2.clear()
+            smu.nvbuffer1.clearcache()
+            smu.nvbuffer2.clearcache()
 
         # diplay current values during measurement
         self.display.smua.measure.func = self.display.MEASURE_DCAMPS
@@ -894,15 +913,9 @@ class Keithley2600(Keithley2600Base):
         smu1.trigger.measure.action = smu1.ENABLE
         smu2.trigger.measure.action = smu2.ENABLE
 
-        # measure current on trigger, store in buffer of smu
-        buffer_smu1_1 = '%s.nvbuffer1' % self._get_smu_string(smu1)
-        buffer_smu1_2 = '%s.nvbuffer2' % self._get_smu_string(smu1)
-
-        buffer_smu2_1 = '%s.nvbuffer1' % self._get_smu_string(smu2)
-        buffer_smu2_2 = '%s.nvbuffer2' % self._get_smu_string(smu2)
-
-        smu1.trigger.measure.iv(buffer_smu1_1, buffer_smu1_2)
-        smu2.trigger.measure.iv(buffer_smu2_1, buffer_smu2_2)
+        # measure current and voltage on trigger, store in buffer of smu
+        smu1.trigger.measure.iv(smu1.nvbuffer1, smu1.nvbuffer2)
+        smu2.trigger.measure.iv(smu2.nvbuffer1, smu2.nvbuffer2)
 
         # initiate measure trigger when source is complete
         smu1.trigger.measure.stimulus = smu1.trigger.SOURCE_COMPLETE_EVENT_ID
@@ -993,14 +1006,17 @@ class Keithley2600(Keithley2600Base):
             time.sleep(0.1)
 
         # EXTRACT DATA FROM SMU BUFFERS
+        i_smu1 = self.readBuffer(smu1.nvbuffer1)
+        v_smu1 = self.readBuffer(smu1.nvbuffer2)
+        i_smu2 = self.readBuffer(smu2.nvbuffer1)
+        v_smu2 = self.readBuffer(smu2.nvbuffer2)
 
-        v_smu1 = self.readBuffer(buffer_smu1_2)
-        i_smu1 = self.readBuffer(buffer_smu1_1)
-        v_smu2 = self.readBuffer(buffer_smu2_2)
-        i_smu2 = self.readBuffer(buffer_smu2_1)
-
-        self.clearBuffer(smu1)
-        self.clearBuffer(smu2)
+        # CLEAR BUFFERS
+        for smu in [smu1, smu2]:
+            smu.nvbuffer1.clear()
+            smu.nvbuffer2.clear()
+            smu.nvbuffer1.clearcache()
+            smu.nvbuffer2.clearcache()
 
         self.busy = False
 
@@ -1184,9 +1200,11 @@ class Keithley2600Factory(object):
         """
         if args[0] in cls._instances:
             logger.debug('Returning existing instance with address %s.' % args[0])
+
             return cls._instances[args[0]]
         else:
+            logger.debug('Creating new instance with address %s.' % args[0])
             instance = Keithley2600(*args, **kwargs)
             cls._instances[args[0]] = instance
-            logger.debug('Creating new instance with address %s.' % args[0])
+
             return instance
