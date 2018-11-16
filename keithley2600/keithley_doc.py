@@ -783,8 +783,8 @@ ALL = [
  'smua.measureiandstep',
  'smua.measurerandstep',
  'smua.measurepandstep',
- 'smua.nvbuffer1',
- 'smua.nvbuffer2',
+ 'smua.nvbufferY',
+ 'smua.nvbufferY.readings[N]',
  'smua.reset',
  'smua.savebuffer',
  'smua.sense',
@@ -889,6 +889,7 @@ ALL = [
  'smub.measure.rel.levelY',
  'smub.measureYandstep',
  'smub.nvbufferY',
+ 'smub.nvbufferY.readings[N]',
  'smub.reset',
  'smub.savebuffer',
  'smub.sense',
@@ -1051,8 +1052,12 @@ ALL = [
 PROPERTY_LISTS = [
         'trigger.blender[1].stimulus',
         'trigger.blender[2].stimulus',
+        'smua.nvbuffer1.readings',
+        'smua.nvbuffer2.readings',
+        'smub.nvbuffer1.readings',
+        'smub.nvbuffer2.readings',
+        'readings',
         ]
-
 
 properties = set(PROPERTIES)
 functions = set(FUNCTIONS)
