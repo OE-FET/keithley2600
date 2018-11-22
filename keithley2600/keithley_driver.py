@@ -670,7 +670,13 @@ class Keithley2600(Keithley2600Base):
             return v_smu, i_smu
 
         # setup smu to sweep through list on trigger
-        smu.trigger.source.listv(smu_sweeplist)
+        # use linv sweep if possible to prevent sending long strings to Keithley
+        diffs = np.diff(smu_sweeplist)
+        if np.all(diffs == diffs[0]):  # check if stepsize is constant
+            smu.trigger.source.linearv(smu_sweeplist[0], smu_sweeplist[-1], len(smu_sweeplist))
+        else:
+            smu.trigger.source.listv(smu_sweeplist)
+
         smu.trigger.source.action = smu.ENABLE
 
         # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
@@ -860,10 +866,20 @@ class Keithley2600(Keithley2600Base):
         # Setup smua/smub for sweep measurement. The voltage is swept through the given lists
 
         # setup smu1 and smu2 to sweep through lists on trigger
-        smu1.trigger.source.listv(smu1_sweeplist)
-        smu1.trigger.source.action = smu1.ENABLE
+        # use linv sweep if possible to prevent sending long strings to Keithley
+        diffs1 = np.diff(smu1_sweeplist)
+        if np.all(diffs1 == diffs1[0]):  # check if stepsize is constant
+            smu1.trigger.source.linearv(smu1_sweeplist[0], smu1_sweeplist[-1], len(smu1_sweeplist))
+        else:
+            smu1.trigger.source.listv(smu1_sweeplist)
 
-        smu2.trigger.source.listv(smu2_sweeplist)
+        diffs2 = np.diff(smu2_sweeplist)
+        if np.all(diffs2 == diffs2[0]):  # check if stepsize is constant
+            smu2.trigger.source.linearv(smu2_sweeplist[0], smu2_sweeplist[-1], len(smu2_sweeplist))
+        else:
+            smu2.trigger.source.listv(smu2_sweeplist)
+
+        smu1.trigger.source.action = smu1.ENABLE
         smu2.trigger.source.action = smu2.ENABLE
 
         # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
