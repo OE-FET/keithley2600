@@ -1108,8 +1108,8 @@ class Keithley2600(Keithley2600Base):
                 sd.append(vFix=Vdrain, vSweep=vg_fwd, iDrain=id_fwd, iGate=ig_fwd)
 
             # conduct backward sweep
-            sweeplist_gate = np.flip(sweeplist_gate)
-            sweeplist_drain = np.flip(sweeplist_drain)
+            sweeplist_gate = np.flip(sweeplist_gate, 0)
+            sweeplist_drain = np.flip(sweeplist_drain, 0)
 
             vg_rvs, ig_rvs, vd_rvs, id_rvs = self.voltageSweepDualSMU(
                     smu_gate, smu_drain, sweeplist_gate, sweeplist_drain, tInt, delay, pulsed
@@ -1178,8 +1178,8 @@ class Keithley2600(Keithley2600Base):
                 sd.append(vFix=Vgate, vSweep=vd_fwd, iDrain=id_fwd, iGate=ig_fwd)
 
             # conduct backward sweep
-            sweeplist_gate = np.flip(sweeplist_gate)
-            sweeplist_drain = np.flip(sweeplist_drain)
+            sweeplist_gate = np.flip(sweeplist_gate, 0)
+            sweeplist_drain = np.flip(sweeplist_drain, 0)
 
             vd_rvs, id_rvs, vg_rvs, ig_rvs = self.voltageSweepDualSMU(
                     smu_drain, smu_gate, sweeplist_drain, sweeplist_gate, tInt, delay, pulsed
