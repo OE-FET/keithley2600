@@ -630,7 +630,7 @@ class Keithley2600(Keithley2600Base):
 
         step = np.sign(targetVolt - Vcurr) * abs(stepSize)
 
-        for V in np.arange(Vcurr-step, targetVolt-step, step):
+        for V in np.arange(Vcurr, targetVolt + step, step):
             smu.source.levelv = V
             smu.measure.v()
             time.sleep(delay)
