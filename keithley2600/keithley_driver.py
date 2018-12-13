@@ -47,6 +47,21 @@ except NameError:
     basestring = str  # in Python 2
 
 
+def log_to_screen(level=logging.DEBUG):
+    log_to_stream(None, level) # sys.stderr by default
+
+def log_to_stream(stream_output, level=logging.DEBUG):
+    logger.setLevel(level)
+    ch = logging.StreamHandler(stream_output)
+    ch.setLevel(level)
+
+    formatter = logging.Formatter('%(asctime)s - %(name)s - %(levelname)s - %(message)s')
+
+    ch.setFormatter(formatter)
+
+    logger.addHandler(ch)
+
+
 class MagicPropertyList(object):
     """Mimics a Keithley TSP property list
 
@@ -421,7 +436,7 @@ class Keithley2600Base(MagicClass):
         """
         Writes text to Keithley. Input must be a string.
         """
-        logger.debug(value)
+        logger.debug('write: %s' % value)
 
         if self.connection:
             self.connection.write(value)
@@ -432,11 +447,12 @@ class Keithley2600Base(MagicClass):
         """
         Queries and expects response from Keithley. Input must be a string.
         """
-        logger.debug('print(%s)' % value)
+        logger.debug('write: print(%s)' % value)
 
         if self.connection:
             with self._lock:
                 r = self.connection.query('print(%s)' % value)
+                logger.debug('read: %s' % r)
 
             return self.parse_response(r)
         else:
@@ -630,7 +646,7 @@ class Keithley2600(Keithley2600Base):
 
         step = np.sign(targetVolt - Vcurr) * abs(stepSize)
 
-        for V in np.arange(Vcurr-step, targetVolt-step, step):
+        for V in np.arange(Vcurr, targetVolt + step, step):
             smu.source.levelv = V
             smu.measure.v()
             time.sleep(delay)
