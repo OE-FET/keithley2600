@@ -408,9 +408,19 @@ class Keithley2600Base(MagicClass):
             self.connected = True
             logger.debug('Connected to Keithley at %s.' % self.visa_address)
         except ValueError:
+            self.connection = False
+            self.connected = False
             raise
-        except:
-            # TODO: catch specific error once implemented in pyvisa-py
+        except ConnectionResetError:
+            logger.info('Connection reset by the instrument. Please check ' +
+                        'that no other programm is connected.')
+            self.connection = False
+            self.connected = False
+        except AttributeError:
+            logger.info('Invalid VISA address %s.' % self.visa_address)
+            self.connection = False
+            self.connected = False
+        except Exception:
             logger.warning('Could not connect to Keithley at %s.' % self.visa_address)
             self.connection = False
             self.connected = False
