@@ -421,7 +421,7 @@ class Keithley2600Base(MagicClass):
             self.connection = False
             self.connected = False
         except Exception:
-            logger.warning('Could not connect to Keithley at %s.' % self.visa_address)
+            logger.info('Could not connect to Keithley at %s.' % self.visa_address)
             self.connection = False
             self.connected = False
 
