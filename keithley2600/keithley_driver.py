@@ -29,6 +29,7 @@ Changes in 0.3.0:
 
 # system imports
 from __future__ import absolute_import, division, print_function
+import sys
 import visa
 import logging
 import threading
@@ -39,11 +40,10 @@ import time
 from keithley2600.keithley_doc import CONSTANTS, FUNCTIONS, PROPERTIES, CLASSES, PROPERTY_LISTS
 from keithley2600.sweep_data_class import TransistorSweepData
 
+PY2 = sys.version[0] == '2'
 logger = logging.getLogger(__name__)
 
-try:
-    basestring  # in Python 3
-except NameError:
+if PY2:
     basestring = str  # in Python 2
 
 
@@ -402,6 +402,7 @@ class Keithley2600Base(MagicClass):
         """
         Connects to Keithley and opens pyvisa API.
         """
+        connection_error = OSError if PY2 else ConnectionError
         try:
             self.connection = self.rm.open_resource(self.visa_address, **kwargs)
             self.connection.read_termination = '\n'
@@ -411,9 +412,9 @@ class Keithley2600Base(MagicClass):
             self.connection = False
             self.connected = False
             raise
-        except ConnectionResetError:
-            logger.info('Connection reset by the instrument. Please check ' +
-                        'that no other programm is connected.')
+        except connection_error:
+            logger.info('Connection error. Please check that ' +
+                        'no other programm is connected.')
             self.connection = False
             self.connected = False
         except AttributeError:
