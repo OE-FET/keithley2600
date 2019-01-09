@@ -43,12 +43,13 @@ from keithley2600.sweep_data_class import TransistorSweepData
 PY2 = sys.version[0] == '2'
 logger = logging.getLogger(__name__)
 
-if PY2:
-    basestring = str  # in Python 2
+if not PY2:
+    basestring = str  # in Python 3
 
 
 def log_to_screen(level=logging.DEBUG):
-    log_to_stream(None, level) # sys.stderr by default
+    log_to_stream(None, level)  # sys.stderr by default
+
 
 def log_to_stream(stream_output, level=logging.DEBUG):
     logger.setLevel(level)
