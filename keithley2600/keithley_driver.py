@@ -29,6 +29,7 @@ Changes in 0.3.0:
 
 # system imports
 from __future__ import absolute_import, division, print_function
+import sys
 import visa
 import logging
 import threading
@@ -39,16 +40,16 @@ import time
 from keithley2600.keithley_doc import CONSTANTS, FUNCTIONS, PROPERTIES, CLASSES, PROPERTY_LISTS
 from keithley2600.sweep_data_class import TransistorSweepData
 
+PY2 = sys.version[0] == '2'
 logger = logging.getLogger(__name__)
 
-try:
-    basestring  # in Python 3
-except NameError:
-    basestring = str  # in Python 2
+if not PY2:
+    basestring = str  # in Python 3
 
 
 def log_to_screen(level=logging.DEBUG):
-    log_to_stream(None, level) # sys.stderr by default
+    log_to_stream(None, level)  # sys.stderr by default
+
 
 def log_to_stream(stream_output, level=logging.DEBUG):
     logger.setLevel(level)
@@ -402,16 +403,27 @@ class Keithley2600Base(MagicClass):
         """
         Connects to Keithley and opens pyvisa API.
         """
+        connection_error = OSError if PY2 else ConnectionError
         try:
             self.connection = self.rm.open_resource(self.visa_address, **kwargs)
             self.connection.read_termination = '\n'
             self.connected = True
             logger.debug('Connected to Keithley at %s.' % self.visa_address)
         except ValueError:
+            self.connection = False
+            self.connected = False
             raise
-        except:
-            # TODO: catch specific error once implemented in pyvisa-py
-            logger.warning('Could not connect to Keithley at %s.' % self.visa_address)
+        except connection_error:
+            logger.info('Connection error. Please check that ' +
+                        'no other programm is connected.')
+            self.connection = False
+            self.connected = False
+        except AttributeError:
+            logger.info('Invalid VISA address %s.' % self.visa_address)
+            self.connection = False
+            self.connected = False
+        except Exception:
+            logger.info('Could not connect to Keithley at %s.' % self.visa_address)
             self.connection = False
             self.connected = False
 
