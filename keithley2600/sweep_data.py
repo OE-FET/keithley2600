@@ -106,7 +106,7 @@ class ResultTable(object):
         self.titles = [ColumnTitle(n, u, self.UNIT_FORMAT) for n, u in zip(names, units)]
 
         if data is None:
-            self.data = np.array([])
+            self.data = None
         else:
             self.data = np.array(data)
 
