@@ -876,16 +876,20 @@ class Keithley2600(Keithley2600Base):
         # Setup smua/smub for sweep measurement. The voltage is swept through the given lists
 
         # setup smu1 and smu2 to sweep through lists on trigger
-        # use linv sweep if possible to prevent sending long strings to Keithley
-        diffs1 = np.diff(smu1_sweeplist)
-        if np.all(diffs1 == diffs1[0]):  # check if stepsize is constant
-            smu1.trigger.source.linearv(smu1_sweeplist[0], smu1_sweeplist[-1], len(smu1_sweeplist))
+        # send sweep_list over in chunks if too long
+        if len(smu1_sweeplist) > self.CHUNK_SIZE:
+            self._write('mylist = {}')
+            for num in smu1_sweeplist:
+                self._write('table.insert(mylist, %s)' %  num)
+            smu1.trigger.source.listv('mylist')
         else:
             smu1.trigger.source.listv(smu1_sweeplist)
 
-        diffs2 = np.diff(smu2_sweeplist)
-        if np.all(diffs2 == diffs2[0]):  # check if stepsize is constant
-            smu2.trigger.source.linearv(smu2_sweeplist[0], smu2_sweeplist[-1], len(smu2_sweeplist))
+        if len(smu2_sweeplist) > self.CHUNK_SIZE:
+            self._write('mylist = {}')
+            for num in smu2_sweeplist:
+                self._write('table.insert(mylist, %s)' %  num)
+            smu2.trigger.source.listv('mylist')
         else:
             smu2.trigger.source.listv(smu2_sweeplist)
 
