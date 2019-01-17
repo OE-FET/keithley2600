@@ -1098,7 +1098,8 @@ class Keithley2600(Keithley2600Base):
         sweeplist_gate = np.append(sweeplist_gate_fwd, sweeplist_gate_rvs)
 
         # create ResultTable instance
-        rt = TransistorSweepData(params={'sweep_type': 'transfer'})
+        params={'sweep_type': 'transfer', 't_int': t_int, 'delay': delay, 'pulsed': pulsed}
+        rt = TransistorSweepData(params=params)
         rt.append_column(sweeplist_gate, name='Gate voltage', unit='V')
 
         # record sweeps for every drain voltage step
@@ -1170,7 +1171,8 @@ class Keithley2600(Keithley2600Base):
         sweeplist_drain = np.append(sweeplist_drain_fwd, sweeplist_drain_rvs)
 
         # create ResultTable instance
-        rt = TransistorSweepData(params={'sweep_type': 'output'})
+        params={'sweep_type': 'output', 't_int': t_int, 'delay': delay, 'pulsed': pulsed}
+        rt = TransistorSweepData(params=params)
         rt.append_column(sweeplist_drain, name='Drain voltage', unit='V')
 
         for vgate in vg_list:
