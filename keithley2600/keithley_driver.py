@@ -347,6 +347,8 @@ class Keithley2600Base(MagicClass):
 
     # input types that will be accepted as TSP lists by keithley
     TO_TSP_LIST = (list, np.ndarray, tuple, set)
+    # maximum length of commands send to keithley
+    CHUNK_SIZE = 50
 
     def __init__(self, visa_address, visa_library='@py', **kwargs):
         """Initializes driver, connects to Keithley
@@ -676,10 +678,12 @@ class Keithley2600(Keithley2600Base):
             return v_smu, i_smu
 
         # setup smu to sweep through list on trigger
-        # use linv sweep if possible to prevent sending long strings to Keithley
-        diffs = np.diff(smu_sweeplist)
-        if np.all(diffs == diffs[0]):  # check if stepsize is constant
-            smu.trigger.source.linearv(smu_sweeplist[0], smu_sweeplist[-1], len(smu_sweeplist))
+        # send sweep_list over in chunks if too long
+        if len(smu_sweeplist) > self.CHUNK_SIZE:
+            self._write('mylist = {}')
+            for num in smu_sweeplist:
+                self._write('table.insert(mylist, %s)' %  num)
+            smu.trigger.source.listv('mylist')
         else:
             smu.trigger.source.listv(smu_sweeplist)
 
