@@ -5,26 +5,7 @@
 # (see keithley2600/__init__.py for details)
 
 """
-Core driver with the low level functions
-
-Changes in 0.3.0:
-
-    - Keithley functions now accecpt Keithley objects as arguments, for
-      instance
-          >>> k.smua.measureiv(k.smua.nvbuffer1, k.smua.nvbuffer2)
-      is now possible instead of
-          >>> k.smua.measureiv('smua.nvbuffer1', 'smua.nvbuffer2')
-
-    - Code simplifications resulting from the above.
-
-    - `k.clearBuffers(...)` now raises a deprecation warning and will be
-      removed in v1.0. Clear the buffers directly with `buffer.clear()` instead.
-
-    - Keyword aruments can now be given to `Keithley2600()` and will be passed
-      on to the visa resource (e.g., `baud_rate=9600`)
-
-    - `k.readBuffer(buffer)` no longer clears the given buffer.
-
+Core driver with the low level functions.
 """
 
 # system imports
@@ -38,7 +19,7 @@ import time
 
 # local import
 from keithley2600.keithley_doc import CONSTANTS, FUNCTIONS, PROPERTIES, CLASSES, PROPERTY_LISTS
-from keithley2600.sweep_data_class import TransistorSweepData
+from keithley2600.sweep_data import TransistorSweepData
 
 PY2 = sys.version[0] == '2'
 logger = logging.getLogger(__name__)
@@ -360,7 +341,7 @@ class Keithley2600Base(MagicClass):
     """
 
     _lock = threading.RLock()
-    connection = False
+    connection = None
     connected = False
     busy = False
 
@@ -410,21 +391,21 @@ class Keithley2600Base(MagicClass):
             self.connected = True
             logger.debug('Connected to Keithley at %s.' % self.visa_address)
         except ValueError:
-            self.connection = False
+            self.connection = None
             self.connected = False
             raise
         except connection_error:
             logger.info('Connection error. Please check that ' +
                         'no other programm is connected.')
-            self.connection = False
+            self.connection = None
             self.connected = False
         except AttributeError:
             logger.info('Invalid VISA address %s.' % self.visa_address)
-            self.connection = False
+            self.connection = None
             self.connected = False
         except Exception:
             logger.info('Could not connect to Keithley at %s.' % self.visa_address)
-            self.connection = False
+            self.connection = None
             self.connected = False
 
     def disconnect(self):
@@ -432,7 +413,7 @@ class Keithley2600Base(MagicClass):
         if self.connection:
             try:
                 self.connection.close()
-                self.connection = False
+                self.connection = None
                 self.connected = False
                 del self.connection
                 logger.debug('Disconnected from Keithley at %s.' % self.visa_address)
@@ -470,7 +451,8 @@ class Keithley2600Base(MagicClass):
         else:
             raise KeithleyIOError('No connection to keithley present. Try to call connect().')
 
-    def parse_response(self, string):
+    @staticmethod
+    def parse_response(string):
         try:
             r = float(string)
         except ValueError:
@@ -546,7 +528,7 @@ class Keithley2600(Keithley2600Base):
         >>> data2 = k.transferMeasurement(...) # records transfer curve
 
     Attributes:
-        SMU_LIST (list): List containing strings of all smu names.
+        SMU_LIST (list): List containing strings of all smu column_names.
     """
 
     SMU_LIST = ['smua', 'smub']
@@ -561,14 +543,16 @@ class Keithley2600(Keithley2600Base):
         """Check if selected smu is indeed present."""
         assert smu._name.split('.')[-1] in self.SMU_LIST
 
-    def _get_smu_string(self, smu):
+    @staticmethod
+    def _get_smu_string(smu):
         return smu._name.split('.')[-1]
 
 # =============================================================================
 # Define lower level control functions
 # =============================================================================
 
-    def readBuffer(self, buffer):
+    @staticmethod
+    def readBuffer(buffer):
         """
         Reads buffer values and returns them as a list.
         """
@@ -581,17 +565,10 @@ class Keithley2600(Keithley2600Base):
     def clearBuffer(self, smu):
         """Clears buffer of a given smu."""
 
-        print('"clearBuffer()" will be deprecated in future versions of this driver. ' +
-              'Please use buffer.clear() and buffer.clearcache() instead where buffer ' +
-              'is a Keithley2600 buffer instance such as k.smua.nvbuffer1.')
-
-        self._check_smu(smu)
-
-        smu.nvbuffer1.clear()
-        smu.nvbuffer2.clear()
-
-        smu.nvbuffer1.clearcache()
-        smu.nvbuffer2.clearcache()
+        raise DeprecationWarning(
+            "'clearBuffer()' has beeen deprecated. Please use 'buffer.clear()' and " +
+            "'buffer.clearcache()' instead, where 'buffer' is a Keithley2600 buffer instance " +
+            "such as 'k.smua.nvbuffer1'.")
 
     def setIntegrationTime(self, smu, tInt):
         """Sets the integration time of SMU for measurements in sec.
@@ -639,6 +616,7 @@ class Keithley2600(Keithley2600Base):
         Ramps up the voltage of the specified SMU. Beeps when done.
 
         Args:
+            smu: SMU to ramp.
             targetVolt (float): Target gate voltage.
             stepSize (float): Size of the voltage ramp steps in Volts.
             delay (float): Delay between steps in sec.
@@ -1075,8 +1053,8 @@ class Keithley2600(Keithley2600Base):
 # Define higher level control functions
 # =============================================================================
 
-    def transferMeasurement(self, smu_gate, smu_drain, VgStart, VgStop, VgStep,
-                            VdList, tInt, delay, pulsed):
+    def transferMeasurement(self, smu_gate, smu_drain, vg_start, vg_stop,
+                            vg_step, vd_list, t_int, delay, pulsed):
         """
         Records a transfer curve and saves the results in a TransistorSweepData
         instance.
@@ -1086,11 +1064,11 @@ class Keithley2600(Keithley2600Base):
                 measuremnt (keithley smu object).
             smu_drain: SMU attached to drain electrode of FET for transfer
                 measuremnt (keithley smu object).
-            VgStart (float): Start voltage of transfer sweep in Volts .
-            VgStop (float): End voltage of transfer sweep in Volts.
-            VgStep (float): Voltage step size for transfer sweep in Volts.
-            VdList (list): List of drain voltage steps in Volts.
-            tInt (float): Integration time in sec for every data point.
+            vg_start (float): Start voltage of transfer sweep in Volts .
+            vg_stop (float): End voltage of transfer sweep in Volts.
+            vg_step (float): Voltage step size for transfer sweep in Volts.
+            vd_list (list): List of drain voltage steps in Volts.
+            t_int (float): Integration time in sec for every data point.
             delay (float): Settling time in sec before every measurement. Set
                 to -1 for for automatic delay.
             pulsed (bool): True or False for pulsed or conteous measurements.
@@ -1102,58 +1080,53 @@ class Keithley2600(Keithley2600Base):
         self.abort_event.clear()
 
         msg = ('Recording transfer curve with Vg from %sV to %sV, Vd = %s V. '
-               % (VgStart, VgStop, VdList))
+               % (vg_start, vg_stop, vd_list))
         logger.info(msg)
 
-        # create TransistorSweepData instance
-        sd = TransistorSweepData(sweepType='transfer')
-
         # create array with gate voltage steps, always inlude a last step at / beyond VgStop
-        step = np.sign(VgStop - VgStart) * abs(VgStep)
-        sweeplist_gate = np.arange(VgStart, VgStop + step, step)
+        step = np.sign(vg_stop - vg_start) * abs(vg_step)
+        sweeplist_gate_fwd = np.arange(vg_start, vg_stop + step, step)
+        sweeplist_gate_rvs = np.flip(sweeplist_gate_fwd, 0)
+        sweeplist_gate = np.append(sweeplist_gate_fwd, sweeplist_gate_rvs)
 
-        # record forward and backward sweeps for every drain voltage step
-        for Vdrain in VdList:
+        # create ResultTable instance
+        rt = TransistorSweepData(params={'sweep_type': 'transfer'})
+        rt.append_column(sweeplist_gate, name='Gate voltage', unit='V')
+
+        # record sweeps for every drain voltage step
+        for vdrain in vd_list:
 
             # check for abort event
             if self.abort_event.is_set():
                 self.reset()
                 self.beeper.beep(0.3, 2400)
-                return sd
+                return rt
 
             # create array with drain voltages
-            if Vdrain == 'trailing':
+            if vdrain == 'trailing':
                 sweeplist_drain = sweeplist_gate
             else:
-                sweeplist_drain = np.full_like(sweeplist_gate, Vdrain)
+                sweeplist_drain = np.full_like(sweeplist_gate, vdrain)
 
-            # conduct forward sweep
-            vg_fwd, ig_fwd, vd_fwd, id_fwd = self.voltageSweepDualSMU(
-                    smu_gate, smu_drain, sweeplist_gate, sweeplist_drain, tInt, delay, pulsed
+            # conduct sweep
+            v_g, i_g, v_d, i_d = self.voltageSweepDualSMU(
+                    smu_gate, smu_drain, sweeplist_gate, sweeplist_drain, t_int, delay, pulsed
                     )
 
             if not self.abort_event.is_set():
-                sd.append(vFix=Vdrain, vSweep=vg_fwd, iDrain=id_fwd, iGate=ig_fwd)
-
-            # conduct backward sweep
-            sweeplist_gate = np.flip(sweeplist_gate, 0)
-            sweeplist_drain = np.flip(sweeplist_drain, 0)
-
-            vg_rvs, ig_rvs, vd_rvs, id_rvs = self.voltageSweepDualSMU(
-                    smu_gate, smu_drain, sweeplist_gate, sweeplist_drain, tInt, delay, pulsed
-                    )
-
-            if not self.abort_event.is_set():
-                sd.append(vFix=Vdrain, vSweep=vg_rvs, iDrain=id_rvs, iGate=ig_rvs)
+                i_s = np.array(i_d) + np.array(i_g)
+                rt.append_column(i_s, name='Source current (Vd = %s)' % vdrain, unit='A')
+                rt.append_column(i_d, name='Drain current (Vd = %s)' % vdrain, unit='A')
+                rt.append_column(i_g, name='Gate current (Vd = %s)' % vdrain, unit='A')
 
         self.reset()
         self.beeper.beep(0.3, 2400)
 
         self.busy = False
-        return sd
+        return rt
 
-    def outputMeasurement(self, smu_gate, smu_drain, VdStart, VdStop, VdStep,
-                          VgList, tInt, delay, pulsed):
+    def outputMeasurement(self, smu_gate, smu_drain, vd_start, vd_stop, vd_step,
+                          vg_list, tInt, delay, pulsed):
         """
         Records an output curve and saves the results in a TransistorSweepData
         instance.
@@ -1163,10 +1136,10 @@ class Keithley2600(Keithley2600Base):
                 measuremnt (keithley smu object).
             smu_drain: SMU attached to drain electrode of FET for transfer
                 measuremnt (keithley smu object).
-            VgStart (float): Start voltage of output sweep in Volts .
-            VgStop (float): End voltage of output sweep in Volts.
-            VgStep (float): Voltage step size for output sweep in Volts.
-            VdList (list): List of gate voltage steps in Volts.
+            vd_start (float): Start voltage of output sweep in Volts .
+            vd_stop (float): End voltage of output sweep in Volts.
+            vd_step (float): Voltage step size for output sweep in Volts.
+            vg_list (list): List of gate voltage steps in Volts.
             tInt (float): Integration time in sec for every data point.
             delay (float): Settling time in sec before every measurement. Set
                 to -1 for for automatic delay.
@@ -1179,48 +1152,44 @@ class Keithley2600(Keithley2600Base):
         self.busy = True
         self.abort_event.clear()
         msg = ('Recording output curve with Vd from %sV to %sV, Vg = %s V. '
-               % (VdStart, VdStop, VgList))
+               % (vd_start, vd_stop, vg_list))
         logger.info(msg)
 
-        # create TransistorSweepData instance
-        sd = TransistorSweepData(sweepType='output')
-
         # create array with drain voltage steps, always inlude a last step at / beyond VgStop
-        step = np.sign(VdStop - VdStart) * abs(VdStep)
-        sweeplist_drain = np.arange(VdStart, VdStop + step, step)
+        step = np.sign(vd_stop - vd_start) * abs(vd_step)
+        sweeplist_drain_fwd = np.arange(vd_start, vd_stop + step, step)
+        sweeplist_drain_rvs = np.flip(sweeplist_drain_fwd, 0)
+        sweeplist_drain = np.append(sweeplist_drain_fwd, sweeplist_drain_rvs)
 
-        for Vgate in VgList:
+        # create ResultTable instance
+        rt = TransistorSweepData(params={'sweep_type': 'output'})
+        rt.append_column(sweeplist_drain, name='Drain voltage', unit='V')
+
+        for vgate in vg_list:
             if self.abort_event.is_set():
                 self.reset()
                 self.beeper.beep(0.3, 2400)
-                return sd
+                return rt
 
             # create array with gate voltages
-            sweeplist_gate = np.full_like(sweeplist_drain, Vgate)
+            sweeplist_gate = np.full_like(sweeplist_drain, vgate)
 
             # conduct forward sweep
-            vd_fwd, id_fwd, vg_fwd, ig_fwd = self.voltageSweepDualSMU(
-                    smu_drain, smu_gate, sweeplist_drain, sweeplist_gate, tInt, delay, pulsed
-                    )
-            if not self.abort_event.is_set():
-                sd.append(vFix=Vgate, vSweep=vd_fwd, iDrain=id_fwd, iGate=ig_fwd)
-
-            # conduct backward sweep
-            sweeplist_gate = np.flip(sweeplist_gate, 0)
-            sweeplist_drain = np.flip(sweeplist_drain, 0)
-
-            vd_rvs, id_rvs, vg_rvs, ig_rvs = self.voltageSweepDualSMU(
+            v_d, i_d, v_g, i_g = self.voltageSweepDualSMU(
                     smu_drain, smu_gate, sweeplist_drain, sweeplist_gate, tInt, delay, pulsed
                     )
 
             if not self.abort_event.is_set():
-                sd.append(vFix=Vgate, vSweep=vd_rvs, iDrain=id_rvs, iGate=ig_rvs)
+                i_s = np.array(i_d) + np.array(i_g)
+                rt.append_column(i_s, name='Source current (Vd = %s)' % vgate, unit='A')
+                rt.append_column(i_d, name='Drain current (Vd = %s)' % vgate, unit='A')
+                rt.append_column(i_g, name='Gate current (Vd = %s)' % vgate, unit='A')
 
         self.reset()
         self.beeper.beep(0.3, 2400)
 
         self.busy = False
-        return sd
+        return rt
 
     def playChord(self, direction='up'):
         """Plays a chord on the Keithley."""

@@ -147,3 +147,6 @@ ESR measurement scripts/*
 .idea/modules.xml
 .idea/vcs.xml
 .idea/workspace.xml
+.idea/codeStyles/codeStyleConfig.xml
+.idea/encodings.xml
+keithley2600/ipython.html
