@@ -22,6 +22,18 @@ if not PY2:
     basestring = str  # in Python 3
 
 
+def find_numbers(string):
+    """
+    Finds all numbers in a string and returns them in a list.
+    """
+
+    fmt = r'[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
+    string_list = re.findall(fmt, string)
+    float_list = [float(s) for s in string_list]
+
+    return float_list
+
+
 class ColumnTitle(object):
     """
     Object to hold a column title.
@@ -87,7 +99,7 @@ class ResultTable(object):
     DELIMITER = '\t'
     PARAM_DELIMITER = ': '
     LINE_BREAK = '\n'
-    UNIT_FORMAT = '/{}'
+    UNIT_FORMAT = '[{}]'
 
     def __init__(self, names=None, units=None, data=None, params=None):
         """
@@ -346,7 +358,12 @@ class ResultTable(object):
                 try:
                     params[key] = float(value)
                 except ValueError:
-                    params[key] = value
+                    if value in ['True', 'true']:
+                        params[key] = True
+                    elif value in ['False', 'false']:
+                        params[key] = False
+                    else:
+                        params[key] = value
 
         return params
 
@@ -642,7 +659,8 @@ class TransistorSweepData(ResultTable):
     `TransistorSweepData` inherits from `ResultTable` and overrides the plot method.
 
     The following additional properties are accessible:
-        * sweep_type: String that describes the sweep type, can be 'transfer' or 'output'.
+        * sweep_type: String that describes the sweep type, can be 'transfer'
+          or 'output'.
 
     The following new methods are defined:
         * step_list: Returns list of stepped voltages.
@@ -657,21 +675,17 @@ class TransistorSweepData(ResultTable):
     def sweep_type(self, value):
         self.params['sweep_type'] = value
 
-    def step_list(self):
+    def stepped_voltage_list(self):
         """
-        Get a list of stepped voltages transfer / output characteristics. This returns
-        a list of drain voltages for a transfer data and gate voltages for output data.
+        Get voltage steps of transfer / output characteristics. This returns
+        the drain voltages steps for transfer curve data and gate voltage steps
+        for output curve data.
 
-        :return: List voltage steps in transfer / output characteristics.
-        :rtype: list
+        :return: Voltage steps in transfer / output characteristics.
+        :rtype: set
         """
 
-        voltages = []
-
-        for name in self.column_names:
-            voltages.append(self._find_numbers(name))
-
-        return voltages
+        return set(find_numbers(self.column_title_string()))
 
     def n_steps(self):
         return len(self.step_list())
@@ -681,15 +695,3 @@ class TransistorSweepData(ResultTable):
             return np.sqrt(np.abs(x))
         super(self.__class__, self).plot(semilog=True, func=np.abs, *args, **kwargs)
         super(self.__class__, self).plot(semilog=False, func=sqrt_abs, *args, **kwargs)
-
-    @staticmethod
-    def _find_numbers(string):
-        """
-        Finds all numbers in a string and returns them in a list.
-        """
-
-        fmt = r'[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
-        string_list = re.findall(fmt, string)
-        float_list = [float(s) for s in string_list]
-
-        return float_list
