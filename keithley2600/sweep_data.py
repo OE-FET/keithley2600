@@ -508,7 +508,7 @@ class ResultTable(object):
         if y_unit == '':
             plt.ylabel('%s' % y_label)
         else:
-            plt.ylabel('%s [%s]' % (y_label, y_unit))
+            plt.ylabel(y_label + ' ' + self.UNIT_FORMAT.format(y_unit))
 
         plt.tight_layout()
 
