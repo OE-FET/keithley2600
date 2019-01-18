@@ -347,7 +347,7 @@ class Keithley2600Base(MagicClass):
 
     # input types that will be accepted as TSP lists by keithley
     TO_TSP_LIST = (list, np.ndarray, tuple, set)
-    # maximum length of commands send to keithley
+    # maximum length of lists send to keithley
     CHUNK_SIZE = 50
 
     def __init__(self, visa_address, visa_library='@py', **kwargs):

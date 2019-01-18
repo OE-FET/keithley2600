@@ -28,12 +28,12 @@ Higher level commands defined in the driver:
 
 ```python
 >>> data = k.readBuffer(k.smua.nvbuffer1)  # reads entries from nvbuffer1 of smuA
->>> k.clearBuffer(k.smua) # clears buffer of k.smua
 >>> k.setIntegrationTime(k.smua, 0.001) # in sec
 
 >>> k.applyVoltage(k.smua, -60) # applies -60V to k.smua
 >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from k.smub
 >>> k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1) # ramps k.smua to 10V in 1V steps
+>>> i = k.smua.measure.i() # mesures current at smuA
 
 >>> k.voltageSweepSingleSMU(smu=k.smua, smu_sweeplist=list(range(0, 61)),
                             tInt=0.1, delay=-1, pulsed=False)  # records single SMU IV curve
