@@ -472,8 +472,7 @@ class ResultTable(object):
         self.DELIMITER = old_delim
         self.LINE_BREAK = old_line_break
 
-    def plot(self, x_clmn=0, y_clmn=None, xscale='linear', yscale='linear', func=lambda x: x,
-             **kwargs):
+    def plot(self, x_clmn=0, y_clmn=None, func=lambda x: x, **kwargs):
         """
         Plots the data. This method should not be called from a thread.
         The column containing the x-axis data is specified (defaults to first
@@ -486,8 +485,6 @@ class ResultTable(object):
         :param x_clmn: Integer or name of column containing the x-axis data.
         :param y_clmn: List of column numbers or column_names for y-axis data. If not
             given, all columns will be plotted (excluding the x-axis column).
-        :param str xscale: Scale of x-axis. Can be: {"linear", "log", "symlog", "logit", ...}
-        :param str yscale: Scale of y-axis. Can be: {"linear", "log", "symlog", "logit", ...}
         :param func: Function to apply to y-data before plotting.
         """
         if self.ncols == 0:
@@ -522,17 +519,16 @@ class ResultTable(object):
                 line_labels.append(self.column_names[c])
                 line_units.append(self.column_units[c])
 
-        ax.xlabel(str(self.titles[x_clmn]))
+        ax.set_xlabel(str(self.titles[x_clmn]))
 
         y_label = os.path.commonprefix(line_labels)
         y_unit = os.path.commonprefix(line_units)
         if y_unit == '':
-            ax.ylabel('%s' % y_label)
+            ax.set_ylabel('%s' % y_label)
         else:
-            ax.ylabel(y_label + ' ' + self.UNIT_FORMAT.format(y_unit))
+            ax.set_ylabel(y_label + ' ' + self.UNIT_FORMAT.format(y_unit))
 
-        ax.set_xscale(xscale)
-        ax.set_yscale(yscale)
+        ax.autoscale(enable=True, axis='x', tight=True)
         fig.tight_layout()
 
         self.setup_plot(fig, ax)
@@ -712,5 +708,10 @@ class TransistorSweepData(ResultTable):
     def plot(self, *args, **kwargs):
         def sqrt_abs(x):
             return np.sqrt(np.abs(x))
-        super(self.__class__, self).plot(yscale='log', func=np.abs, *args, **kwargs)
-        super(self.__class__, self).plot(yscale='log', func=sqrt_abs, *args, **kwargs)
+        fig, ax = super(self.__class__, self).plot(func=np.abs, *args, **kwargs)
+        ax.set_yscale('log')
+        ax.set_ylabel('I [A]')
+
+        fig, ax = super(self.__class__, self).plot(func=sqrt_abs, *args, **kwargs)
+        ax.set_yscale('linear')
+        ax.set_ylabel('$\mathregular{I^{1/2}}$ ' + self.UNIT_FORMAT.format('$\mathregular{A^{1/2}}$'))
