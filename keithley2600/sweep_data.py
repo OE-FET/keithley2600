@@ -472,7 +472,8 @@ class ResultTable(object):
         self.DELIMITER = old_delim
         self.LINE_BREAK = old_line_break
 
-    def plot(self, x_axis=0, y_axes=None, semilog=False, func=lambda x: x, **kwargs):
+    def plot(self, x_clmn=0, y_clmn=None, xscale='linear', yscale='linear', func=lambda x: x,
+             **kwargs):
         """
         Plots the data. This method should not be called from a thread.
         The column containing the x-axis data is specified (defaults to first
@@ -482,55 +483,73 @@ class ResultTable(object):
         Column titles are taken as legend labels. `plot` tries to determine a
         common y-axis unit and name from all given labels.
 
-        :param x_axis: Integer or name of column containing the x-axis data.
-        :param y_axes: List of column numbers or column_names for y-axis data. If not
+        :param x_clmn: Integer or name of column containing the x-axis data.
+        :param y_clmn: List of column numbers or column_names for y-axis data. If not
             given, all columns will be plotted (excluding the x-axis column).
-        :param bool semilog: Turns semilog-scale on or off.
+        :param str xscale: Scale of x-axis. Can be: {"linear", "log", "symlog", "logit", ...}
+        :param str yscale: Scale of y-axis. Can be: {"linear", "log", "symlog", "logit", ...}
         :param func: Function to apply to y-data before plotting.
         """
         if self.ncols == 0:
             return
 
-        if not isinstance(x_axis, int):
-            x_axis = self.column_names.index(x_axis)
+        if not isinstance(x_clmn, int):
+            x_clmn = self.column_names.index(x_clmn)
 
-        xdata = self.data[:, x_axis]
+        xdata = self.data[:, x_clmn]
 
-        plt.figure()
+        fig = plt.figure()
 
-        if y_axes is None:
-            ydata = np.delete(self.data, [x_axis], axis=1)
+        ax = fig.add_subplot(111)
+
+        if y_clmn is None:
+            ydata = np.delete(self.data, [x_clmn], axis=1)
             ydata = func(ydata)
-            lines = plt.plot(xdata, ydata, **kwargs)
-            line_labels = self.column_names[0:x_axis] + self.column_names[x_axis + 1:]
-            line_units = self.column_units[0:x_axis] + self.column_units[x_axis + 1:]
-            plt.legend(lines, line_labels)
+            lines = ax.plot(xdata, ydata, **kwargs)
+            line_labels = self.column_names[0:x_clmn] + self.column_names[x_clmn + 1:]
+            line_units = self.column_units[0:x_clmn] + self.column_units[x_clmn + 1:]
+            ax.legend(lines, line_labels)
         else:
             line_labels = []
             line_units = []
-            for axis in y_axes:
-                if not isinstance(axis, int):
-                    axis = self.column_names.index(axis)
-                ydata = self.data[:, axis]
+            for c in y_clmn:
+                if not isinstance(c, int):
+                    c = self.column_names.index(c)
+                ydata = self.data[:, c]
                 ydata = func(ydata)
-                plt.plot(xdata, ydata, label=self.column_names[axis], **kwargs)
+                ax.plot(xdata, ydata, label=self.column_names[c], **kwargs)
 
-                line_labels.append(self.column_names[axis])
-                line_units.append(self.column_units[axis])
+                line_labels.append(self.column_names[c])
+                line_units.append(self.column_units[c])
 
-        plt.xlabel(str(self.titles[x_axis]))
+        ax.xlabel(str(self.titles[x_clmn]))
 
         y_label = os.path.commonprefix(line_labels)
         y_unit = os.path.commonprefix(line_units)
         if y_unit == '':
-            plt.ylabel('%s' % y_label)
+            ax.ylabel('%s' % y_label)
         else:
-            plt.ylabel(y_label + ' ' + self.UNIT_FORMAT.format(y_unit))
+            ax.ylabel(y_label + ' ' + self.UNIT_FORMAT.format(y_unit))
 
-        plt.tight_layout()
+        ax.set_xscale(xscale)
+        ax.set_yscale(yscale)
+        fig.tight_layout()
 
-        if semilog:
-            plt.semilogy()
+        self.setup_plot(fig, ax)
+
+        fig.show()
+
+        return fig, ax
+
+    def setup_plot(self, fig, ax):
+        """
+        This method does nothing by default, but can be overridden by the child
+        class in order to set up custom options for plotting.
+
+        :param fig: Matplotlib figure instance.
+        :param ax: Matplotlib axes instance.
+        """
+        pass
 
     def __repr__(self):
         titles = [str(t) for t in self.titles]
@@ -688,10 +707,10 @@ class TransistorSweepData(ResultTable):
         return set(find_numbers(self.column_title_string()))
 
     def n_steps(self):
-        return len(self.step_list())
+        return len(self.stepped_voltage_list())
 
     def plot(self, *args, **kwargs):
         def sqrt_abs(x):
             return np.sqrt(np.abs(x))
-        super(self.__class__, self).plot(semilog=True, func=np.abs, *args, **kwargs)
-        super(self.__class__, self).plot(semilog=False, func=sqrt_abs, *args, **kwargs)
+        super(self.__class__, self).plot(yscale='log', func=np.abs, *args, **kwargs)
+        super(self.__class__, self).plot(yscale='log', func=sqrt_abs, *args, **kwargs)
