@@ -556,7 +556,15 @@ class Keithley2600(Keithley2600Base):
     @staticmethod
     def readBuffer(buffer):
         """
-        Reads buffer values and returns them as a list.
+        Reads buffer values and returns them as a list. This can be done more
+        quickly by "readings = buffer.readings" but such a call may fail due to
+        I/O limitations of the keithley if the readings list is too long.
+
+        Args:
+            buffer: A keithley buffer instance.
+
+        Returns:
+            A list with buffer readings.
         """
         list_out = []
         for i in range(0, int(buffer.n)):
@@ -565,7 +573,9 @@ class Keithley2600(Keithley2600Base):
         return list_out
 
     def clearBuffer(self, smu):
-        """Clears buffer of a given smu."""
+        """
+        Clears buffer of a given smu. This function has been deprecated.
+        """
 
         raise DeprecationWarning(
             "'clearBuffer()' has beeen deprecated. Please use 'buffer.clear()' and " +
@@ -573,14 +583,15 @@ class Keithley2600(Keithley2600Base):
             "such as 'k.smua.nvbuffer1'.")
 
     def setIntegrationTime(self, smu, tInt):
-        """Sets the integration time of SMU for measurements in sec.
+        """
+        Sets the integration time of SMU for measurements in sec.
 
         Args:
-            smu (keithley smu object): Smu set apply settings.
+            smu: A keithley smu instance.
             tInt (float): Integration time in sec. Value must be betweeen 0.001
                 and 25 power line cycles.
         Raises:
-            ValueError for too short or long integration times.
+            ValueError for too short or too long integration times.
         """
 
         self._check_smu(smu)

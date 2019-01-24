@@ -22,6 +22,18 @@ if not PY2:
     basestring = str  # in Python 3
 
 
+def find_numbers(string):
+    """
+    Finds all numbers in a string and returns them in a list.
+    """
+
+    fmt = r'[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
+    string_list = re.findall(fmt, string)
+    float_list = [float(s) for s in string_list]
+
+    return float_list
+
+
 class ColumnTitle(object):
     """
     Object to hold a column title.
@@ -87,7 +99,7 @@ class ResultTable(object):
     DELIMITER = '\t'
     PARAM_DELIMITER = ': '
     LINE_BREAK = '\n'
-    UNIT_FORMAT = '/{}'
+    UNIT_FORMAT = '[{}]'
 
     def __init__(self, names=None, units=None, data=None, params=None):
         """
@@ -346,7 +358,12 @@ class ResultTable(object):
                 try:
                     params[key] = float(value)
                 except ValueError:
-                    params[key] = value
+                    if value in ['True', 'true']:
+                        params[key] = True
+                    elif value in ['False', 'false']:
+                        params[key] = False
+                    else:
+                        params[key] = value
 
         return params
 
@@ -455,7 +472,7 @@ class ResultTable(object):
         self.DELIMITER = old_delim
         self.LINE_BREAK = old_line_break
 
-    def plot(self, x_axis=0, y_axes=None, semilog=False, func=lambda x: x, **kwargs):
+    def plot(self, x_clmn=0, y_clmn=None, func=lambda x: x, **kwargs):
         """
         Plots the data. This method should not be called from a thread.
         The column containing the x-axis data is specified (defaults to first
@@ -465,55 +482,70 @@ class ResultTable(object):
         Column titles are taken as legend labels. `plot` tries to determine a
         common y-axis unit and name from all given labels.
 
-        :param x_axis: Integer or name of column containing the x-axis data.
-        :param y_axes: List of column numbers or column_names for y-axis data. If not
+        :param x_clmn: Integer or name of column containing the x-axis data.
+        :param y_clmn: List of column numbers or column_names for y-axis data. If not
             given, all columns will be plotted (excluding the x-axis column).
-        :param bool semilog: Turns semilog-scale on or off.
         :param func: Function to apply to y-data before plotting.
         """
         if self.ncols == 0:
             return
 
-        if not isinstance(x_axis, int):
-            x_axis = self.column_names.index(x_axis)
+        if not isinstance(x_clmn, int):
+            x_clmn = self.column_names.index(x_clmn)
 
-        xdata = self.data[:, x_axis]
+        xdata = self.data[:, x_clmn]
 
-        plt.figure()
+        fig = plt.figure()
 
-        if y_axes is None:
-            ydata = np.delete(self.data, [x_axis], axis=1)
+        ax = fig.add_subplot(111)
+
+        if y_clmn is None:
+            ydata = np.delete(self.data, [x_clmn], axis=1)
             ydata = func(ydata)
-            lines = plt.plot(xdata, ydata, **kwargs)
-            line_labels = self.column_names[0:x_axis] + self.column_names[x_axis + 1:]
-            line_units = self.column_units[0:x_axis] + self.column_units[x_axis + 1:]
-            plt.legend(lines, line_labels)
+            lines = ax.plot(xdata, ydata, **kwargs)
+            line_labels = self.column_names[0:x_clmn] + self.column_names[x_clmn + 1:]
+            line_units = self.column_units[0:x_clmn] + self.column_units[x_clmn + 1:]
+            ax.legend(lines, line_labels)
         else:
             line_labels = []
             line_units = []
-            for axis in y_axes:
-                if not isinstance(axis, int):
-                    axis = self.column_names.index(axis)
-                ydata = self.data[:, axis]
+            for c in y_clmn:
+                if not isinstance(c, int):
+                    c = self.column_names.index(c)
+                ydata = self.data[:, c]
                 ydata = func(ydata)
-                plt.plot(xdata, ydata, label=self.column_names[axis], **kwargs)
+                ax.plot(xdata, ydata, label=self.column_names[c], **kwargs)
 
-                line_labels.append(self.column_names[axis])
-                line_units.append(self.column_units[axis])
+                line_labels.append(self.column_names[c])
+                line_units.append(self.column_units[c])
 
-        plt.xlabel(str(self.titles[x_axis]))
+        ax.set_xlabel(str(self.titles[x_clmn]))
 
         y_label = os.path.commonprefix(line_labels)
         y_unit = os.path.commonprefix(line_units)
         if y_unit == '':
-            plt.ylabel('%s' % y_label)
+            ax.set_ylabel('%s' % y_label)
         else:
-            plt.ylabel(y_label + ' ' + self.UNIT_FORMAT.format(y_unit))
+            ax.set_ylabel(y_label + ' ' + self.UNIT_FORMAT.format(y_unit))
 
-        plt.tight_layout()
+        ax.autoscale(enable=True, axis='x', tight=True)
+        fig.tight_layout()
 
-        if semilog:
-            plt.semilogy()
+        self.setup_plot(fig, ax)
+
+        fig.show()
+
+        return fig, ax
+
+    def setup_plot(self, fig, ax):
+        """
+        This method does nothing by default, but can be overridden by the child
+        class in order to set up custom options for plotting.
+
+        :param fig: Matplotlib figure instance.
+        :param ax: Matplotlib axes instance.
+        """
+        pass
 
     def __repr__(self):
         titles = [str(t) for t in self.titles]
@@ -642,7 +674,8 @@ class TransistorSweepData(ResultTable):
     `TransistorSweepData` inherits from `ResultTable` and overrides the plot method.
 
     The following additional properties are accessible:
-        * sweep_type: String that describes the sweep type, can be 'transfer' or 'output'.
+        * sweep_type: String that describes the sweep type, can be 'transfer'
+          or 'output'.
 
     The following new methods are defined:
         * step_list: Returns list of stepped voltages.
@@ -657,39 +690,29 @@ class TransistorSweepData(ResultTable):
     def sweep_type(self, value):
         self.params['sweep_type'] = value
 
-    def step_list(self):
+    def stepped_voltage_list(self):
         """
-        Get a list of stepped voltages transfer / output characteristics. This returns
-        a list of drain voltages for a transfer data and gate voltages for output data.
+        Get voltage steps of transfer / output characteristics. This returns
+        the drain voltages steps for transfer curve data and gate voltage steps
+        for output curve data.
 
-        :return: List voltage steps in transfer / output characteristics.
-        :rtype: list
+        :return: Voltage steps in transfer / output characteristics.
+        :rtype: set
         """
 
-        voltages = []
-
-        for name in self.column_names:
-            voltages.append(self._find_numbers(name))
-
-        return voltages
+        return set(find_numbers(self.column_title_string()))
 
     def n_steps(self):
-        return len(self.step_list())
+        return len(self.stepped_voltage_list())
 
     def plot(self, *args, **kwargs):
         def sqrt_abs(x):
             return np.sqrt(np.abs(x))
-        super(self.__class__, self).plot(semilog=True, func=np.abs, *args, **kwargs)
-        super(self.__class__, self).plot(semilog=False, func=sqrt_abs, *args, **kwargs)
+        fig, ax = super(self.__class__, self).plot(func=np.abs, *args, **kwargs)
+        ax.set_yscale('log')
+        ax.set_ylabel('I [A]')
 
-    @staticmethod
-    def _find_numbers(string):
-        """
-        Finds all numbers in a string and returns them in a list.
-        """
-
-        fmt = r'[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
-        string_list = re.findall(fmt, string)
-        float_list = [float(s) for s in string_list]
-
-        return float_list
+        fig, ax = super(self.__class__, self).plot(func=sqrt_abs, *args, **kwargs)
+        ax.set_yscale('linear')
+        ax.set_ylabel('$\mathregular{I^{1/2}}$ ' +
+                      self.UNIT_FORMAT.format('$\mathregular{A^{1/2}}$'))
