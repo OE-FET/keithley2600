@@ -414,8 +414,8 @@ class ResultTable(object):
         base_name = os.path.splitext(filename)[0]
         filename = base_name + ext
 
-        np.savetxt(filename, self.data, fmt='%.9E', delimiter=self.DELIMITER,
-                   newline=self.LINE_BREAK, header=self.header(), comments=self.COMMENT)
+        np.savetxt(filename, self.data, delimiter=self.DELIMITER, newline=self.LINE_BREAK,
+                   header=self.header(), comments=self.COMMENT)
 
     def save_csv(self, filename):
         """

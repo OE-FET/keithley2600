@@ -1146,7 +1146,7 @@ class Keithley2600(Keithley2600Base):
         return rt
 
     def outputMeasurement(self, smu_gate, smu_drain, vd_start, vd_stop, vd_step,
-                          vg_list, tInt, delay, pulsed):
+                          vg_list, t_int, delay, pulsed):
         """
         Records an output curve and saves the results in a TransistorSweepData
         instance.
@@ -1160,7 +1160,7 @@ class Keithley2600(Keithley2600Base):
             vd_stop (float): End voltage of output sweep in Volts.
             vd_step (float): Voltage step size for output sweep in Volts.
             vg_list (list): List of gate voltage steps in Volts.
-            tInt (float): Integration time in sec for every data point.
+            t_int (float): Integration time in sec for every data point.
             delay (float): Settling time in sec before every measurement. Set
                 to -1 for for automatic delay.
             pulsed (bool): True or False for pulsed or conteous measurements.
@@ -1197,7 +1197,7 @@ class Keithley2600(Keithley2600Base):
 
             # conduct forward sweep
             v_d, i_d, v_g, i_g = self.voltageSweepDualSMU(
-                    smu_drain, smu_gate, sweeplist_drain, sweeplist_gate, tInt, delay, pulsed
+                    smu_drain, smu_gate, sweeplist_drain, sweeplist_gate, t_int, delay, pulsed
                     )
 
             if not self.abort_event.is_set():
