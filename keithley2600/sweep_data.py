@@ -720,6 +720,6 @@ class TransistorSweepData(ResultTable):
             ax.set_ylabel('$\mathregular{I^{1/2}}$ ' +
                           self.UNIT_FORMAT.format('$\mathregular{A^{1/2}}$'))
         elif self.sweep_type == 'output':
-            fig, ax = super(self.__class__, self).plot(*args, **kwargs)
+            fig, ax = super(self.__class__, self).plot(func=np.abs, *args, **kwargs)
             ax.set_yscale('linear')
             ax.set_ylabel('I [A]')
