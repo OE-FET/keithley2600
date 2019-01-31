@@ -24,7 +24,7 @@ if not PY2:
 
 def find_numbers(string):
     """
-    Finds all numbers in a string and returns them in a list.
+    Find all numbers in a string and return them in a list.
     """
 
     fmt = r'[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
@@ -215,10 +215,11 @@ class ResultTable(object):
         """
         Appends a row to data array.
 
-        :param data: Interable with the same number of elements as columns in the data array.
+        :param data: Iterable with the same number of elements as columns in the data
+            array.
         """
         if not len(data) == self.ncols:
-            raise ValueError('Length must match number of columns: {0}'.format(self.ncols))
+            raise ValueError('Length must match number of columns: %s' % self.ncols)
 
         if self.data is None:
             self.data = np.array([data])
@@ -241,7 +242,7 @@ class ResultTable(object):
         """
         Appends a new column to data array.
 
-        :param data: Interable with the same number of elements as rows in the data array.
+        :param data: Iterable with the same number of elements as rows in the data array.
         :param str name: Column name.
         :param str unit: Unit of values in new column.
         """
@@ -308,7 +309,8 @@ class ResultTable(object):
         assert unique not in self.UNIT_FORMAT
 
         regexp_name = '(?P<name>.*) '
-        regexp_unit = re.escape(self.UNIT_FORMAT.format(unique)).replace(unique, '(?P<unit>.*)')
+        regexp_unit = re.escape(self.UNIT_FORMAT.format(unique)).replace(unique,
+                                                                         '(?P<unit>.*)')
 
         strings = title_string.split(self.DELIMITER)
 
@@ -319,14 +321,15 @@ class ResultTable(object):
             if m is None:
                 titles.append(ColumnTitle(s, unit_fmt=self.UNIT_FORMAT))
             else:
-                titles.append(ColumnTitle(m.group('name'), m.group('unit'), self.UNIT_FORMAT))
+                titles.append(ColumnTitle(m.group('name'), m.group('unit'),
+                                          self.UNIT_FORMAT))
 
         return titles
 
     def param_string(self):
         """
-        Creates string containing all parametrers from `params` as key, value pairs in separate
-        lines marked as comments.
+        Creates string containing all parameters from `params` as key, value pairs in
+        separate lines marked as comments.
 
         :return: Parameter string
         :rtype: str
@@ -369,8 +372,8 @@ class ResultTable(object):
 
     def header(self):
         """
-        Outputs full header with comment section containing measurment parameters and column titles
-        including column_units.
+        Outputs full header with comment section containing measurement parameters and
+        column titles including column_units.
 
         :return: Header as string.
         :rtype: str
@@ -383,7 +386,8 @@ class ResultTable(object):
 
     def parse_header(self, header):
         """
-        Parses header. Returns list of ColumnTitle objects and measuement parameters in dictionary.
+        Parses header. Returns list of ColumnTitle objects and measurement parameters in
+        dictionary.
 
         :param str header: Header to parse
         :return: titles, params
@@ -553,7 +557,7 @@ class ResultTable(object):
                 self.__class__.__name__, str(titles))
 
 # =============================================================================
-# Dictionary compatability functions. This allows access to all columns of the
+# Dictionary compatibility functions. This allows access to all columns of the
 # table with their names as keys.
 # =============================================================================
 
@@ -578,7 +582,7 @@ class ResultTable(object):
     def __getitem__(self, key):
         """
         Gets values in column with name `key`.
-        :param str key: Columnn name.
+        :param str key: Column name.
         :return: Column content as numpy array.
         """
 
@@ -593,7 +597,7 @@ class ResultTable(object):
         """
         Sets values in column with name `key`.
 
-        :param str key: Columnn name.
+        :param str key: Column name.
         :param value: Iterable containing column values.
         """
         if not isinstance(key, str):
@@ -670,7 +674,7 @@ class IVSweepData(ResultTable):
 
 class TransistorSweepData(ResultTable):
     """
-    Class to handle, store and load transfer and ouput characteristic data of FETs.
+    Class to handle, store and load transfer and output characteristic data of FETs.
     `TransistorSweepData` inherits from `ResultTable` and overrides the plot method.
 
     The following additional properties are accessible:
@@ -717,8 +721,8 @@ class TransistorSweepData(ResultTable):
 
             fig, ax = super(self.__class__, self).plot(func=sqrt_abs, *args, **kwargs)
             ax.set_yscale('linear')
-            ax.set_ylabel('$\mathregular{I^{1/2}}$ ' +
-                          self.UNIT_FORMAT.format('$\mathregular{A^{1/2}}$'))
+            ax.set_ylabel('$\\mathregular{I^{1/2}}$ ' +
+                          self.UNIT_FORMAT.format('$\\mathregular{A^{1/2}}$'))
         elif self.sweep_type == 'output':
             fig, ax = super(self.__class__, self).plot(func=np.abs, *args, **kwargs)
             ax.set_yscale('linear')
