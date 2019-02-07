@@ -31,7 +31,7 @@ setup(name="keithley2600",
       packages=find_packages(),
       install_requires=[
           'PyVISA',
-          'pyvisa-py>=0.3.1',
+          'pyvisa-py',
           'setuptools',
           'numpy',
           'matplotlib',
