@@ -13,9 +13,9 @@ There are currently no checks for allowed arguments in the base commands. See th
 for all available commands and arguments. Almost all remotely accessible commands can be
 used with this driver. Not supported are:
 
-* tspnet.execute() # conflicts with Python's execute command
-* lan.trigger[N].connected # conflicts with the connected attribute of Keithley2600Base
-* All Keithley IV sweep commands. We implement our own in the Keithley2600 class.
+* `tspnet.execute()`: conflicts with Python's execute command
+* `lan.trigger[N].connected`: conflicts with the connected attribute of `Keithley2600Base`.
+* All Keithley IV sweep commands. We implement our own in the `Keithley2600` class.
 
 *Usage:*
 
