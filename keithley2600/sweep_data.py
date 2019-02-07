@@ -667,13 +667,9 @@ class TransistorSweepData(ResultTable):
 
     The following additional properties are accessible:
 
-    - sweep_type: String that describes the sweep type, can be 'transfer'
+    :cvar sts sweep_type: Describes the sweep type, can be 'transfer'
       or 'output'.
 
-    The following new methods are defined:
-
-    - step_list: Returns list of stepped voltages.
-    - n_steps: Returns number of fixed voltage steps.
     """
 
     @property
