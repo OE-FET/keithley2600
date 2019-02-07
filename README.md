@@ -1,5 +1,5 @@
 # keithley2600
-Full Python driver for the Keithley 2600 series source measurement units.
+A full Python driver for the Keithley 2600 series of source measurement units.
 
 ## About
 Keithley driver with access to base functions and higher level functions such as IV

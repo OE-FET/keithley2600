@@ -24,7 +24,9 @@ if not PY2:
 
 def find_numbers(string):
     """
-    Find all numbers in a string and return them in a list.
+    Finds all numbers in a string and return them in a list.
+
+    :param str string: String to search.
     """
 
     fmt = r'[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
@@ -38,20 +40,13 @@ class ColumnTitle(object):
     """
     Object to hold a column title.
 
-    :ivar name: String containing column name.
-    :ivar unit: String containing column unit.
-    :ivar unit_fmt: Formatting directive for column_units when generating
+    :ivar str name: String containing column name.
+    :ivar str unit: String containing column unit.
+    :ivar str unit_fmt: Formatting directive for column_units when generating
         string representation.
     """
 
     def __init__(self, name, unit=None, unit_fmt='[{}]'):
-        """
-
-        :param str name: String containing column name.
-        :param str unit: String containing column unit.
-        :param str unit_fmt: Formatting directive for column_units when
-            generating string representation.
-        """
 
         self.name = name
         self.unit = '' if unit is None else unit
@@ -84,15 +79,10 @@ class ResultTable(object):
     can have column_units. It is possible to access columns by their
     names in a dictionary type notation.
 
-    :cvar COMMENT: The string used to identify a comment (default: '# ')
-    :cvar DELIMITER: The string used to delimit the data (default: '\t')
-    :cvar PARAM_DELIMITER: The string used to delimit (key, value) pairs (default: ': ')
-    :cvar LINE_BREAK: The string used for line breaks (default: '\n' )
-    :cvar UNIT_FORMAT: The format used to display column_units (default: '/{}')
-
-    :ivar data: numpy array holding the data
-    :ivar titles: list of column title objects
-    :ivar params: dictionary of measurement parameters
+    :ivar list names: List of column names (strings).
+    :ivar list units: List of column units (strings).
+    :ivar data: Numpy array holding the data.
+    :ivar dict params: Dictionary of measurement parameters.
     """
 
     COMMENT = '# '
@@ -102,12 +92,6 @@ class ResultTable(object):
     UNIT_FORMAT = '[{}]'
 
     def __init__(self, names=None, units=None, data=None, params=None):
-        """
-        :param list names: List of column column_names (strings).
-        :param list units: List of column column_units (strings).
-        :param data: Numpy array holding the data.
-        :param dict params: Dictionary of measurement parameters.
-        """
 
         if names is None:
             names = []
@@ -168,11 +152,11 @@ class ResultTable(object):
 
     def has_unit(self, col):
         """
-        Returns `True` if column_units of column `col` have been set, `False` otherwise.
+        Returns `True` if column_units of column ``col`` have been set, `False` otherwise.
 
         :param col: Column index or name.
 
-        :return: `True` if column_units have been set, `False` otherwise.
+        :returns: `True` if column_units have been set, `False` otherwise.
         :rtype: bool
         """
         if not isinstance(col, int):
@@ -182,10 +166,10 @@ class ResultTable(object):
 
     def get_unit(self, col):
         """
-        Get unit of column `col`.
+        Get unit of column ``col``.
 
         :param col: Column index or name (int or str)
-        :return: Unit string.
+        :returns: Unit string.
         :rtype: str
         """
         if not isinstance(col, int):
@@ -195,7 +179,7 @@ class ResultTable(object):
 
     def set_unit(self, col, unit):
         """
-        Set unit of column `col`.
+        Set unit of column ``col``.
 
         :param col: Column index or name.
         :param str unit: Unit string.
@@ -287,7 +271,7 @@ class ResultTable(object):
         """
         Creates column title string.
 
-        :return: String with column titles from column column_names and column_units.
+        :returns: String with column titles.
         :rtype: str
         """
         column_titles = [str(title) for title in self.titles]
@@ -295,12 +279,11 @@ class ResultTable(object):
 
     def parse_column_title_string(self, title_string):
         """
-        Parses a column title string and returns column column_names and column_units.
+        Parses a column title string.
 
         :param str title_string: String to parse.
 
-        :return: List of ColumnTitle objects.
-        :rtype: list
+        :returns: List of :class:`ColumnTitle` instances.
         """
 
         title_string = title_string.lstrip(self.COMMENT)
@@ -328,10 +311,10 @@ class ResultTable(object):
 
     def param_string(self):
         """
-        Creates string containing all parameters from `params` as key, value pairs in
-        separate lines marked as comments.
+        Creates string containing all parameters from :attr:`params` as key, value pairs
+        in separate lines marked as comments.
 
-        :return: Parameter string
+        :returns: Parameter string.
         :rtype: str
         """
         lines = []
@@ -345,7 +328,7 @@ class ResultTable(object):
         """
         Parses comment section of header to extract measurement parameters
 
-        :return: Dictionary containing measurement parameters.
+        :returns: Dictionary containing measurement parameters.
         :rtype: dict
         """
 
@@ -373,9 +356,9 @@ class ResultTable(object):
     def header(self):
         """
         Outputs full header with comment section containing measurement parameters and
-        column titles including column_units.
+        column titles including units.
 
-        :return: Header as string.
+        :returns: Header as string.
         :rtype: str
         """
 
@@ -386,11 +369,12 @@ class ResultTable(object):
 
     def parse_header(self, header):
         """
-        Parses header. Returns list of ColumnTitle objects and measurement parameters in
-        dictionary.
+        Parses header. Returns list of :class:`ColumnTitle` objects and measurement
+        parameters in dictionary.
 
-        :param str header: Header to parse
-        :return: titles, params
+        :param str header: Header to parse.
+        :returns: Tuple with titles and params.
+        :rtype: (str, str)
         """
         header = header.strip(self.LINE_BREAK)
         last_line = header.split(self.LINE_BREAK)[-1]
@@ -403,9 +387,10 @@ class ResultTable(object):
     def save(self, filename, ext='.txt'):
         """
         Saves the result table to a text file. The file format is:
-            * The header contains all measurement parameters as comments.
-            * Column titles contain column_names and column_units of measured quantity.
-            * Delimited columns contain the data.
+
+        - The header contains all measurement parameters as comments.
+        - Column titles contain column_names and column_units of measured quantity.
+        - Delimited columns contain the data.
 
         Files are saved with the specified extension (default: .txt). The
         classes default delimiters are used to separate columns and rows.
@@ -424,9 +409,10 @@ class ResultTable(object):
     def save_csv(self, filename):
         """
         Saves the result table to a csv file. The file format is:
-            * The header contains all measurement parameters as comments.
-            * Column titles contain column_names and column_units of measured quantity.
-            * Comma delimited columns contain the data.
+
+        - The header contains all measurement parameters as comments.
+        - Column titles contain column_names and column_units of measured quantity.
+        - Comma delimited columns contain the data.
 
         Files are saved with the extension '.csv' and other extensions are
         overwritten.
@@ -543,7 +529,7 @@ class ResultTable(object):
 
     def setup_plot(self, fig, ax):
         """
-        This method does nothing by default, but can be overridden by the child
+        This method does nothing by default, but can be overwritten by the child
         class in order to set up custom options for plotting.
 
         :param fig: Matplotlib figure instance.
@@ -569,9 +555,9 @@ class ResultTable(object):
 
     def values(self):
         """
-        Returns list of all columns.
+        Returns a list of all columns.
 
-        :return: List of columns as numpy arrays.
+        :returns: List of columns as numpy arrays.
         :rtype: list
         """
         return [self.get_column(i) for i in range(self.ncols)]
@@ -583,7 +569,7 @@ class ResultTable(object):
         """
         Gets values in column with name `key`.
         :param str key: Column name.
-        :return: Column content as numpy array.
+        :returns: Column content as numpy array.
         """
 
         if key not in self.column_names:
@@ -611,6 +597,7 @@ class ResultTable(object):
     def __delitem__(self, key):
         """
         Deletes column with name `key`.
+
         :param str key:
         """
         i = self.column_names.index(key)
@@ -675,15 +662,18 @@ class IVSweepData(ResultTable):
 class TransistorSweepData(ResultTable):
     """
     Class to handle, store and load transfer and output characteristic data of FETs.
-    `TransistorSweepData` inherits from `ResultTable` and overrides the plot method.
+    :class:`TransistorSweepData` inherits from :class:`ResultTable` and overrides the
+    plot method.
 
     The following additional properties are accessible:
-        * sweep_type: String that describes the sweep type, can be 'transfer'
-          or 'output'.
+
+    - sweep_type: String that describes the sweep type, can be 'transfer'
+      or 'output'.
 
     The following new methods are defined:
-        * step_list: Returns list of stepped voltages.
-        * n_steps: Returns number of fixed voltage steps.
+
+    - step_list: Returns list of stepped voltages.
+    - n_steps: Returns number of fixed voltage steps.
     """
 
     @property
@@ -700,7 +690,7 @@ class TransistorSweepData(ResultTable):
         the drain voltages steps for transfer curve data and gate voltage steps
         for output curve data.
 
-        :return: Voltage steps in transfer / output characteristics.
+        :returns: Voltage steps in transfer / output characteristics.
         :rtype: set
         """
 
