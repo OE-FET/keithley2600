@@ -81,33 +81,33 @@ class ResultTable(object):
 
     :Example:
 
-    Create a :class:`ResultTable` to hold current-vs-time data, for instance for
-    a bias stress test of a device:
+        Create a :class:`ResultTable` to hold current-vs-time data, for instance for
+        a bias stress test of a device:
 
-    >>> import time
-    >>> import numpy as np
-    >>> from  keithley2600 import ResultTable
-    >>> # create dictionary of relevant measurement parameters
-    >>> params = {'Voltage': 10, 'Recorded': time.asctime()}
-    >>> # create ResultTable with two columns
-    >>> table = ResultTable(names=['Time', 'Current'], units=['sec', 'A'], params=params)
+        >>> import time
+        >>> import numpy as np
+        >>> from  keithley2600 import ResultTable
+        >>> # create dictionary of relevant measurement parameters
+        >>> par_dict = {'Voltage': 10, 'Recorded': time.asctime()}
+        >>> # create ResultTable with two columns
+        >>> table = ResultTable(['Time', 'Current'], units=['sec', 'A'], params=par_dict)
 
-    Create a :class:`Keithley2600` instance and record some data:
+        Create a :class:`Keithley2600` instance and record some data:
 
-    >>> from  keithley2600 import Keithley2600
-    >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')  # connect to keithley
-    >>> k.applyVoltage(k.smua, 10)  # apply a voltage
-    >>> for t in range(120):  # measure each second, for 2 min
-    ...     i = k.smua.measure.i()
-    ...     table.append_row([t, i])  # add values to ResultTable
-    ...     time.sleep(1)
+        >>> from  keithley2600 import Keithley2600
+        >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')  # connect to keithley
+        >>> k.applyVoltage(k.smua, 10)  # apply a voltage
+        >>> for t in range(120):  # measure each second, for 2 min
+        ...     i = k.smua.measure.i()
+        ...     table.append_row([t, i])  # add values to ResultTable
+        ...     time.sleep(1)
 
-    Save and plot the recorded data:
+        Save and plot the recorded data:
 
-    >>> table.save('~/Desktop/stress_test.txt')  # save the ResultTable
-    >>> table.plot()  # plot the data
-    >>> table['Current']  # look at the data
-    array([0.01, ..., 0.01])
+        >>> table.save('~/Desktop/stress_test.txt')  # save the ResultTable
+        >>> table.plot()  # plot the data
+        >>> table['Current']  # look at the data
+        array([0.01, ..., 0.01])
 
     """
 
@@ -580,12 +580,6 @@ class ResultTable(object):
         return self.__contains__(key)
 
     def values(self):
-        """
-        Returns a list of all columns.
-
-        :returns: List of columns as numpy arrays.
-        :rtype: list
-        """
         return [self.get_column(i) for i in range(self.ncols)]
 
     def items(self):
@@ -655,7 +649,10 @@ class IVSweepData(ResultTable):
     :class:`IVSweepData` inherits form :class:`ResultTable` but provides
     the fixed columns 'Voltage' and 'Current' with units 'V' and 'A', respectively.
 
+    The following attributes are new or overwritten:
+
     :cvar str sweep_type: Describes the sweep type, defaults to 'iv'.
+
     """
 
     sweep_type = 'iv'
@@ -695,10 +692,7 @@ class TransistorSweepData(ResultTable):
     :class:`TransistorSweepData` inherits from :class:`ResultTable` and overrides the
     plot method.
 
-    The following additional properties are accessible:
-
-    :cvar str sweep_type: Describes the sweep type, should be 'transfer'
-      or 'output'.
+    The following attributes are new or overwritten:
     """
 
     @property
