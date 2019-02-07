@@ -23,11 +23,6 @@ if not PY2:
 
 
 def find_numbers(string):
-    """
-    Finds all numbers in a string and return them in a list.
-
-    :param str string: String to search.
-    """
 
     fmt = r'[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
     string_list = re.findall(fmt, string)
@@ -42,7 +37,7 @@ class ColumnTitle(object):
 
     :ivar str name: String containing column name.
     :ivar str unit: String containing column unit.
-    :ivar str unit_fmt: Formatting directive for column_units when generating
+    :ivar str unit_fmt: Formatting directive for units when generating
         string representation.
     """
 
@@ -75,14 +70,45 @@ class ResultTable(object):
     Class that holds measurement data. All data is stored internally in a numpy
     array.
 
-    Columns must have column_names, to designate the measurement variable, and
-    can have column_units. It is possible to access columns by their
+    Columns must have names, to designate the measurement variable, and
+    can have units. It is possible to access columns by their
     names in a dictionary type notation.
 
     :ivar list names: List of column names (strings).
     :ivar list units: List of column units (strings).
     :ivar data: Numpy array holding the data.
     :ivar dict params: Dictionary of measurement parameters.
+
+    :Example:
+
+    Create a :class:`ResultTable` to hold current-vs-time data, for instance for
+    a bias stress test of a device:
+
+    >>> import time
+    >>> import numpy as np
+    >>> from  keithley2600 import ResultTable
+    >>> # create dictionary of relevant measurement parameters
+    >>> params = {'Voltage': 10, 'Recorded': time.asctime()}
+    >>> # create ResultTable with two columns
+    >>> table = ResultTable(names=['Time', 'Current'], units=['sec', 'A'], params=params)
+
+    Create a :class:`Keithley2600` instance and record some data:
+
+    >>> from  keithley2600 import Keithley2600
+    >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')  # connect to keithley
+    >>> k.applyVoltage(k.smua, 10)  # apply a voltage
+    >>> for t in range(120):  # measure each second, for 2 min
+    ...     i = k.smua.measure.i()
+    ...     table.append_row([t, i])  # add values to ResultTable
+    ...     time.sleep(1)
+
+    Save and plot the recorded data:
+
+    >>> table.save('~/Desktop/stress_test.txt')  # save the ResultTable
+    >>> table.plot()  # plot the data
+    >>> table['Current']  # look at the data
+    array([0.01, ..., 0.01])
+
     """
 
     COMMENT = '# '
@@ -267,7 +293,7 @@ class ResultTable(object):
         """
         return self.data[:, i]
 
-    def column_title_string(self):
+    def _column_title_string(self):
         """
         Creates column title string.
 
@@ -363,7 +389,7 @@ class ResultTable(object):
         """
 
         params_string = self._param_string()
-        titles_string = self.column_title_string()
+        titles_string = self._column_title_string()
 
         return self.LINE_BREAK.join([params_string, titles_string])
 
@@ -626,6 +652,10 @@ class ResultTable(object):
 class IVSweepData(ResultTable):
     """
     Class to store, load, save, and plot data from a simple IV sweep.
+    :class:`IVSweepData` inherits form :class:`ResultTable` but provides
+    the fixed columns 'Voltage' and 'Current' with units 'V' and 'A', respectively.
+
+    :cvar str sweep_type: Describes the sweep type, defaults to 'iv'.
     """
 
     sweep_type = 'iv'
@@ -651,8 +681,8 @@ class IVSweepData(ResultTable):
         """
         Appends list-like objects with voltage and current values to data.
 
-        :param v: List (or list-like object) containing voltages.
-        :param i: List (or list-like object) containing currents.
+        :param v: List (or list-like object) containing voltage values.
+        :param i: List (or list-like object) containing current values.
         """
 
         assert len(i) == len(v)
@@ -667,9 +697,8 @@ class TransistorSweepData(ResultTable):
 
     The following additional properties are accessible:
 
-    :cvar sts sweep_type: Describes the sweep type, can be 'transfer'
+    :cvar str sweep_type: Describes the sweep type, should be 'transfer'
       or 'output'.
-
     """
 
     @property
@@ -690,12 +719,25 @@ class TransistorSweepData(ResultTable):
         :rtype: set
         """
 
-        return set(find_numbers(self.column_title_string()))
+        return set(find_numbers(self._column_title_string()))
 
     def n_steps(self):
+        """
+        Gets the number of steps in transfer or output curve.
+
+        :returns: Number of drain voltage steps for transfer curves or number of
+            gate voltage steps for output curves.
+        :rtype: int
+        """
         return len(self.stepped_voltage_list())
 
     def plot(self, *args, **kwargs):
+        """
+        Plots the transfer or output curves. Overrides :meth:`ResultTable.plot`.
+        Absolute values are plotted, on a linear scale for output characteristics
+        and a logarithmic scale for transfer characteristics. All arguments are passed
+        on to :meth:`ResultTable.plot`.
+        """
 
         def sqrt_abs(x):
             return np.sqrt(np.abs(x))
