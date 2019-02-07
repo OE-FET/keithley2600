@@ -6,6 +6,8 @@
 Welcome to keithley2600's documentation
 =======================================
 
+This documentation provides both a quick introduction to keithley2600 and a detailed reference of the API:
+
 .. toctree::
    :maxdepth: 2
 

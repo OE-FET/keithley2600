@@ -8,3 +8,5 @@ Classes to hold sweep results
 
 .. automodule:: sweep_data
    :members:
+   :show-inheritance:
+   

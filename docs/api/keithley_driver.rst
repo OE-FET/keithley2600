@@ -8,3 +8,5 @@ Keithley driver
 
 .. automodule:: keithley_driver
    :members:
+   :show-inheritance:
+   
