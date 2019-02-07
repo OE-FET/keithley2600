@@ -324,10 +324,9 @@ class Keithley2600Base(MagicClass):
     :ivar kwargs: Keyword arguments passed on to the visa connection, for instance
         baude-rate or timeout. If not given, reasonable defaults will be used.
 
-    .. warning::
+    .. note::
 
-        There are currently no checks for allowed arguments in the base
-        commands. See the Keithley 2600 reference manual for all available
+        See the Keithley 2600 reference manual for all available
         commands and arguments. Almost all remotely accessible commands can be
         used with this driver. NOT SUPPORTED ARE:
 
@@ -506,7 +505,7 @@ class Keithley2600(Keithley2600Base):
     :ivar kwargs: Keyword arguments passed on to the visa connection, for instance
         baude-rate or timeout. If not given, reasonable defaults will be used.
 
-    .. warning::
+    .. note::
 
         There are currently no checks for allowed arguments in the base
         commands. See the Keithley 2600 reference manual for all available

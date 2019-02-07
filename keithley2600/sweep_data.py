@@ -277,7 +277,7 @@ class ResultTable(object):
         column_titles = [str(title) for title in self.titles]
         return self.DELIMITER.join(column_titles)
 
-    def parse_column_title_string(self, title_string):
+    def _parse_column_title_string(self, title_string):
         """
         Parses a column title string.
 
@@ -309,7 +309,7 @@ class ResultTable(object):
 
         return titles
 
-    def param_string(self):
+    def _param_string(self):
         """
         Creates string containing all parameters from :attr:`params` as key, value pairs
         in separate lines marked as comments.
@@ -324,7 +324,7 @@ class ResultTable(object):
 
         return self.LINE_BREAK.join(lines)
 
-    def parse_param_string(self, header):
+    def _parse_param_string(self, header):
         """
         Parses comment section of header to extract measurement parameters
 
@@ -362,7 +362,7 @@ class ResultTable(object):
         :rtype: str
         """
 
-        params_string = self.param_string()
+        params_string = self._param_string()
         titles_string = self.column_title_string()
 
         return self.LINE_BREAK.join([params_string, titles_string])
@@ -379,8 +379,8 @@ class ResultTable(object):
         header = header.strip(self.LINE_BREAK)
         last_line = header.split(self.LINE_BREAK)[-1]
 
-        titles = self.parse_column_title_string(last_line)
-        params = self.parse_param_string(header)
+        titles = self._parse_column_title_string(last_line)
+        params = self._parse_param_string(header)
 
         return titles, params
 
