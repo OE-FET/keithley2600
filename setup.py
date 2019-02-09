@@ -32,9 +32,7 @@ setup(name="keithley2600",
       install_requires=[
           'PyVISA',
           'pyvisa-py',
-          'setuptools',
           'numpy',
-          'matplotlib',
       ],
       zip_safe=False,
 )

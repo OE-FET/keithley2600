@@ -13,7 +13,6 @@ import sys
 import os
 import re
 import time
-import matplotlib.pyplot as plt
 import numpy as np
 
 PY2 = sys.version[0] == '2'
@@ -503,6 +502,12 @@ class ResultTable(object):
             given, all columns will be plotted (excluding the x-axis column).
         :param func: Function to apply to y-data before plotting.
         """
+        try:
+            import matplotlib.pyplot as plt
+        except ImportError:
+            print('Warning: Install matplotlib to support plotting.')
+            return
+
         if self.ncols == 0:
             return
 

@@ -2,4 +2,3 @@ pyvisa
 pyvisa-py
 setuptools
 numpy
-matplotlib
