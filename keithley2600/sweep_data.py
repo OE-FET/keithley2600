@@ -89,12 +89,12 @@ class ResultTable(object):
         >>> # create dictionary of relevant measurement parameters
         >>> par_dict = {'Voltage': 10, 'Recorded': time.asctime()}
         >>> # create ResultTable with two columns
-        >>> table = ResultTable(['Time', 'Current'], units=['sec', 'A'], params=par_dict)
+        >>> table = ResultTable(['Time', 'Current'], ['sec', 'A'], par_dict)
 
         Create a :class:`Keithley2600` instance and record some data:
 
         >>> from  keithley2600 import Keithley2600
-        >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')  # connect to keithley
+        >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
         >>> k.applyVoltage(k.smua, 10)  # apply a voltage
         >>> for t in range(120):  # measure each second, for 2 min
         ...     i = k.smua.measure.i()
