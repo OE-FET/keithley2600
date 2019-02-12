@@ -313,7 +313,9 @@ class ResultTable(object):
 
         title_string = title_string.lstrip(self.COMMENT)
 
-        unique = '_UNIQUE_STRING_'
+        # use only alphabetic characters in `unique`
+        # otherwise `re.escape` may inadvertently escape them in Python < 3.7
+        unique = 'UNIQUESTRING'
         assert unique not in self.UNIT_FORMAT
 
         regexp_name = '(?P<name>.*) '
