@@ -1,5 +1,5 @@
 [![Documentation Status](https://readthedocs.org/projects/keithley2600/badge/?version=latest)](https://keithley2600.readthedocs.io/en/latest/?badge=latest)
-[![PyPi Release](https://img.shields.io/pypi/v/keithley2600.svg)](https://img.shields.io/pypi/v/keithley2600.svg)
+[![PyPi Release](https://img.shields.io/pypi/v/keithley2600.svg)](https://pypi.org/project/keithley2600/)
 
 # keithley2600
 A full Python driver for the Keithley 2600 series of source measurement units.
