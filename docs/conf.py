@@ -17,6 +17,9 @@ import sys
 sys.path.insert(0, os.path.abspath('.'))
 sys.path.insert(0, os.path.abspath('../keithley2600'))
 
+autodoc_mock_imports = ['pyvisa']
+
+
 # -- Project information -----------------------------------------------------
 
 project = 'keithley2600'
@@ -39,7 +42,7 @@ def get_metadata(relpath, varname):
                 return line.split('"')[1]
             elif "'" in line:
                 return line.split("'")[1]
-                
+
 
 # The short X.Y version
 version = get_metadata("../keithley2600/keithley_driver.py", "__version__")
@@ -102,7 +105,7 @@ autodoc_member_order = 'bysource'
 # The theme to use for HTML and HTML Help pages.  See the documentation for
 # a list of builtin themes.
 #
-html_theme = 'sphinx_rtd_theme' 
+html_theme = 'sphinx_rtd_theme'
 
 # Theme options are theme-specific and customize the look and feel of a theme
 # further.  For a list of options available for each theme, see the
