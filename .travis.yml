@@ -9,4 +9,14 @@ install:
   - pip install .
 # command to run tests
 script:
-- echo "skipping tests"
+  - echo "skipping tests"
+
+deploy:
+  provider: pypi
+  user: SamSchott
+  skip_existing: true
+  password:
+    secure: CRRBw/WeYS/FGP1sfN4XKB0ymBEFi0Ow9GJzboxamnDUYPhv3lal3F29HUVZMX8qHWI3vvQP2R5VQEAxco0fFbaq8KxgEyL2uI0txFWNjKcYM6wGvIGM3+QehKsihhNRb2VxiBcskLTQDmffCj13IEZzaqT2TbH8Upwmo7x8+5e9aIaSdL1PbpdG3NyeI1UScvZFY5oLYxc4VK7y5siw4W8AW68os2bHuO6Y8jPolcvQCMSoY6iRdET3MTTpswoOYCLXAhdq+iIGUi2+QCXYbPAYPNOCQLWKaz3W3qJILB1bX9xBoHEHopu28stz9Zxs96Va0RElDkujAPMdYE9X7b2MYuhcO9ZJRIFxEnocH6hWa9zdnS0Usbq7ZUvunPB5n9uhjMFVw65QCiagPNDKLZ7GA/koAgnotk89hDEGyQHrRdZG53QSalq4ZiCTudqF1o5onJ+CNdRCs9aYjOTj6uCprN+jcLlFvNCAA2X/Bw87a65EJOr8hjL9eRMTrev99nDO0rsShbAumc+yJyII4UmADwVd9DYsWN8be+t4LEsa6xhHna1py6J6AYHZ95Lcc/76MPBt5DY0DdGCmX0D2YnNBIegd1RHaLZld3G6k4fxb4w0JD89bOSGUcJePKAIeuFhzWl+d484h2tUj6wpq0BQIrjejOPTmxDhNbdrmHI=
+
+  on:
+    tags: true
