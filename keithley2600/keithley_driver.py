@@ -873,9 +873,9 @@ class Keithley2600(Keithley2600Base):
 
         :param smu1: 1st keithley smu instance to be swept.
         :param smu2: 2nd keithley smu instance to be swept.
-        :param list smu1_sweeplist: Voltages to sweep at ``smu1`` (can be a numpy
+        :param smu1_sweeplist: Voltages to sweep at ``smu1`` (can be a numpy
              array, list or tuple).
-        :param list smu2_sweeplist: Voltages to sweep at ``smu2`` (can be a numpy
+        :param smu2_sweeplist: Voltages to sweep at ``smu2`` (can be a numpy
              array, list or tuple).
         :param float t_int: Integration time per data point. must be
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
