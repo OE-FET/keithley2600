@@ -187,7 +187,7 @@ class MagicClass(object):
         """Custom getter
 
         Get attributes as usual if they exist. Otherwise, fall back to
-        :meth:`__get_global_handler`.
+        :func:`__get_global_handler`.
         """
         try:
             try:
@@ -203,16 +203,16 @@ class MagicClass(object):
     def __get_global_handler(self, attr_name):
         """Custom getter
 
-        Creates an attribute as :class:MagicClass`, :class:MagicFunction` or
-        :class:MagicPropertyList` instance if it is an expected Keithley TSP command
+        Creates an attribute as :class:`MagicClass`, :class:`MagicFunction` or
+        :class:`MagicPropertyList` instance if it is an expected Keithley TSP command
         group, function or property list. Queries and returns the value if the attribute
         corresponds to a Keithley TSP constant. Otherwise raises a
         :class:`AttributeError`.
 
         :param str attr_name: Attribute name.
 
-        :returns: Instance of :class:MagicClass`, :class:MagicFunction` or
-            :class:MagicPropertyList`.
+        :returns: Instance of :class:`MagicClass`, :class:`MagicFunction` or
+            :class:`MagicPropertyList`.
 
         :raises: :class:`AttributeError` if attribute is not expected.
         """

@@ -8,11 +8,11 @@ A full Python driver for the Keithley 2600 series of source measurement units.
 ## About
 Keithley driver with access to base functions and higher level functions such as IV
 measurements, transfer and output curves, etc. Base commands replicate the functionality
-and syntax from the Keithley TSP functions, which have a syntax similar to python.
+and syntax from the Keithley's internal TSP functions, which have a syntax similar to Python.
 
 *Warning:*
 
-There are currently no checks for allowed arguments in the base commands. See the
+There are currently only heuristic checks for allowed arguments in the base commands. See the
 [Keithley 2600 reference manual](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
 for all available commands and arguments. Almost all remotely accessible commands can be
 used with this driver. Not supported are:
