@@ -51,9 +51,9 @@ class MagicPropertyList(object):
     """Mimics a Keithley TSP property list
 
     Class which mimics a Keithley TSP property list and can be dynamically
-    created. It forwards all calls to the :meth:`_read` method of the parent class
-    and assignments to the :meth:`_write` method. Arbitrary values can be assigned,
-    as long as :meth:`_write` can handle them.
+    created. It forwards all calls to the :func:`_read` method of the parent class
+    and assignments to the :func:`_write` method. Arbitrary values can be assigned,
+    as long as :func:`_write` can handle them.
 
     This class is designed to look like a Keithley TSP "attribute" list,
     forward function calls to the Keithley, and return the results.
@@ -115,8 +115,8 @@ class MagicFunction(object):
     """Mimics a Keithley TSP function
 
     Class which mimics a function and can be dynamically created. It forwards
-    all calls to the :meth:`_query` method of the parent class and returns the result
-    from :meth:`_query`. Calls accept arbitrary arguments, as long as :meth:`_query` can
+    all calls to the :func:`_query` method of the parent class and returns the result
+    from :func:`_query`. Calls accept arbitrary arguments, as long as :func:`_query` can
     handle them.
 
     This class is designed to look like a Keithley TSP function, forward
@@ -131,7 +131,7 @@ class MagicFunction(object):
         self._parent = parent
 
     def __call__(self, *args, **kwargs):
-        """Pass on calls to :meth:`parent._write`, store result in variable.
+        """Pass on calls to :func:`parent._write`, store result in variable.
         Querying results from function calls directly may result in
         a VisaIOError if the function does not return anything."""
 
@@ -139,10 +139,12 @@ class MagicFunction(object):
         args = tuple(self._parent._convert_input(a) for a in args)
         # remove outside brackets and all quotation marks
         args_string = str(args).strip("(),").replace("'", "")
-        # pass on calls to self._write as string representing function call
-        self._parent._write('result = %s(%s)' % (self._name, args_string))
-        # query for result in second call
-        return self._parent._query('result')
+
+        with self._parent._lock:
+            # pass on calls to self._write as string representing function call
+            self._parent._write('result = %s(%s)' % (self._name, args_string))
+            # query for result in second call
+            return self._parent._query('result')
 
 
 class MagicClass(object):
@@ -155,7 +157,7 @@ class MagicClass(object):
     accessed attribute should behave like a function or property. Otherwise, it
     is assumed to be a new class.
 
-    Attribute setters and getters are forwarded to :meth:`_write` and :meth:`_query`
+    Attribute setters and getters are forwarded to :func:`_write` and :func:`_query`
     functions from the parent class. New functions are created as instances of
     MagicFunction, new classes are created as instances of MagicClass.
 
@@ -176,12 +178,14 @@ class MagicClass(object):
 
     _name = ''
     _parent = None
+    _lock = None
 
     def __init__(self, name, parent=None):
-        if not isinstance(name, basestring):
-            raise ValueError('First argument must be of type str.')
+        assert isinstance(name, basestring)
         self._name = name
-        self._parent = parent
+        if parent is not None:
+            self._parent = parent
+            self._lock = parent._lock
 
     def __getattr__(self, attr_name):
         """Custom getter
