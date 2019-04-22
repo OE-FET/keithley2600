@@ -19,7 +19,7 @@ import time
 
 # local import
 from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
-                                       CLASSES, PROPERTY_LISTS)
+                                       CLASSES, PROPERTY_LISTS, ALL_CMDS)
 from keithley2600.sweep_data import TransistorSweepData
 
 __version__ = 'v1.1.0'
@@ -74,7 +74,7 @@ class MagicPropertyList(object):
         :returns: Result from _query call of parent class.
         """
         new_name = '%s[%s]' % (self._name, i)
-        return self._query(new_name)
+        return self._parent._query(new_name)
 
     def __setitem__(self, i, value):
         """Sets i-th item: set item at parent class
@@ -83,27 +83,12 @@ class MagicPropertyList(object):
         :param value: An input object that can be accepted by parent class.
 
         """
-        value = self._convert_input(value)
+        value = self._parent._convert_input(value)
         new_name = '%s[%s] = %s' % (self._name, i, value)
-        self._write(new_name)
+        self._parent._write(new_name)
 
     def __iter__(self):
         return self
-
-    def _write(self, value):
-        """Forward _write calls to parent class."""
-        self._parent._write(value)
-
-    def _query(self, value):
-        """Forward _query calls to parent class."""
-        return self._parent._query(value)
-
-    def _convert_input(self, value):
-        """Forward _convert_input calls to parent class."""
-        try:
-            return self._parent._convert_input(value)
-        except AttributeError:
-            return value
 
     def getdoc(self):
         """Prevent pydoc from trying to document this class. This could
