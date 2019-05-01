@@ -1,3 +1,13 @@
+#### v1.1.1 (2019-05-01):
+_Changed:_
+
+- Fixed a thread safety bug: Fixed a bug that could cause the wrong result to be returned by a query when using `Keithley2600` from multiple threads.
+
+#### v1.1.0 (2019-02-07):
+_Added:_
+
+- Sphinx documentation.
+
 #### v1.0.0 (2019-01-17):
 _Added:_
 
@@ -44,4 +54,3 @@ _Changed:_
 _Removed:_
 
 - `k.clearBuffers(...)` now logs a deprecation warning and will be removed in v1.0. Clear the buffers directly with `buffer.clear()` instead.
- 
