@@ -19,7 +19,7 @@ import time
 
 # local import
 from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
-                                       CLASSES, PROPERTY_LISTS)
+                                       CLASSES, PROPERTY_LISTS, ALL_CMDS)
 from keithley2600.sweep_data import TransistorSweepData
 
 __version__ = 'v1.1.1'
@@ -125,9 +125,11 @@ class MagicFunction(object):
         # remove outside brackets and all quotation marks
         args_string = str(args).strip("(),").replace("'", "")
 
-        func_call_string = '%s(%s)' % (self._name, args_string)
-
-        return self._parent._query(func_call_string)
+        with self._parent._lock:
+            # pass on calls to self._write as string representing function call
+            self._parent._write('result = %s(%s)' % (self._name, args_string))
+            # query for result in second call
+            return self._parent._query('result')
 
 
 class MagicClass(object):
@@ -161,12 +163,14 @@ class MagicClass(object):
 
     _name = ''
     _parent = None
+    _lock = None
 
     def __init__(self, name, parent=None):
         assert isinstance(name, basestring)
         self._name = name
         if parent is not None:
             self._parent = parent
+            self._lock = parent._lock
 
     def __getattr__(self, attr_name):
         """Custom getter
@@ -333,6 +337,7 @@ class Keithley2600Base(MagicClass):
     arguments.
     """
 
+    _lock = threading.RLock()
     connection = None
     connected = False
     busy = False
@@ -432,8 +437,9 @@ class Keithley2600Base(MagicClass):
         logger.debug('write: print(%s)' % value)
 
         if self.connection:
-            r = self.connection.query('print(%s)' % value)
-            logger.debug('read: %s' % r)
+            with self._lock:
+                r = self.connection.query('print(%s)' % value)
+                logger.debug('read: %s' % r)
 
             return self.parse_response(r)
         else:
@@ -671,7 +677,7 @@ class Keithley2600(Keithley2600Base):
         :param smu: A keithley smu instance.
         :param smu_sweeplist: Voltages to sweep through. Should be a list,
             tuple, or numpy array.
-        :param float t_int: Integration time per data point. Must be
+        :param float t_int: Integration time per data point. must be
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before measurement. Set ``delay = -1`` for
             an automatic measurement once the current is stable.
@@ -860,7 +866,7 @@ class Keithley2600(Keithley2600Base):
              array, list or tuple).
         :param smu2_sweeplist: Voltages to sweep at ``smu2`` (can be a numpy
              array, list or tuple).
-        :param float t_int: Integration time per data point. Must be
+        :param float t_int: Integration time per data point. must be
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before measurement. Set ``delay = -1`` for
             an automatic measurement once the current is stable.
@@ -1088,7 +1094,7 @@ class Keithley2600(Keithley2600Base):
         :param float vg_step: Voltage step size for transfer sweep in Volt.
         :param vd_list: List of drain voltage steps in Volt. Can be a numpy
              array, list or tuple.
-        :param float t_int: Integration time per data point. Must be
+        :param float t_int: Integration time per data point. must be
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before measurement. Set ``delay = -1`` for
             an automatic measurement once the current is stable.
@@ -1163,7 +1169,7 @@ class Keithley2600(Keithley2600Base):
         :param float vd_step: Voltage step size for output sweep in Volt.
         :param vg_list: List of gate voltage steps in Volt. Can be a numpy
              array, list or tuple.
-        :param float t_int: Integration time per data point. Must be
+        :param float t_int: Integration time per data point. must be
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before measurement. Set ``delay = -1`` for
             an automatic measurement once the current is stable.
