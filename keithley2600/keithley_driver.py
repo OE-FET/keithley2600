@@ -614,8 +614,8 @@ class Keithley2600(Keithley2600Base):
 
         self._check_smu(smu)
 
-        smu.source.output = smu.OUTPUT_ON
         smu.source.levelv = voltage
+        smu.source.output = smu.OUTPUT_ON
 
     def applyCurrent(self, smu, curr):
         """
