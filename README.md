@@ -53,9 +53,13 @@ Higher level commands defined in the driver:
 
 
 ## Installation
-Download or clone the repository. Install the package by running
+Install the stable version from PyPi by running
 ```console
 $ pip install keithley2600
+```
+or the latest development version from GitHub:
+```console
+$ pip install git+https://github.com/OE-FET/keithley2600
 ```
 
 ##  Documentation
