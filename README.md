@@ -51,6 +51,17 @@ Higher level commands defined in the driver:
 ...                       pulsed=False) # records dual SMU IV curve
 ```
 
+*Singleton behaviour:*
+
+Once a Keithley2600 instance with a perticular visa address `'address'` has been created, repeated calls to `Keithley2600('address')` will return the existing instance instead of creating a new one. This prevents the user from opening multiple connections simultaneously and allows easy access to a Keithley2600 instance from different parts of a programm. For examplet:
+
+```python
+>>> from keithley2600 import Keithley2600
+>>> k1 = Keithley2600('TCPIP0::192.168.2.121::INSTR')
+>>> k2 = Keithley2600('TCPIP0::192.168.2.121::INSTR')
+>>> print(k1 is k2)
+True
+```
 
 ## Installation
 Install the stable version from PyPi by running
