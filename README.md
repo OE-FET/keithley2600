@@ -53,7 +53,7 @@ Higher level commands defined in the driver:
 
 *Singleton behaviour:*
 
-Once a Keithley2600 instance with a perticular visa address `'address'` has been created, repeated calls to `Keithley2600('address')` will return the existing instance instead of creating a new one. This prevents the user from opening multiple connections simultaneously and allows easy access to a Keithley2600 instance from different parts of a programm. For example:
+Once a Keithley2600 instance with a visa address `'address'` has been created, repeated calls to `Keithley2600('address')` will return the existing instance instead of creating a new one. This prevents the user from opening multiple connections to the same instrument simultaneously and allows easy access to a Keithley2600 instance from different parts of a program. For example:
 
 ```python
 >>> from keithley2600 import Keithley2600
