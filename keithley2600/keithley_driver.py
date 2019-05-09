@@ -22,7 +22,7 @@ from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
                                        CLASSES, PROPERTY_LISTS)
 from keithley2600.sweep_data import TransistorSweepData
 
-__version__ = 'v1.1.1'
+__version__ = 'v1.2.0-dev'
 
 PY2 = sys.version[0] == '2'
 logger = logging.getLogger(__name__)
@@ -442,6 +442,10 @@ class Keithley2600Base(MagicClass):
     @staticmethod
     def _parse_single_response(string):
 
+        # Dictionary to convert from Keithley TSP to Python types.
+        # Note that emtpy strings are converted to `None`. This is necessary
+        # since `self.connection.query('print(myfunc())')` returns an empty
+        # string if the TSP function `myfunc()` returns 'nil'.
         conversion_dict = {'true': True, 'false': False, 'nil': None, '': None}
 
         try:
