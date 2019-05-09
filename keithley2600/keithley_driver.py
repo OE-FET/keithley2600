@@ -567,7 +567,7 @@ class Keithley2600(Keithley2600Base):
 # Define lower level control functions
 # =============================================================================
 
-    def readErrorQueue(self)
+    def readErrorQueue(self):
         """
         Returns all entries from the Keithley error queue and clears the queue.
 
