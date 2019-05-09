@@ -567,6 +567,25 @@ class Keithley2600(Keithley2600Base):
 # Define lower level control functions
 # =============================================================================
 
+    def readErrorQueue(self)
+        """
+        Returns all entries from the Keithley error queue and clears the queue.
+
+        :returns: List of errors from the Keithley error queue. Each entry is a
+            tuple ``(error_code, message, severity, error_node)``. If the queue
+            is empty, an empty list is returned.
+        :rtype: list
+        """
+
+        error_list = []
+
+        err = self.errorqueue.next()
+        while err[0] != 0:
+            error_list += err
+            err = self.errorqueue.next()
+
+        return error_list
+
     @staticmethod
     def readBuffer(buffer):
         """
@@ -587,7 +606,12 @@ class Keithley2600(Keithley2600Base):
 
     def clearBuffer(self, smu):
         """
-        Clears buffer of a given smu. This function has been deprecated.
+        Clears buffer of a given smu.
+
+        .. note::
+            This function has been deprecated. Please use `buffer.clear()` or
+            `buffer.clearcache()` instead, where `buffer` is a Keithley buffer instance
+            such as :attr:`smua.nvbuffer1`.
         """
 
         raise DeprecationWarning(
@@ -640,6 +664,29 @@ class Keithley2600(Keithley2600Base):
 
         smu.source.leveli = curr
         smu.source.output = smu.OUTPUT_ON
+
+    def measureVoltage(self, smu):
+        """
+        Measures a voltage at the specified SMU.
+
+        :returns: Measured voltage in Volts.
+        :rtype: float
+        """
+
+        self._check_smu(smu)
+
+        return smu.measure.v()
+
+    def measureCurrent(self, smu):
+        """
+        Measures a current at the specified SMU.
+
+        :returns: Measured current in Ampere.
+        :rtype: float
+        """
+        self._check_smu(smu)
+
+        return smu.measure.i()
 
     def rampToVoltage(self, smu, target_volt, delay=0.1, step_size=1):
         """
@@ -837,13 +884,12 @@ class Keithley2600(Keithley2600Base):
         # 2 = only smua sweeping
         # 0 = neither smu sweeping
 
-        status = 0
-        while status == 0:  # while loop that runs until the sweep begins
-            status = self.status.operation.sweeping.condition
+        # while loop that runs until the sweep begins
+        while self.status.operation.sweeping.condition == 0:
             time.sleep(0.1)
 
-        while status > 0:  # while loop that runs until the sweep ends
-            status = self.status.operation.sweeping.condition
+        # while loop that runs until the sweep ends
+        while self.status.operation.sweeping.condition > 0:
             time.sleep(0.1)
 
         # EXTRACT DATA FROM SMU BUFFERS
@@ -1056,13 +1102,12 @@ class Keithley2600(Keithley2600Base):
         # 2 = only smua sweeping
         # 0 = neither smu sweeping
 
-        status = 0
-        while status == 0:  # while loop that runs until the sweep begins
-            status = self.status.operation.sweeping.condition
+        # while loop that runs until the sweep begins
+        while self.status.operation.sweeping.condition == 0:
             time.sleep(0.1)
 
-        while status > 0:  # while loop that runs until the sweep ends
-            status = self.status.operation.sweeping.condition
+        # while loop that runs until the sweep ends
+        while self.status.operation.sweeping.condition > 0:
             time.sleep(0.1)
 
         # EXTRACT DATA FROM SMU BUFFERS
