@@ -125,14 +125,8 @@ class MagicFunction(object):
         # remove outside brackets and all quotation marks
         args_string = str(args).strip("(),").replace("'", "")
 
-        with self._parent._lock:
-            # pass on as a string representing the function call to self._parent._write
-            self._parent._write('result = %s(%s)' % (self._name, args_string))
-            # query for result in second call
-            # we cannot query directly via `self._parent._query('%s(%s)')` since with
-            # would return an empty string instead of 'nil' if the function call does not
-            # return anything
-            return self._parent._query('result')
+        # pass on a string representation of the function call to self._parent._query
+        return self._parent._query('%s(%s)' % (self._name, args_string))
 
 
 class MagicClass(object):
@@ -166,14 +160,12 @@ class MagicClass(object):
 
     _name = ''
     _parent = None
-    _lock = None
 
     def __init__(self, name, parent=None):
         assert isinstance(name, basestring)
         self._name = name
         if parent is not None:
             self._parent = parent
-            self._lock = parent._lock
 
     def __getattr__(self, attr_name):
         """Custom getter
@@ -340,7 +332,6 @@ class Keithley2600Base(MagicClass):
     arguments.
     """
 
-    _lock = threading.RLock()
     connection = None
     connected = False
     busy = False
@@ -440,30 +431,41 @@ class Keithley2600Base(MagicClass):
         logger.debug('write: print(%s)' % value)
 
         if self.connection:
-            with self._lock:
-                r = self.connection.query('print(%s)' % value)
-                logger.debug('read: %s' % r)
+            r = self.connection.query('print(%s)' % value)
+            logger.debug('read: %s' % r)
 
-            return self.parse_response(r)
+            return self._parse_response(r)
         else:
             raise KeithleyIOError(
                 'No connection to keithley present. Try to call connect().')
 
     @staticmethod
-    def parse_response(string):
+    def _parse_single_response(string):
+
+        conversion_dict = {'true': True, 'false': False, 'nil': None, '': None}
+
         try:
             r = float(string)
+            if r.is_integer():
+                r = int(r)
         except ValueError:
-            if string == 'nil':
-                r = None
-            elif string == 'true':
-                r = True
-            elif string == 'false':
-                r = False
+            if string in conversion_dict.keys():
+                r = conversion_dict[string]
             else:
                 r = string
 
         return r
+
+    def _parse_response(self, string):
+
+        string_list = string.split('\t')
+
+        converted_tuple = tuple(self._parse_single_response(s) for s in string_list)
+
+        if len(converted_tuple) == 1:
+            return converted_tuple[0]
+        else:
+            return converted_tuple
 
     def _convert_input(self, value):
         """ Convert bool to lower case string and list / tuples to comma
@@ -554,7 +556,8 @@ class Keithley2600(Keithley2600Base):
 
         :param smu: A keithley smu instance.
         """
-        assert smu._name.split('.')[-1] in self.SMU_LIST
+        if self._get_smu_string(smu) not in self.SMU_LIST:
+            raise RuntimeError('The specified SMU does not exist.')
 
     @staticmethod
     def _get_smu_string(smu):
