@@ -2,12 +2,12 @@
 _Added:_
 
 - New method `readErrorQueue` which returns a list of all errors in the Keithley's error queue.
-- Support for Keithley TSP functions with multiple return arguments. Previously, only the first argument would be returned.
+- Support for Keithley TSP functions with multiple return values. Previously, only the first value would be returned.
 
 _Changed:_
 
-- Optimized Keithley function calls to only use a single `query` call instead of consequtive `query` and `read` calls.
-- Emtpy strings from the Keithley will always be converted to Python `None`.
+- Optimized I/O: Keithley function calls to only use a single `query` call instead of consequtive `query` and `read` calls.
+- Emtpy strings returned by the Keithley will always be converted to `None`. This is necessary to enable the above change.
 
 #### v1.1.1 (2019-05-01):
 _Changed:_
