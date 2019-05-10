@@ -63,6 +63,101 @@ class ColumnTitle(object):
             return self.name
 
 
+class ResusltTablePlot(object):
+    """
+    Class that holds a plot of a data in a :class:`ResultTable`.
+
+    Columns must have names, to designate the measurement variable, and
+    can have units. It is possible to access columns by their
+    names in a dictionary type notation.
+
+    :ivar result_table: :class:`ResultTable` instance with data to plot.
+    :ivar x_clmn: Integer or name of column containing the x-axis data.
+    :ivar y_clmns: List of column numbers or column names for y-axis data. If not
+        given, all columns will be plotted against the x-axis column.
+    :ivar func: Function to apply to y-data before plotting.
+    """
+
+    def __init__(self, result_table, x_clmn=0, y_clmns=None, func=lambda x: x, **kwargs):
+
+        try:
+            import matplotlib
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError('Matplotlib is required to support plotting.')
+
+        # input processing
+        self.result_table = result_table
+        if self.result_table.ncols < 2:
+            raise ValueError("'ResultTable' must at least contain two columns of data.")
+        self.x_clmn = self._to_column_number(x_clmn)
+        if y_clmns is None:
+            self.y_clmns = list(range(0, self.result_table.ncols))
+            self.y_clmns.remove(x_clmn)
+        else:
+            self.y_clmns = [self._to_column_number(c) for c in y_clmns]
+        self.func = func
+
+        # create plot
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(111)
+
+        line_labels = []
+        line_units = []
+        self.lines = []
+
+        x = self.result_table.data[:, self.x_clmn]
+
+        for c in self.y_clmns:
+            y = self.result_table.data[:, c]
+            y = self.func(y)
+            line = self.ax.plot(x, y, label=self.result_table.column_names[c], **kwargs)
+            self.lines.append(line[0])
+
+            line_labels.append(self.result_table.column_names[c])
+            line_units.append(self.result_table.column_units[c])
+
+        self.ax.set_xlabel(str(self.result_table.titles[x_clmn]))
+
+        y_label = os.path.commonprefix(line_labels)
+        y_unit = os.path.commonprefix(line_units)
+        if y_unit == '':
+            label_text = '%s' % y_label
+        else:
+            label_text = y_label + ' ' + self.result_table.UNIT_FORMAT.format(y_unit)
+        self.ax.set_ylabel(label_text)
+
+        self.ax.autoscale(enable=True, axis='x', tight=True)
+        self.fig.tight_layout()
+
+        self.fig.show()
+
+    def show(self):
+
+        self.fig.show()
+
+    def update_plot(self):
+
+        x = self.result_table.data[:, self.x_clmn]
+
+        for line, column in zip(self.lines, self.y_clmns):
+            y = self.result_table.data[:, column]
+            y = self.func(y)
+            line.set_xdata(x)
+            line.set_ydata(y)
+
+        self.ax.relim()
+        self.ax.autoscale_view(True,True,True)
+        self.fig.canvas.draw()
+
+    def _to_column_number(self, c):
+
+        if not isinstance(c, int):
+            c = self.result_table.column_names.index(c)
+
+        return c
+
+
 # noinspection PyTypeChecker
 class ResultTable(object):
     """
@@ -136,6 +231,8 @@ class ResultTable(object):
         else:
             self.params = params
 
+        self.live_plot = None
+
     @property
     def nrows(self):
         if self.data is None:
@@ -177,11 +274,12 @@ class ResultTable(object):
 
     def has_unit(self, col):
         """
-        Returns `True` if column_units of column ``col`` have been set, `False` otherwise.
+        Returns ``True`` if column_units of column ``col`` have been set, ``False``
+        otherwise.
 
         :param col: Column index or name.
 
-        :returns: `True` if column_units have been set, `False` otherwise.
+        :returns: ``True`` if column_units have been set, ``False`` otherwise.
         :rtype: bool
         """
         if not isinstance(col, int):
@@ -235,6 +333,9 @@ class ResultTable(object):
         else:
             self.data = np.append(self.data, [data], 0)
 
+        if self.live_plot:
+            self.update_plot()
+
     def append_rows(self, data):
         """
         Appends multiple rows to data array.
@@ -246,6 +347,9 @@ class ResultTable(object):
             self.data = np.array(data)
         else:
             self.data = np.append(self.data, data, 0)
+
+        if self.live_plot:
+            self.update_plot()
 
     def append_column(self, data, name, unit=None):
         """
@@ -489,86 +593,51 @@ class ResultTable(object):
         self.DELIMITER = old_delim
         self.LINE_BREAK = old_line_break
 
-    def plot(self, x_clmn=0, y_clmn=None, func=lambda x: x, **kwargs):
+    def plot(self, x_clmn=0, y_clmns=None, func=lambda x: x, live=False, **kwargs):
         """
         Plots the data. This method should not be called from a thread.
         The column containing the x-axis data is specified (defaults to first
         column), all other data is plotted on the y-axis. Keyword arguments are
         passed on to pyplot.
 
-        Column titles are taken as legend labels. `plot` tries to determine a
+        Column titles are taken as legend labels. :func:`plot` tries to determine a
         common y-axis unit and name from all given labels.
 
         :param x_clmn: Integer or name of column containing the x-axis data.
-        :param y_clmn: List of column numbers or column_names for y-axis data. If not
-            given, all columns will be plotted (excluding the x-axis column).
+        :param y_clmns: List of column numbers or column names for y-axis data. If not
+            given, all columns will be plotted against the x-axis column.
         :param func: Function to apply to y-data before plotting.
+        :param bool live: If ``True``, update plot when new rows are added (default:
+            ``False``).
+
+        :returns: :class:`ResusltTablePlot` instance with Matplotlib figure.
         """
+
         try:
+            import matplotlib
             import matplotlib.pyplot as plt
         except ImportError:
-            print('Warning: Install matplotlib to support plotting.')
-            return
+            raise ImportError('Matplotlib is required to support plotting.')
 
-        if self.ncols == 0:
-            return
+        if live and not matplotlib.get_backend() in matplotlib.rcsetup.interactive_bk:
+            print("An interactive Matplotlib backend is required for live " +
+                  "plotting. You can get a list of available interactive " +
+                  "backends from 'matplotlib.rcsetup.interactive_bk'.")
 
-        if not isinstance(x_clmn, int):
-            x_clmn = self.column_names.index(x_clmn)
+        plot = ResusltTablePlot(self, x_clmn, y_clmns, func, **kwargs)
 
-        xdata = self.data[:, x_clmn]
+        self.live_plot = plot if live else None
 
-        fig = plt.figure()
+        return plot
 
-        ax = fig.add_subplot(111)
-
-        if y_clmn is None:
-            ydata = np.delete(self.data, [x_clmn], axis=1)
-            ydata = func(ydata)
-            lines = ax.plot(xdata, ydata, **kwargs)
-            line_labels = self.column_names[0:x_clmn] + self.column_names[x_clmn + 1:]
-            line_units = self.column_units[0:x_clmn] + self.column_units[x_clmn + 1:]
-            ax.legend(lines, line_labels)
-        else:
-            line_labels = []
-            line_units = []
-            for c in y_clmn:
-                if not isinstance(c, int):
-                    c = self.column_names.index(c)
-                ydata = self.data[:, c]
-                ydata = func(ydata)
-                ax.plot(xdata, ydata, label=self.column_names[c], **kwargs)
-
-                line_labels.append(self.column_names[c])
-                line_units.append(self.column_units[c])
-
-        ax.set_xlabel(str(self.titles[x_clmn]))
-
-        y_label = os.path.commonprefix(line_labels)
-        y_unit = os.path.commonprefix(line_units)
-        if y_unit == '':
-            ax.set_ylabel('%s' % y_label)
-        else:
-            ax.set_ylabel(y_label + ' ' + self.UNIT_FORMAT.format(y_unit))
-
-        ax.autoscale(enable=True, axis='x', tight=True)
-        fig.tight_layout()
-
-        self.setup_plot(fig, ax)
-
-        fig.show()
-
-        return fig, ax
-
-    def setup_plot(self, fig, ax):
+    def update_plot(self):
         """
-        This method does nothing by default, but can be overwritten by the child
-        class in order to set up custom options for plotting.
-
-        :param fig: Matplotlib figure instance.
-        :param ax: Matplotlib axes instance.
+        Updates a created live plot with the current data. Does nothing if no live
+        plot has been created.
         """
-        pass
+
+        if self.live_plot:
+            self.live_plot.update_plot()
 
     def __repr__(self):
         titles = [str(t) for t in self.titles]
@@ -594,7 +663,8 @@ class ResultTable(object):
 
     def __getitem__(self, key):
         """
-        Gets values in column with name `key`.
+        Gets values in column with name ``key``.
+
         :param str key: Column name.
         :returns: Column content as numpy array.
         """
@@ -608,7 +678,7 @@ class ResultTable(object):
 
     def __setitem__(self, key, value):
         """
-        Sets values in column with name `key`.
+        Sets values in column with name ``key``.
 
         :param str key: Column name.
         :param value: Iterable containing column values.
@@ -623,7 +693,7 @@ class ResultTable(object):
 
     def __delitem__(self, key):
         """
-        Deletes column with name `key`.
+        Deletes column with name ``key``.
 
         :param str key:
         """
@@ -736,16 +806,20 @@ class TransistorSweepData(ResultTable):
         """
         Plots the transfer or output curves. Overrides :func:`ResultTable.plot`.
         Absolute values are plotted, on a linear scale for output characteristics
-        and a logarithmic scale for transfer characteristics. All arguments are passed
-        on to :func:`ResultTable.plot`.
+        and a logarithmic scale for transfer characteristics. Takes the same arguments
+        as :func:`ResultTable.plot`.
+
+        :returns: Tuple ``(fig, ax)`` containing Matplotlib figure and axes instances.
+        :rtype: tuple
         """
 
         if self.sweep_type == 'transfer':
-            fig, ax = super(self.__class__, self).plot(func=np.abs, *args, **kwargs)
-            ax.set_yscale('log')
-            ax.set_ylabel('I [A]')
+            plot = ResultTable.plot(self, func=np.abs, *args, **kwargs)
+            plot.ax.set_yscale('log')
+            plot.ax.set_ylabel('I [A]')
+        else:
+            plot = ResultTable.plot(self, func=np.abs, *args, **kwargs)
+            plot.ax.set_yscale('linear')
+            plot.ax.set_ylabel('I [A]')
 
-        elif self.sweep_type == 'output':
-            fig, ax = super(self.__class__, self).plot(func=np.abs, *args, **kwargs)
-            ax.set_yscale('linear')
-            ax.set_ylabel('I [A]')
+        return plot

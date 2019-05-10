@@ -3,6 +3,8 @@ _Added:_
 
 - New method `readErrorQueue` which returns a list of all errors in the Keithley's error queue.
 - Support for Keithley TSP functions with multiple return values. Previously, only the first value would be returned.
+- Added `ResultTablePlot` class to plot the data in a `ResultTable`.
+- Added live plotting of data to `ResultTable` and its subclasses. Pass the keyword argument `live=True` to the `plot` method for the plot to update dynamically when new data is added.
 
 _Changed:_
 
