@@ -78,13 +78,18 @@ class ResusltTablePlot(object):
     :ivar func: Function to apply to y-data before plotting.
     """
 
-    def __init__(self, result_table, x_clmn=0, y_clmns=None, func=lambda x: x, **kwargs):
+    def __init__(self, result_table, x_clmn=0, y_clmns=None, func=lambda x: x,
+                 live=False, **kwargs):
 
         try:
             import matplotlib
             import matplotlib.pyplot as plt
         except ImportError:
             raise ImportError('Matplotlib is required to support plotting.')
+
+        if live and not matplotlib.get_backend() == 'Qt5Agg':
+            print("'Qt5Agg' backend to Matplotlib is required for live plotting.")
+            live = False
 
         # input processing
         self.result_table = result_table
@@ -132,6 +137,11 @@ class ResusltTablePlot(object):
 
         self.fig.show()
 
+        if live and matplotlib.get_backend() == 'Qt5Agg':
+            self._timer = self.fig.canvas.new_timer()
+            self._timer.add_callback(self.update_plot)
+            self._timer.start(100)
+
     def show(self):
 
         self.fig.show()
@@ -147,7 +157,7 @@ class ResusltTablePlot(object):
             line.set_ydata(y)
 
         self.ax.relim()
-        self.ax.autoscale_view(True,True,True)
+        self.ax.autoscale_view(True, True, True)
         self.fig.canvas.draw()
 
     def _to_column_number(self, c):
@@ -211,18 +221,19 @@ class ResultTable(object):
     LINE_BREAK = '\n'
     UNIT_FORMAT = '[{}]'
 
-    def __init__(self, names=None, units=None, data=None, params=None):
+    def __init__(self, column_titles=None, units=None, data=None, params=None):
 
-        if names is None:
-            names = []
+        if column_titles is None:
+            column_titles = []
 
         if units is None:
-            units = [''] * len(names)
+            units = [''] * len(column_titles)
 
-        self.titles = [ColumnTitle(n, u, self.UNIT_FORMAT) for n, u in zip(names, units)]
+        self.titles = [ColumnTitle(n, u, self.UNIT_FORMAT)
+                       for n, u in zip(column_titles, units)]
 
         if data is None:
-            self.data = None
+            self.data = np.array([[]]*self.ncols).transpose()
         else:
             self.data = np.array(data)
 
@@ -231,14 +242,9 @@ class ResultTable(object):
         else:
             self.params = params
 
-        self.live_plot = None
-
     @property
     def nrows(self):
-        if self.data is None:
-            return 0
-        else:
-            return self.data.shape[0]
+        return self.data.shape[0]
 
     @property
     def ncols(self):
@@ -316,7 +322,7 @@ class ResultTable(object):
         """
         Clears all data.
         """
-        self.data = None
+        self.data = np.array([[]]*self.ncols).transpose()
 
     def append_row(self, data):
         """
@@ -328,13 +334,7 @@ class ResultTable(object):
         if not len(data) == self.ncols:
             raise ValueError('Length must match number of columns: %s' % self.ncols)
 
-        if self.data is None:
-            self.data = np.array([data])
-        else:
-            self.data = np.append(self.data, [data], 0)
-
-        if self.live_plot:
-            self.update_plot()
+        self.data = np.append(self.data, [data], 0)
 
     def append_rows(self, data):
         """
@@ -343,13 +343,7 @@ class ResultTable(object):
         :param data: List of lists or numpy array with dimensions matching the data array.
         """
 
-        if self.data is None:
-            self.data = np.array(data)
-        else:
-            self.data = np.append(self.data, data, 0)
-
-        if self.live_plot:
-            self.update_plot()
+        self.data = np.append(self.data, data, 0)
 
     def append_column(self, data, name, unit=None):
         """
@@ -360,10 +354,7 @@ class ResultTable(object):
         :param str unit: Unit of values in new column.
         """
 
-        if self.data is None:
-            self.data = np.array(np.transpose([data]))
-        else:
-            self.data = np.append(self.data, np.transpose([data]), 1)
+        self.data = np.append(self.data, np.transpose([data]), 1)
 
         self.titles.append(ColumnTitle(name, unit, self.UNIT_FORMAT))
 
@@ -376,10 +367,7 @@ class ResultTable(object):
         :param list units: Units for new columns.
         """
 
-        if self.data is None:
-            self.data = np.array(np.transpose(data))
-        else:
-            self.data = np.append(self.data, np.transpose(data), 1)
+        self.data = np.append(self.data, np.transpose(data), 1)
 
         for name, unit in zip(names, units):
             self.titles.append(ColumnTitle(name, unit, self.UNIT_FORMAT))
@@ -609,7 +597,6 @@ class ResultTable(object):
         :param func: Function to apply to y-data before plotting.
         :param bool live: If ``True``, update plot when new rows are added (default:
             ``False``).
-
         :returns: :class:`ResusltTablePlot` instance with Matplotlib figure.
         """
 
@@ -619,25 +606,13 @@ class ResultTable(object):
         except ImportError:
             raise ImportError('Matplotlib is required to support plotting.')
 
-        if live and not matplotlib.get_backend() in matplotlib.rcsetup.interactive_bk:
-            print("An interactive Matplotlib backend is required for live " +
-                  "plotting. You can get a list of available interactive " +
-                  "backends from 'matplotlib.rcsetup.interactive_bk'.")
+        if live and not matplotlib.get_backend() == 'Qt5Agg':
+            print("'Qt5Agg' backend to Matplotlib is required for live plotting.")
+            live = False
 
-        plot = ResusltTablePlot(self, x_clmn, y_clmns, func, **kwargs)
-
-        self.live_plot = plot if live else None
+        plot = ResusltTablePlot(self, x_clmn, y_clmns, func, live=live, **kwargs)
 
         return plot
-
-    def update_plot(self):
-        """
-        Updates a created live plot with the current data. Does nothing if no live
-        plot has been created.
-        """
-
-        if self.live_plot:
-            self.live_plot.update_plot()
 
     def __repr__(self):
         titles = [str(t) for t in self.titles]
