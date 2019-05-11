@@ -32,12 +32,13 @@ def find_numbers(string):
 
 class ColumnTitle(object):
     """
-    Object to hold a column title.
+    Class to hold a column title.
 
-    :ivar str name: String containing column name.
-    :ivar str unit: String containing column unit.
-    :ivar str unit_fmt: Formatting directive for units when generating
-        string representation.
+    :param str name: String containing column name.
+    :param str unit: String containing column unit.
+    :param str unit_fmt: Formatting directive for units when generating string
+        representation. Defaults to '[{}]', such that units are appended to the column
+        title in square brackets.
     """
 
     def __init__(self, name, unit=None, unit_fmt='[{}]'):
@@ -63,125 +64,22 @@ class ColumnTitle(object):
             return self.name
 
 
-class ResusltTablePlot(object):
-    """
-    Class that holds a plot of a data in a :class:`ResultTable`.
-
-    Columns must have names, to designate the measurement variable, and
-    can have units. It is possible to access columns by their
-    names in a dictionary type notation.
-
-    :ivar result_table: :class:`ResultTable` instance with data to plot.
-    :ivar x_clmn: Integer or name of column containing the x-axis data.
-    :ivar y_clmns: List of column numbers or column names for y-axis data. If not
-        given, all columns will be plotted against the x-axis column.
-    :ivar func: Function to apply to y-data before plotting.
-    """
-
-    def __init__(self, result_table, x_clmn=0, y_clmns=None, func=lambda x: x,
-                 live=False, **kwargs):
-
-        try:
-            import matplotlib
-            import matplotlib.pyplot as plt
-        except ImportError:
-            raise ImportError('Matplotlib is required to support plotting.')
-
-        if live and not matplotlib.get_backend() == 'Qt5Agg':
-            print("'Qt5Agg' backend to Matplotlib is required for live plotting.")
-            live = False
-
-        # input processing
-        self.result_table = result_table
-        if self.result_table.ncols < 2:
-            raise ValueError("'ResultTable' must at least contain two columns of data.")
-        self.x_clmn = self._to_column_number(x_clmn)
-        if y_clmns is None:
-            self.y_clmns = list(range(0, self.result_table.ncols))
-            self.y_clmns.remove(x_clmn)
-        else:
-            self.y_clmns = [self._to_column_number(c) for c in y_clmns]
-        self.func = func
-
-        # create plot
-        self.fig = plt.figure()
-        self.ax = self.fig.add_subplot(111)
-
-        line_labels = []
-        line_units = []
-        self.lines = []
-
-        x = self.result_table.data[:, self.x_clmn]
-
-        for c in self.y_clmns:
-            y = self.result_table.data[:, c]
-            y = self.func(y)
-            line = self.ax.plot(x, y, label=self.result_table.column_names[c], **kwargs)
-            self.lines.append(line[0])
-
-            line_labels.append(self.result_table.column_names[c])
-            line_units.append(self.result_table.column_units[c])
-
-        self.ax.set_xlabel(str(self.result_table.titles[x_clmn]))
-
-        y_label = os.path.commonprefix(line_labels)
-        y_unit = os.path.commonprefix(line_units)
-        if y_unit == '':
-            label_text = '%s' % y_label
-        else:
-            label_text = y_label + ' ' + self.result_table.UNIT_FORMAT.format(y_unit)
-        self.ax.set_ylabel(label_text)
-
-        self.ax.autoscale(enable=True, axis='x', tight=True)
-        self.fig.tight_layout()
-
-        self.fig.show()
-
-        if live and matplotlib.get_backend() == 'Qt5Agg':
-            self._timer = self.fig.canvas.new_timer()
-            self._timer.add_callback(self.update_plot)
-            self._timer.start(100)
-
-    def show(self):
-
-        self.fig.show()
-
-    def update_plot(self):
-
-        x = self.result_table.data[:, self.x_clmn]
-
-        for line, column in zip(self.lines, self.y_clmns):
-            y = self.result_table.data[:, column]
-            y = self.func(y)
-            line.set_xdata(x)
-            line.set_ydata(y)
-
-        self.ax.relim()
-        self.ax.autoscale_view(True, True, True)
-        self.fig.canvas.draw()
-
-    def _to_column_number(self, c):
-
-        if not isinstance(c, int):
-            c = self.result_table.column_names.index(c)
-
-        return c
-
-
 # noinspection PyTypeChecker
 class ResultTable(object):
     """
-    Class that holds measurement data. All data is stored internally in a numpy
-    array.
+    Class that holds measurement data. All data is stored internally as a numpy array.
 
-    Columns must have names, to designate the measurement variable, and
-    can have units. It is possible to access columns by their
-    names in a dictionary type notation.
+    Columns must have names, to designate the measurement variable, and can have units. It
+    is possible to access columns by their names in a dictionary type notation.
 
-    :ivar list names: List of column names (strings).
-    :ivar list units: List of column units (strings).
-    :ivar data: Numpy array holding the data.
-    :ivar dict params: Dictionary of measurement parameters.
+    :param column_titles: List of column titles (strings).
+    :type column_titles: list[str]
+    :param units: List of column units (strings).
+    :type units: list[str]
+    :param data: Numpy array holding the data. If ``data`` is ``None``, an empty array
+        with the required number of columns is created.
+    :type data: numpy.ndarray or NoneType
+    :param dict params: Dictionary of measurement parameters.
 
     :Example:
 
@@ -192,9 +90,11 @@ class ResultTable(object):
         >>> import numpy as np
         >>> from  keithley2600 import ResultTable
         >>> # create dictionary of relevant measurement parameters
-        >>> par_dict = {'Voltage': 10, 'Recorded': time.asctime()}
+        >>> par_dict = {'Recorded': time.asctime()}
         >>> # create ResultTable with two columns
-        >>> table = ResultTable(['Time', 'Current'], ['sec', 'A'], par_dict)
+        >>> table = ResultTable(['Voltage', 'Current'], ['V', 'A'], par_dict)
+        >>> # create a live plot of the data
+        >>> fig = table.plot(live=True)
 
         Create a :class:`Keithley2600` instance and record some data:
 
@@ -202,15 +102,15 @@ class ResultTable(object):
         >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
         >>> k.applyVoltage(k.smua, 10)  # apply a voltage
         >>> for t in range(120):  # measure each second, for 2 min
+        ...     v = k.smua.measure.v()
         ...     i = k.smua.measure.i()
-        ...     table.append_row([t, i])  # add values to ResultTable
+        ...     table.append_row([v, i])  # add values to ResultTable
         ...     time.sleep(1)
 
         Save and plot the recorded data:
 
         >>> table.save('~/Desktop/stress_test.txt')  # save the ResultTable
-        >>> table.plot()  # plot the data
-        >>> table['Current']  # look at the data
+        >>> table['Voltage']  # print the column with title 'Voltage'
         array([0.01, ..., 0.01])
 
     """
@@ -284,6 +184,7 @@ class ResultTable(object):
         otherwise.
 
         :param col: Column index or name.
+        :type col: int or str
 
         :returns: ``True`` if column_units have been set, ``False`` otherwise.
         :rtype: bool
@@ -297,7 +198,9 @@ class ResultTable(object):
         """
         Get unit of column ``col``.
 
-        :param col: Column index or name (int or str)
+        :param col: Column index or name.
+        :type col: int or str
+
         :returns: Unit string.
         :rtype: str
         """
@@ -311,6 +214,7 @@ class ResultTable(object):
         Set unit of column ``col``.
 
         :param col: Column index or name.
+        :type col: int or str
         :param str unit: Unit string.
         """
         if not isinstance(col, int):
@@ -350,7 +254,7 @@ class ResultTable(object):
         Appends a new column to data array.
 
         :param data: Iterable with the same number of elements as rows in the data array.
-        :param str name: Column name.
+        :param str name: Name of new column.
         :param str unit: Unit of values in new column.
         """
 
@@ -358,29 +262,33 @@ class ResultTable(object):
 
         self.titles.append(ColumnTitle(name, unit, self.UNIT_FORMAT))
 
-    def append_columns(self, data, names, units=None):
+    def append_columns(self, data, column_titles, units=None):
         """
         Appends multiple columns to data array.
 
         :param list data: List of columns to append.
-        :param list names: Column column_names.
-        :param list units: Units for new columns.
+        :param column_titles: List of column titles.
+        :type column_titles: list[str]
+        :param units: List of units for new columns.
+        :type units: list[str]
         """
 
         self.data = np.append(self.data, np.transpose(data), 1)
 
-        for name, unit in zip(names, units):
+        for name, unit in zip(column_titles, units):
             self.titles.append(ColumnTitle(name, unit, self.UNIT_FORMAT))
 
     def get_row(self, i):
         """
-        Returns row i as a 1D numpy array.
+        :returns: Numpy array with data from row ``i``.
+        :rtype: :class:`numpy.ndarray`
         """
         return self.data[i, :]
 
     def get_column(self, i):
         """
-        Returns column i as a 1D numpy array.
+        :returns: Numpy array with data from column ``i``.
+        :rtype: :class:`numpy.ndarray`
         """
         return self.data[:, i]
 
@@ -493,7 +401,7 @@ class ResultTable(object):
 
         :param str header: Header to parse.
         :returns: Tuple with titles and params.
-        :rtype: (str, str)
+        :rtype: tuple(str, str)
         """
         header = header.strip(self.LINE_BREAK)
         last_line = header.split(self.LINE_BREAK)[-1]
@@ -511,12 +419,12 @@ class ResultTable(object):
         - Column titles contain column_names and column_units of measured quantity.
         - Delimited columns contain the data.
 
-        Files are saved with the specified extension (default: .txt). The
-        classes default delimiters are used to separate columns and rows.
+        Files are saved with the specified extension (default: '.txt'). The classes
+        default delimiters are used to separate columns and rows.
 
-        :param str filename: Path of file to save. Relative paths are
-            interpreted with respect to the current working directory.
-        :param str ext: File extension (default: .txt)
+        :param str filename: Path of file to save. Relative paths are interpreted with
+            respect to the current working directory.
+        :param str ext: File extension. Defaults to '.txt'.
         """
 
         base_name = os.path.splitext(filename)[0]
@@ -536,8 +444,8 @@ class ResultTable(object):
         Files are saved with the extension '.csv' and other extensions are
         overwritten.
 
-        :param str filename: Path of file to save. Relative paths are
-            interpreted with respect to the current working directory.
+        :param str filename: Path of file to save. Relative paths are interpreted with
+            respect to the current working directory.
         """
 
         old_delim = self.DELIMITER
@@ -552,8 +460,8 @@ class ResultTable(object):
 
     def load(self, filename):
         """
-        Loads data from csv or tab delimited tex file. The header is searched
-        for measurement parameters.
+        Loads data from csv or tab delimited tex file. The header is searched for
+        measurement parameters.
 
         :param str filename: Absolute or relative path of file to load.
         """
@@ -583,21 +491,27 @@ class ResultTable(object):
 
     def plot(self, x_clmn=0, y_clmns=None, func=lambda x: x, live=False, **kwargs):
         """
-        Plots the data. This method should not be called from a thread.
-        The column containing the x-axis data is specified (defaults to first
-        column), all other data is plotted on the y-axis. Keyword arguments are
-        passed on to pyplot.
+        Plots the data. This method should not be called from a thread. The column
+        containing the x-axis data is specified (defaults to first column), all other data
+        is plotted on the y-axis. This method requires Matplotlib to be installed and
+        accepts, in addition to the arguments documented here, the same keyword arguments
+        as :func:`matplotlib.pyplot.plot`.
 
-        Column titles are taken as legend labels. :func:`plot` tries to determine a
-        common y-axis unit and name from all given labels.
+        Column titles are taken as legend labels. :func:`plot` tries to determine a common
+        y-axis unit and name from all given labels.
 
         :param x_clmn: Integer or name of column containing the x-axis data.
-        :param y_clmns: List of column numbers or column names for y-axis data. If not
-            given, all columns will be plotted against the x-axis column.
-        :param func: Function to apply to y-data before plotting.
+        :type x_clmn: int or str
+        :param list y_clmns: List of column numbers or column names for y-axis data. If
+            not given, all columns will be plotted against the x-axis column.
+        :param function func: Function to apply to y-data before plotting.
         :param bool live: If ``True``, update plot when new rows are added (default:
             ``False``).
+
         :returns: :class:`ResusltTablePlot` instance with Matplotlib figure.
+        :rtype: :class:`ResusltTablePlot`
+
+        :raises ImportError: if import of matplotlib fails
         """
 
         try:
@@ -641,7 +555,9 @@ class ResultTable(object):
         Gets values in column with name ``key``.
 
         :param str key: Column name.
+
         :returns: Column content as numpy array.
+        :rtype: :class:`numpy.ndarray`
         """
 
         if key not in self.column_names:
@@ -693,6 +609,114 @@ class ResultTable(object):
 
     def __len__(self):
         return self.ncols
+
+
+class ResultTablePlot(object):
+    """
+    Plots the data from a given :class:`ResultTable` instance. Axes labels are
+    automatically generated from column titles and units. This class requires Matplotlib
+    to be installed and accepts, in addition to the arguments documented here, the same
+    keyword arguments as :func:`matplotlib.pyplot.plot`.
+
+    :param result_table: :class:`ResultTable` instance with data to plot.
+    :type result_table: :class:`ResultTable`
+    :param x_clmn: Integer or name of column containing the x-axis data.
+    :type x_clmn: int or str
+    :param y_clmns: List of column numbers or column names for y-axis data. If not given,
+        all columns will be plotted against the x-axis column.
+    :type y_clmns: list(int or str)
+    :param function func: Function to apply to y-data before plotting.
+    :param bool live: If ``True``, update plot when new rows are added (default: ``False``).
+    """
+
+    def __init__(self, result_table, x_clmn=0, y_clmns=None, func=lambda x: x,
+                 live=False, **kwargs):
+
+        try:
+            import matplotlib
+            import matplotlib.pyplot as plt
+        except ImportError:
+            raise ImportError('Matplotlib is required to support plotting.')
+
+        if live and not matplotlib.get_backend() == 'Qt5Agg':
+            print("'Qt5Agg' backend to Matplotlib is required for live plotting.")
+            live = False
+
+        # input processing
+        self.result_table = result_table
+        if self.result_table.ncols < 2:
+            raise ValueError("'ResultTable' must at least contain two columns of data.")
+        self.x_clmn = self._to_column_number(x_clmn)
+        if y_clmns is None:
+            self.y_clmns = list(range(0, self.result_table.ncols))
+            self.y_clmns.remove(x_clmn)
+        else:
+            self.y_clmns = [self._to_column_number(c) for c in y_clmns]
+        self.func = func
+
+        # create plot
+        self.fig = plt.figure()
+        self.ax = self.fig.add_subplot(111)
+
+        line_labels = []
+        line_units = []
+        self.lines = []
+
+        x = self.result_table.data[:, self.x_clmn]
+
+        for c in self.y_clmns:
+            y = self.result_table.data[:, c]
+            y = self.func(y)
+            line = self.ax.plot(x, y, label=self.result_table.column_names[c], **kwargs)
+            self.lines.append(line[0])
+
+            line_labels.append(self.result_table.column_names[c])
+            line_units.append(self.result_table.column_units[c])
+
+        self.ax.set_xlabel(str(self.result_table.titles[x_clmn]))
+
+        y_label = os.path.commonprefix(line_labels)
+        y_unit = os.path.commonprefix(line_units)
+        if y_unit == '':
+            label_text = '%s' % y_label
+        else:
+            label_text = y_label + ' ' + self.result_table.UNIT_FORMAT.format(y_unit)
+        self.ax.set_ylabel(label_text)
+
+        self.ax.autoscale(enable=True, axis='x', tight=True)
+        self.fig.tight_layout()
+
+        self.fig.show()
+
+        if live and matplotlib.get_backend() == 'Qt5Agg':
+            self._timer = self.fig.canvas.new_timer()
+            self._timer.add_callback(self.update_plot)
+            self._timer.start(100)
+
+    def show(self):
+
+        self.fig.show()
+
+    def update_plot(self):
+
+        x = self.result_table.data[:, self.x_clmn]
+
+        for line, column in zip(self.lines, self.y_clmns):
+            y = self.result_table.data[:, column]
+            y = self.func(y)
+            line.set_xdata(x)
+            line.set_ydata(y)
+
+        self.ax.relim()
+        self.ax.autoscale_view(True, True, True)
+        self.fig.canvas.draw()
+
+    def _to_column_number(self, c):
+
+        if not isinstance(c, int):
+            c = self.result_table.column_names.index(c)
+
+        return c
 
 
 class IVSweepData(ResultTable):
