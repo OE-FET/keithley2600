@@ -72,10 +72,8 @@ class ResultTable(object):
     Columns must have names, to designate the measurement variable, and can have units. It
     is possible to access columns by their names in a dictionary type notation.
 
-    :param column_titles: List of column titles (strings).
-    :type column_titles: list[str]
-    :param units: List of column units (strings).
-    :type units: list[str]
+    :param list column_titles: List of column titles (strings).
+    :param list units: List of column units (strings).
     :param data: Numpy array holding the data. If ``data`` is ``None``, an empty array
         with the required number of columns is created.
     :type data: numpy.ndarray or NoneType
@@ -267,10 +265,8 @@ class ResultTable(object):
         Appends multiple columns to data array.
 
         :param list data: List of columns to append.
-        :param column_titles: List of column titles.
-        :type column_titles: list[str]
-        :param units: List of units for new columns.
-        :type units: list[str]
+        :param list column_titles: List of column titles (strings).
+        :param list units: List of units for new columns (strings).
         """
 
         self.data = np.append(self.data, np.transpose(data), 1)
@@ -508,8 +504,8 @@ class ResultTable(object):
         :param bool live: If ``True``, update plot when new rows are added (default:
             ``False``).
 
-        :returns: :class:`ResusltTablePlot` instance with Matplotlib figure.
-        :rtype: :class:`ResusltTablePlot`
+        :returns: :class:`ResultTablePlot` instance with Matplotlib figure.
+        :rtype: :class:`ResultTablePlot`
 
         :raises ImportError: if import of matplotlib fails
         """
