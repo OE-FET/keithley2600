@@ -520,7 +520,7 @@ class ResultTable(object):
             print("'Qt5Agg' backend to Matplotlib is required for live plotting.")
             live = False
 
-        plot = ResusltTablePlot(self, x_clmn, y_clmns, func, live=live, **kwargs)
+        plot = ResultTablePlot(self, x_clmn, y_clmns, func, live=live, **kwargs)
 
         return plot
 
@@ -622,7 +622,8 @@ class ResultTablePlot(object):
         all columns will be plotted against the x-axis column.
     :type y_clmns: list(int or str)
     :param function func: Function to apply to y-data before plotting.
-    :param bool live: If ``True``, update plot when new rows are added (default: ``False``).
+    :param bool live: If ``True``, update plot when new rows are added. Default to
+        `False``.
     """
 
     def __init__(self, result_table, x_clmn=0, y_clmns=None, func=lambda x: x,
