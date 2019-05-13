@@ -67,15 +67,17 @@ class ColumnTitle(object):
 # noinspection PyTypeChecker
 class ResultTable(object):
     """
-    Class that holds measurement data. All data is stored internally as a numpy array.
+    Class that holds measurement data. All data is stored internally as a numpy array with
+    the first index designating rows and the second index designating columns.
 
     Columns must have names, to designate the measurement variable, and can have units. It
     is possible to access columns by their names in a dictionary type notation.
 
     :param list column_titles: List of column titles (strings).
     :param list units: List of column units (strings).
-    :param data: Numpy array holding the data. If ``data`` is ``None``, an empty array
-        with the required number of columns is created.
+    :param data: Numpy array holding the data with the first index designating rows and
+        the second index designating columns. If ``data`` is ``None``, an empty array with
+        the required number of columns is created.
     :type data: numpy.ndarray or NoneType
     :param dict params: Dictionary of measurement parameters.
 
@@ -146,7 +148,7 @@ class ResultTable(object):
 
     @property
     def ncols(self):
-        return len(self.titles)
+        return self.data.shape[1]
 
     @property
     def column_names(self):
@@ -507,14 +509,14 @@ class ResultTable(object):
         :returns: :class:`ResultTablePlot` instance with Matplotlib figure.
         :rtype: :class:`ResultTablePlot`
 
-        :raises ImportError: if import of matplotlib fails
+        :raises ImportError: If import of matplotlib fails.
         """
 
         try:
             import matplotlib
             import matplotlib.pyplot as plt
         except ImportError:
-            raise ImportError('Matplotlib is required to support plotting.')
+            raise ImportError('Matplotlib is required for plotting.')
 
         if live and not matplotlib.get_backend() == 'Qt5Agg':
             print("'Qt5Agg' backend to Matplotlib is required for live plotting.")
@@ -633,7 +635,7 @@ class ResultTablePlot(object):
             import matplotlib
             import matplotlib.pyplot as plt
         except ImportError:
-            raise ImportError('Matplotlib is required to support plotting.')
+            raise ImportError('Matplotlib is required for plotting.')
 
         if live and not matplotlib.get_backend() == 'Qt5Agg':
             print("'Qt5Agg' backend to Matplotlib is required for live plotting.")
@@ -716,87 +718,23 @@ class ResultTablePlot(object):
         return c
 
 
-class IVSweepData(ResultTable):
-    """
-    Class to store, load, save, and plot data from a simple IV sweep.
-    :class:`IVSweepData` inherits form :class:`ResultTable` but provides
-    the fixed columns 'Voltage' and 'Current' with units 'V' and 'A', respectively.
-
-    The following attributes are new or overwritten:
-
-    :cvar str sweep_type: Describes the sweep type, defaults to 'iv'.
-
-    """
-
-    sweep_type = 'iv'
-
-    def __init__(self, v=None, i=None, params=None):
-
-        if (i is None) or (v is None):
-            data = None
-        else:
-            data = np.transpose([v, i])
-
-        if params is None:
-            params = {}
-
-        names = ['Voltage', 'Current']
-        units = ['V', 'A']
-        params['sweep_type'] = self.sweep_type
-        params['recorded'] = time.localtime()
-
-        super(self.__class__, self).__init__(names, units, data, params)
-
-    def append(self, v, i):
-        """
-        Appends list-like objects with voltage and current values to data.
-
-        :param v: List (or list-like object) containing voltage values.
-        :param i: List (or list-like object) containing current values.
-        """
-
-        assert len(i) == len(v)
-        self.append_rows(np.transpose([v, i]))
-
-
-class TransistorSweepData(ResultTable):
+class FETResultTable(ResultTable):
     """
     Class to handle, store and load transfer and output characteristic data of FETs.
     :class:`TransistorSweepData` inherits from :class:`ResultTable` and overrides the
     plot method.
-
-    The following attributes are new or overwritten:
     """
 
     @property
     def sweep_type(self):
-        return self.params['sweep_type']
+        if 'sweep_type' in self.params.keys():
+            return self.params['sweep_type']
+        else:
+            return ''
 
     @sweep_type.setter
-    def sweep_type(self, value):
-        self.params['sweep_type'] = value
-
-    def stepped_voltage_list(self):
-        """
-        Get voltage steps of transfer / output characteristics. This returns
-        the drain voltages steps for transfer curve data and gate voltage steps
-        for output curve data.
-
-        :returns: Voltage steps in transfer / output characteristics.
-        :rtype: set
-        """
-
-        return set(find_numbers(self._column_title_string()))
-
-    def n_steps(self):
-        """
-        Gets the number of steps in transfer or output curve.
-
-        :returns: Number of drain voltage steps for transfer curves or number of
-            gate voltage steps for output curves.
-        :rtype: int
-        """
-        return len(self.stepped_voltage_list())
+    def sweep_type(self, sweep_type):
+        self.params['sweep_type'] = sweep_type
 
     def plot(self, *args, **kwargs):
         """
@@ -805,17 +743,18 @@ class TransistorSweepData(ResultTable):
         and a logarithmic scale for transfer characteristics. Takes the same arguments
         as :func:`ResultTable.plot`.
 
-        :returns: Tuple ``(fig, ax)`` containing Matplotlib figure and axes instances.
-        :rtype: tuple
+        :returns: :class:`ResultTablePlot` instance with Matplotlib figure.
+        :rtype: :class:`ResultTablePlot`
+
+        :raises ImportError: If import of matplotlib fails.
         """
 
+        plot = ResultTable.plot(self, func=np.abs, *args, **kwargs)
+        plot.ax.set_ylabel('I [A]')
+
         if self.sweep_type == 'transfer':
-            plot = ResultTable.plot(self, func=np.abs, *args, **kwargs)
             plot.ax.set_yscale('log')
-            plot.ax.set_ylabel('I [A]')
         else:
-            plot = ResultTable.plot(self, func=np.abs, *args, **kwargs)
             plot.ax.set_yscale('linear')
-            plot.ax.set_ylabel('I [A]')
 
         return plot
