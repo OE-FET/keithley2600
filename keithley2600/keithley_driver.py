@@ -1280,23 +1280,52 @@ class Keithley2600(Keithley2600Base):
         self.busy = False
         return rt
 
-    def playChord(self, direction='up'):
+    def playChord(self, notes=['C6', 'E6', 'G6'], durations=0.3):
         """Plays a chord on the Keithley.
 
-        :param str direction: 'up' or 'done' for upward or downward chord
+        :param list notes: List of notes in scientific pitch notation, for instance
+            ``['F4', 'Ab4', 'C4']`` for a f-minor chord in the 4th octave. Defaults to
+            c-major in the 6th octave.
+        :param duration: List of durations for each note in sec. If a single float is
+            given, all notes will have the same duration. Defaults to 0.3 sec.
+        :type duration: float or list
         """
-        if direction is 'up':
-            self.beeper.beep(0.3, 1046.5)
-            self.beeper.beep(0.3, 1318.5)
-            self.beeper.beep(0.3, 1568)
 
-        elif direction is 'down':
-            self.beeper.beep(0.3, 1568)
-            self.beeper.beep(0.3, 1318.5)
-            self.beeper.beep(0.3, 1046.5)
-        else:
-            self.beeper.beep(0.2, 1046.5)
-            self.beeper.beep(0.1, 1046.5)
+        freqs = [self._pitch_to_freq(p) for p in notes]
+        if not isinstance(durations, list):
+            durations = [durations]*len(freqs)
+
+        for f, d in zip(freqs, durations):
+            self.beeper.beep(d, f)
+
+
+    @staticmethod
+    def _pitch_to_freq(pitch):
+
+        A4 = 440
+        C4 = A4*2.0**(-9/12)
+
+        names_sharp = ["C", "C#", "D", "D#", "E", "F", "F#", "G", "G#", "A", "A#", "B"]
+        names_flat = ["C", "Db", "D", "Eb", "E", "F", "Gb", "G", "Ab", "A", "Bb", "B"]
+
+        octave = list(filter(lambda x: x in '0123456789', pitch))
+        octave = ''.join(octave)
+
+        pitch = pitch.strip(octave)
+
+        octave == '4' if octave == '' else octave
+        octave = int(octave)
+
+        try:
+            steps = names_sharp.index(pitch)
+        except ValueError:
+            steps = names_flat.index(pitch)
+
+        steps += 12*(octave-4)
+
+        freq = C4*2.0**(steps/12)
+
+        return freq
 
 
 class Keithley2600Factory(object):
