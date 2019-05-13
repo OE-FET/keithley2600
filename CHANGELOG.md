@@ -10,6 +10,11 @@ _Changed:_
 
 - Optimized I/O: Keithley function calls to only use a single `query` call instead of consequtive `query` and `read` calls.
 - Emtpy strings returned by the Keithley will always be converted to `None`. This is necessary to enable the above change.
+- Renamed `TransistorSweepData` to `FETResultTable`. Renames `sweep_data` mode to `result_table`.
+
+_Removed:_
+
+- Removed `IVSweepData`. The was no clear added value over just using `ResultTable`.
 
 #### v1.1.1 (2019-05-01):
 _Changed:_
