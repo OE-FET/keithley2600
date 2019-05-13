@@ -6,7 +6,6 @@
 Classes to hold sweep results
 =============================
 
-.. automodule:: sweep_data
+.. automodule:: result_table
    :members:
    :show-inheritance:
-   

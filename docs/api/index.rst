@@ -10,6 +10,6 @@ This section gives an overview of keithley2600's modules:
 
 .. toctree::
    :maxdepth: 1
-   
+
    keithley2600.keithley_driver <keithley_driver>
-   keithley2600.sweep_data <sweep_data>
+   keithley2600.result_table <sweep_data>
