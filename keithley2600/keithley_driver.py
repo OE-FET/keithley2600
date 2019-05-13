@@ -20,7 +20,7 @@ import time
 # local import
 from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
                                        CLASSES, PROPERTY_LISTS)
-from keithley2600.sweep_data import TransistorSweepData
+from keithley2600.result_table import FETResultTable
 
 __version__ = 'v1.2.0-dev'
 
@@ -1175,7 +1175,7 @@ class Keithley2600(Keithley2600Base):
         # create ResultTable instance
         params = {'sweep_type': 'transfer', 't_int': t_int, 'delay': delay,
                   'pulsed': pulsed}
-        rt = TransistorSweepData(params=params)
+        rt = FETResultTable(params=params)
         rt.append_column(sweeplist_gate, name='Gate voltage', unit='V')
 
         # record sweeps for every drain voltage step
@@ -1250,7 +1250,7 @@ class Keithley2600(Keithley2600Base):
         # create ResultTable instance
         params = {'sweep_type': 'output', 't_int': t_int, 'delay': delay,
                   'pulsed': pulsed}
-        rt = TransistorSweepData(params=params)
+        rt = FETResultTable(params=params)
         rt.append_column(sweeplist_drain, name='Drain voltage', unit='V')
 
         for vgate in vg_list:

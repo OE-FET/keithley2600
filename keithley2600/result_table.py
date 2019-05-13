@@ -90,11 +90,11 @@ class ResultTable(object):
         >>> import numpy as np
         >>> from  keithley2600 import ResultTable
         >>> # create dictionary of relevant measurement parameters
-        >>> par_dict = {'Recorded': time.asctime()}
+        >>> pars = {'recorded': time.asctime(), 'sweep_type': 'iv'}
         >>> # create ResultTable with two columns
-        >>> table = ResultTable(['Voltage', 'Current'], ['V', 'A'], par_dict)
+        >>> rt = ResultTable(['Voltage', 'Current'], ['V', 'A'], pars)
         >>> # create a live plot of the data
-        >>> fig = table.plot(live=True)
+        >>> fig = rt.plot(live=True)
 
         Create a :class:`Keithley2600` instance and record some data:
 
@@ -104,13 +104,13 @@ class ResultTable(object):
         >>> for t in range(120):  # measure each second, for 2 min
         ...     v = k.smua.measure.v()
         ...     i = k.smua.measure.i()
-        ...     table.append_row([v, i])  # add values to ResultTable
+        ...     rt.append_row([v, i])  # add values to ResultTable
         ...     time.sleep(1)
 
         Save and plot the recorded data:
 
-        >>> table.save('~/Desktop/stress_test.txt')  # save the ResultTable
-        >>> table['Voltage']  # print the column with title 'Voltage'
+        >>> rt.save('~/Desktop/stress_test.txt')  # save the ResultTable
+        >>> rt['Voltage']  # print the column with title 'Voltage'
         array([0.01, ..., 0.01])
 
     """
