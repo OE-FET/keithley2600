@@ -50,6 +50,8 @@ Higher level commands defined in the driver:
 ...                         delay=-1, pulsed=False)
 >>> k.voltageSweepDualSMU(smu1=k.smua, smu2=k.smub, smu1_sweeplist=list(range(0, 61)),
 ...                       smu2_sweeplist=list(range(0, 61)), t_int=0.1, delay=-1, pulsed=False)
+>>> k.transferMeasurement( ... )
+>>> k.outputMeasurement( ... )
 ```
 
 *Singleton behaviour:*
@@ -66,7 +68,7 @@ True
 
 *Data structures:*
 
-The methods `voltageSweepSingleSMU` and `voltageSweepDualSMU` return lists with the measured voltages and currents. However, the higher level commands `transferMeasurement` and `outputMeasurement` return `ResultTable` objects. `ResultTable` stores the measurement data internally as a numpy array and provides information about column titles and units. In addition, `ResultTable` provides a dictionary-like interface to access columns by name, a built in `plot` command, and methods to load and save the data to text files.
+The methods `voltageSweepSingleSMU` and `voltageSweepDualSMU` return lists with the measured voltages and currents. The higher level commands `transferMeasurement` and `outputMeasurement` return `ResultTable` objects. `ResultTable` stores the measurement data internally as a numpy array and provides information about column titles and units. It also provides a dictionary-like interface to access columns by name, a built in `plot` command, and methods to load and save the data to text files.
 
 For example:
 ```python
