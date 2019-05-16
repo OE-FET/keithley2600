@@ -1,4 +1,4 @@
-#### master (2019-05-09):
+#### v1.2.0 (2019-05-16):
 _Added:_
 
 - New method `readErrorQueue` which returns a list of all errors in the Keithley's error queue.
@@ -14,7 +14,7 @@ _Changed:_
 
 _Removed:_
 
-- Removed `IVSweepData`. The was no clear added value over just using `ResultTable`.
+- Removed `IVSweepData`. The was no clear added value over using `ResultTable` directly.
 
 #### v1.1.1 (2019-05-01):
 _Changed:_
