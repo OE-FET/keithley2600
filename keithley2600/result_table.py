@@ -12,7 +12,6 @@ Submodule defining classes to store, plot, and save measurement results.
 import sys
 import os
 import re
-import time
 import numpy as np
 
 PY2 = sys.version[0] == '2'
@@ -126,14 +125,16 @@ class ResultTable(object):
         if column_titles is None:
             column_titles = []
 
+        ncols = len(column_titles)
+
         if units is None:
-            units = [''] * len(column_titles)
+            units = [''] * ncols
 
         self.titles = [ColumnTitle(n, u, self.UNIT_FORMAT)
                        for n, u in zip(column_titles, units)]
 
         if data is None:
-            self.data = np.array([[]]*self.ncols).transpose()
+            self.data = np.array([[]]*ncols).transpose()
         else:
             self.data = np.array(data)
 
