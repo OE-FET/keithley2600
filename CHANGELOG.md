@@ -1,7 +1,7 @@
-#### v1.2.1-dev (2019-05-20):
+#### v1.2.1 (2019-05-20):
 _Changed:_
 
-- Fixed a bug when initializing and appending columns to an emtpy `ResultTable` instance.
+- Fixed a critical error when initializing and appending columns to an emtpy `ResultTable` instance.
 
 #### v1.2.0 (2019-05-16):
 _Added:_
