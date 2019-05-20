@@ -29,7 +29,7 @@ _Added:_
 #### v1.0.0 (2019-01-17):
 _Added:_
 
-- Added the base class `ResultTable` to store, save and load tables of measurement data togther with column titles, units, and measurement parameters. The data is stored internally as a 2D numpy array and can be accessed in a dictionary-type fashion with column names as keys. Additionaly, `ResultTable` provides a basic plotting method using matplotlib.
+- Added the base class `ResultTable` to store, save and load tables of measurement data together with column titles, units, and measurement parameters. The data is stored internally as a 2D numpy array and can be accessed in a dictionary-type fashion with column names as keys. Additionally, `ResultTable` provides a basic plotting method using matplotlib.
 
 _Changed:_
 
@@ -40,7 +40,7 @@ _Changed:_
 	  have one of the values: 'transfer' or 'output'.
 	- Options to read and write in CSV format instead of tab-delimited columns are given.
 
-	As a result, data files created by versions < 1.0.0 need to be modified as follows to be recoginzed:
+	As a result, data files created by versions < 1.0.0 need to be modified as follows to be recognized:
 
 	- Prepend '#' to the line with column titles.
 	- Add the line '# sweep_type: type' to the header where type can be 'transfer', 'output', or 'iv'.
@@ -52,7 +52,7 @@ _Removed:_
 #### v0.3.0 (2018-11-13):
 _Added:_
 
-- `Keithley2600` methods now accecpt `Keithley2600` objects as arguments, for instance, one can now write
+- `Keithley2600` methods now accept `Keithley2600` objects as arguments, for instance, one can now write
   ```python
   # assume we have a Keithley2600 instance 'k'
   k.smua.measureiv(k.smua.nvbuffer1, k.smua.nvbuffer2)
@@ -61,7 +61,7 @@ _Added:_
   ```python
   k.smua.measureiv('smua.nvbuffer1', 'smua.nvbuffer2')
   ```
-- Keyword aruments can now be given to `Keithley2600()` and will be passed on to the visa resource (e.g., `baud_rate=9600`)
+- Keyword arguments can now be given to `Keithley2600()` and will be passed on to the visa resource (e.g., `baud_rate=9600`)
 
 _Changed:_
 
