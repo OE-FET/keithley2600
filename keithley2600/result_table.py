@@ -259,7 +259,10 @@ class ResultTable(object):
         :param str unit: Unit of values in new column.
         """
 
-        self.data = np.append(self.data, np.transpose([data]), 1)
+        if self.data.size == 0:
+            self.data = np.transpose([data])
+        else:
+            self.data = np.append(self.data, np.transpose([data]), 1)
 
         self.titles.append(ColumnTitle(name, unit, self.UNIT_FORMAT))
 
@@ -271,8 +274,10 @@ class ResultTable(object):
         :param list column_titles: List of column titles (strings).
         :param list units: List of units for new columns (strings).
         """
-
-        self.data = np.append(self.data, np.transpose(data), 1)
+        if self.data.size == 0:
+            self.data = np.transpose(data)
+        else:
+            self.data = np.append(self.data, np.transpose(data), 1)
 
         for name, unit in zip(column_titles, units):
             self.titles.append(ColumnTitle(name, unit, self.UNIT_FORMAT))
