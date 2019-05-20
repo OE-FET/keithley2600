@@ -121,11 +121,11 @@ class ResultTable(object):
     UNIT_FORMAT = '[{}]'
 
     def __init__(self, column_titles=None, units=None, data=None, params=None):
-        
-        ncols = len(column_titles)
 
         if column_titles is None:
             column_titles = []
+
+        ncols = len(column_titles)
 
         if units is None:
             units = [''] * ncols
