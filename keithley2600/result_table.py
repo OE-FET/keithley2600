@@ -145,18 +145,27 @@ class ResultTable(object):
 
     @property
     def nrows(self):
+        """Number of rows of the ResultTable."""
         return self.data.shape[0]
 
     @property
     def ncols(self):
-        return self.data.shape[1]
+        """Number of columns of the ResultTable."""
+        return len(self.titles)
+
+    @property
+    def shape(self):
+        """A tuple representing the dimensionality of the ResultTable."""
+        return self.data.shape[0], len(self.titles)
 
     @property
     def column_names(self):
+        """List of strings with column names."""
         return [title.name for title in self.titles]
 
     @column_names.setter
     def column_names(self, names_list):
+        """Setter: List of strings with column names."""
         if not all(isinstance(x, basestring) for x in names_list):
             raise ValueError("All column names must be of type 'str'.")
         elif not len(names_list) == self.ncols:
@@ -167,10 +176,12 @@ class ResultTable(object):
 
     @property
     def column_units(self):
+        """List of strings with column units."""
         return [title.unit for title in self.titles]
 
     @column_units.setter
     def column_units(self, units_list):
+        """Setter: List of strings with column units."""
         if not all(isinstance(x, basestring) for x in units_list):
             raise ValueError("All column_units must be of type 'str'.")
         elif not len(units_list) == self.ncols:
