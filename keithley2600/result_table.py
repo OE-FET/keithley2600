@@ -69,8 +69,9 @@ class ResultTable(object):
     Class that holds measurement data. All data is stored internally as a numpy array with
     the first index designating rows and the second index designating columns.
 
-    Columns must have names, to designate the measurement variable, and can have units. It
-    is possible to access columns by their names in a dictionary type notation.
+    Columns must have titles, to designate the measurement variable, and can have units.
+    It is possible to access the data in a column by its title in a dictionary type
+    notation.
 
     :param list column_titles: List of column titles (strings).
     :param list units: List of column units (strings).
@@ -99,18 +100,25 @@ class ResultTable(object):
 
         >>> from  keithley2600 import Keithley2600
         >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
-        >>> k.applyVoltage(k.smua, 10)  # apply a voltage
-        >>> for t in range(120):  # measure each second, for 2 min
-        ...     v = k.smua.measure.v()
+        >>> for v in range(11):  # measure IV characteristics from 0 to 10 V
+        ...     k.applyVoltage(k.smua, 10)
         ...     i = k.smua.measure.i()
         ...     rt.append_row([v, i])  # add values to ResultTable
         ...     time.sleep(1)
 
+        Print a preview of data to the console:
+
+        >>> print(rt)
+        Voltage /V   Current /A
+        0.0000e+00   1.0232e-04
+        1.0000e+00   2.2147e-04
+        2.0000e+00   3.6077e-04
+        3.0000e+00   5.2074e-04
+        4.0000e+00   6.9927e-04
+
         Save and plot the recorded data:
 
         >>> rt.save('~/Desktop/stress_test.txt')  # save the ResultTable
-        >>> rt['Voltage']  # print the column with title 'Voltage'
-        array([0.01, ..., 0.01])
 
     """
 
@@ -547,6 +555,25 @@ class ResultTable(object):
         titles = [str(t) for t in self.titles]
         return '<{0}(columns={1}, data=array(...))>'.format(
                 self.__class__.__name__, str(titles))
+
+    def __str__(self):
+        # print first 7 rows of ResultTable to console
+
+        n = min(7, self.nrows)
+
+        spacer = 3*' '
+
+        title_strings = [str(t) for t in self.titles]
+        max_lengths = [max(len(ts), 11) for ts in title_strings]
+
+        row_strings = [spacer.join([t.rjust(m) for t, m in zip(title_strings, max_lengths)])]
+
+        for row in self.data[0:n, :]:
+            strings = ['{:.4e}'.format(x) for x in row]
+            strings = [s.rjust(m) for s, m in zip(strings, max_lengths)]
+            row_strings.append(spacer.join(strings))
+
+        return '\n'.join(row_strings)
 
 # =============================================================================
 # Dictionary compatibility functions. This allows access to all columns of the

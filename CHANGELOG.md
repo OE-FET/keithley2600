@@ -2,7 +2,8 @@
 
 _Added:_
 - Added `shape` property to `ResultTable`.
-
+- Added string representation of `ResultTable` which returns the first 7 rows as neatly
+  formatted columns (similar to pandas dataframes).
 
 #### v1.2.1 (2019-05-20):
 
@@ -19,7 +20,7 @@ _Added:_
   first value would be returned.
 - Added `ResultTablePlot` class to plot the data in a `ResultTable`.
 - Added live plotting of data to `ResultTable` and its subclasses. Pass the keyword
-  argument `live=True` to the `plot` method for the plot to update dynamically when new 
+  argument `live=True` to the `plot` method for the plot to update dynamically when new
   data is added.
 
 _Changed:_
@@ -48,14 +49,14 @@ _Added:_
 
 _Added:_
 - Added the base class `ResultTable` to store, save and load tables of measurement data
-  together with column titles, units, and measurement parameters. The data is stored 
-  internally as a 2D numpy array and can be accessed in a dictionary-type fashion with 
-  column names as keys. Additionally, `ResultTable` provides a basic plotting method 
+  together with column titles, units, and measurement parameters. The data is stored
+  internally as a 2D numpy array and can be accessed in a dictionary-type fashion with
+  column names as keys. Additionally, `ResultTable` provides a basic plotting method
   using matplotlib.
 
 _Changed:_
 - `TrasistorSweepData` and `IVSweepData` now inherit from `ResultTable` and have been
-   significantly simplified. Formats for saving and loading the data to files have 
+   significantly simplified. Formats for saving and loading the data to files have
    slightly changed:
 
 	- The line with column headers is now  marked as a comment and starts with '#'.
@@ -73,7 +74,7 @@ _Changed:_
 
 _Removed:_
 - `clearBuffers` method from `Keithley2600` has been deprecated. Clear the buffers
-  directly with `buffer.clear()` instead, where `buffer` is a keithley buffer instance 
+  directly with `buffer.clear()` instead, where `buffer` is a keithley buffer instance
   such as `k.smua.nvbuffer1`.
 
 #### v0.3.0 (2018-11-13):
@@ -81,7 +82,7 @@ _Removed:_
 _Added:_
 - `Keithley2600` methods now accept `Keithley2600` objects as arguments, for instance, one
   can now write
- 
+
   ```python
   # assume we have a Keithley2600 instance 'k'
   k.smua.measureiv(k.smua.nvbuffer1, k.smua.nvbuffer2)
