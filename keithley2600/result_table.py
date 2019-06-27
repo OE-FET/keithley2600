@@ -33,11 +33,11 @@ class ColumnTitle(object):
     """
     Class to hold a column title.
 
-    :param str name: String containing column name.
-    :param str unit: String containing column unit.
+    :param str name: Column name.
+    :param str unit: Column unit.
     :param str unit_fmt: Formatting directive for units when generating string
         representation. Defaults to '[{}]', such that units are appended to the column
-        title in square brackets.
+        title in square brackets (e.g., "Gate voltage [V]").
     """
 
     def __init__(self, name, unit=None, unit_fmt='[{}]'):
@@ -73,8 +73,8 @@ class ResultTable(object):
     It is possible to access the data in a column by its title in a dictionary type
     notation.
 
-    :param list column_titles: List of column titles (strings).
-    :param list units: List of column units (strings).
+    :param list column_titles: List of column titles.
+    :param list units: List of column units.
     :param data: Numpy array holding the data with the first index designating rows and
         the second index designating columns. If ``data`` is ``None``, an empty array with
         the required number of columns is created.
