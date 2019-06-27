@@ -8,7 +8,8 @@ A full Python driver for the Keithley 2600 series of source measurement units.
 ## About
 Keithley driver with access to base functions and higher level functions such as IV
 measurements, transfer and output curves, etc. Base commands replicate the functionality
-and syntax from the Keithley's internal TSP functions, which have a syntax similar to Python.
+and syntax from the Keithley's internal TSP functions, which have a syntax similar to
+Python.
 
 *Warning:*
 
@@ -56,7 +57,11 @@ Higher level commands defined in the driver:
 
 *Singleton behaviour:*
 
-Once a Keithley2600 instance with a visa address `'address'` has been created, repeated calls to `Keithley2600('address')` will return the existing instance instead of creating a new one. This prevents the user from opening multiple connections to the same instrument simultaneously and allows easy access to a Keithley2600 instance from different parts of a program. For example:
+Once a Keithley2600 instance with a visa address `'address'` has been created, repeated
+calls to `Keithley2600('address')` will return the existing instance instead of creating a
+new one. This prevents the user from opening multiple connections to the same instrument
+simultaneously and allows easy access to a Keithley2600 instance from different parts of a
+program. For example:
 
 ```python
 >>> from keithley2600 import Keithley2600
@@ -68,7 +73,13 @@ True
 
 *Data structures:*
 
-The methods `voltageSweepSingleSMU` and `voltageSweepDualSMU` return lists with the measured voltages and currents. The higher level commands `transferMeasurement` and `outputMeasurement` return `ResultTable` objects. `ResultTable` stores the measurement data internally as a numpy array and provides information about column titles and units. It also provides a dictionary-like interface to access columns by name, a built in `plot` command, and methods to load and save the data to text files.
+The methods `voltageSweepSingleSMU` and `voltageSweepDualSMU` return lists with the
+measured voltages and currents. The higher level commands `transferMeasurement` and
+`outputMeasurement` return `ResultTable` objects which are very similar to pandas
+dataframes but add support for column units. `ResultTable` stores the measurement data
+internally as a numpy array and provides information about column titles and units. It
+also provides a dictionary-like interface to access columns by name, live plotting of the
+data (requires matplotlib), and methods to load and save the data to text files.
 
 For example:
 ```python
@@ -78,6 +89,8 @@ For example:
 >>> # create ResultTable with two columns
 >>> rt = ResultTable(column_titles=['Voltage', 'Current'], units=['V', 'A'],
 ...                  params={'recorded': time.asctime(), 'sweep_type': 'iv'})
+>>> # create live plot which updates as data is added
+>>> rt.plot(live=True)  
 >>> # measure some currents
 >>> for v in range(0, 20):
 >>>     k.applyVoltage(k.smua, 10)
@@ -85,10 +98,11 @@ For example:
 ...     rt.append_row([v, i])
 >>> # save and plot the data
 >>> rt.save('~/iv_curve.txt')
->>> rt.plot()
+
 ```
 
-See the [documentation](https://keithley2600.readthedocs.io/en/latest/api/result_table.html) for all available methods.
+See the [documentation](https://keithley2600.readthedocs.io/en/latest/api/result_table.html)
+for all available methods.
 
 ## Installation
 Install the stable version from PyPi by running
