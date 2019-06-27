@@ -1,0 +1,363 @@
+# apply general sweep settings from GUI
+
+2019-05-20 12:49:11,413 - keithley2600.keithley_driver - DEBUG - write: print(smua.SENSE_LOCAL)
+2019-05-20 12:49:11,419 - keithley2600.keithley_driver - DEBUG - read: 0.00000e+00
+2019-05-20 12:49:11,420 - keithley2600.keithley_driver - DEBUG - write: smua.sense = 0
+2019-05-20 12:49:11,422 - keithley2600.keithley_driver - DEBUG - write: smua.source.limiti = 0.1
+2019-05-20 12:49:11,425 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.source.limiti = 0.1
+2019-05-20 12:49:11,427 - keithley2600.keithley_driver - DEBUG - write: smua.source.limitv = 200.0
+2019-05-20 12:49:11,429 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.source.limitv = 200.0
+2019-05-20 12:49:11,432 - keithley2600.keithley_driver - DEBUG - write: print(smub.SENSE_LOCAL)
+2019-05-20 12:49:11,434 - keithley2600.keithley_driver - DEBUG - read: 0.00000e+00
+2019-05-20 12:49:11,436 - keithley2600.keithley_driver - DEBUG - write: smub.sense = 0
+2019-05-20 12:49:11,438 - keithley2600.keithley_driver - DEBUG - write: smub.source.limiti = 0.1
+2019-05-20 12:49:11,440 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.source.limiti = 0.1
+2019-05-20 12:49:11,443 - keithley2600.keithley_driver - DEBUG - write: smub.source.limitv = 200.0
+2019-05-20 12:49:11,445 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.source.limitv = 200.0
+2019-05-20 12:49:11,448 - keithley2600.keithley_driver - DEBUG - write: print(localnode.linefreq)
+2019-05-20 12:49:11,451 - keithley2600.keithley_driver - DEBUG - read: 5.00000e+01
+
+# logs from transferMeasurement
+
+2019-05-20 12:49:11,463 - keithley2600.keithley_driver - INFO - Recording transfer curve with Vg from 10.0V to -60.0V, Vd = [-5.0, -60.0] V. 
+2019-05-20 12:49:11,471 - keithley2600.keithley_driver - DEBUG - write: mylist = {}
+2019-05-20 12:49:11,473 - keithley2600.keithley_driver - DEBUG - write: table.insert(mylist, 10.0)
+2019-05-20 12:49:11,473 - keithley2600.keithley_driver - DEBUG - write: table.insert(mylist, 9.0)
+# many more - cut for brevity
+2019-05-20 12:49:11,824 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.source.listv(mylist))
+2019-05-20 12:49:11,828 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:11,829 - keithley2600.keithley_driver - DEBUG - write: mylist = {}
+2019-05-20 12:49:11,831 - keithley2600.keithley_driver - DEBUG - write: table.insert(mylist, -5.0)
+2019-05-20 12:49:11,833 - keithley2600.keithley_driver - DEBUG - write: table.insert(mylist, -5.0)
+# many more - cut for brevity
+2019-05-20 12:49:12,203 - keithley2600.keithley_driver - DEBUG - write: print(smub.trigger.source.listv(mylist))
+2019-05-20 12:49:12,212 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,214 - keithley2600.keithley_driver - DEBUG - write: print(smua.ENABLE)
+2019-05-20 12:49:12,217 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,218 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.source.action = 1
+2019-05-20 12:49:12,221 - keithley2600.keithley_driver - DEBUG - write: print(smub.ENABLE)
+2019-05-20 12:49:12,224 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,225 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.source.action = 1
+2019-05-20 12:49:12,228 - keithley2600.keithley_driver - DEBUG - write: print(localnode.linefreq)
+2019-05-20 12:49:12,231 - keithley2600.keithley_driver - DEBUG - read: 5.00000e+01
+2019-05-20 12:49:12,232 - keithley2600.keithley_driver - DEBUG - write: smua.measure.nplc = 5.0
+2019-05-20 12:49:12,234 - keithley2600.keithley_driver - DEBUG - write: print(localnode.linefreq)
+2019-05-20 12:49:12,238 - keithley2600.keithley_driver - DEBUG - read: 5.00000e+01
+2019-05-20 12:49:12,239 - keithley2600.keithley_driver - DEBUG - write: smub.measure.nplc = 5.0
+2019-05-20 12:49:12,241 - keithley2600.keithley_driver - DEBUG - write: smua.measure.delay = -1.0
+2019-05-20 12:49:12,243 - keithley2600.keithley_driver - DEBUG - write: smub.measure.delay = -1.0
+2019-05-20 12:49:12,245 - keithley2600.keithley_driver - DEBUG - write: print(smua.AUTORANGE_ON)
+2019-05-20 12:49:12,248 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,249 - keithley2600.keithley_driver - DEBUG - write: smua.measure.autorangei = 1
+2019-05-20 12:49:12,252 - keithley2600.keithley_driver - DEBUG - write: print(smub.AUTORANGE_ON)
+2019-05-20 12:49:12,254 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,256 - keithley2600.keithley_driver - DEBUG - write: smub.measure.autorangei = 1
+2019-05-20 12:49:12,258 - keithley2600.keithley_driver - DEBUG - write: print(smua.OUTPUT_DCVOLTS)
+2019-05-20 12:49:12,261 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,262 - keithley2600.keithley_driver - DEBUG - write: smua.source.func = 1
+2019-05-20 12:49:12,264 - keithley2600.keithley_driver - DEBUG - write: print(smub.OUTPUT_DCVOLTS)
+2019-05-20 12:49:12,267 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,268 - keithley2600.keithley_driver - DEBUG - write: smub.source.func = 1
+2019-05-20 12:49:12,271 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.clear())
+2019-05-20 12:49:12,273 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,275 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.clear())
+2019-05-20 12:49:12,278 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,279 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.clearcache())
+2019-05-20 12:49:12,282 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,283 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.clearcache())
+2019-05-20 12:49:12,286 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,288 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.clear())
+2019-05-20 12:49:12,291 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,292 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.clear())
+2019-05-20 12:49:12,295 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,297 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.clearcache())
+2019-05-20 12:49:12,299 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,301 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.clearcache())
+2019-05-20 12:49:12,305 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,306 - keithley2600.keithley_driver - DEBUG - write: print(display.MEASURE_DCAMPS)
+2019-05-20 12:49:12,309 - keithley2600.keithley_driver - DEBUG - read: 0.00000e+00
+2019-05-20 12:49:12,310 - keithley2600.keithley_driver - DEBUG - write: display.smua.measure.func = 0
+2019-05-20 12:49:12,312 - keithley2600.keithley_driver - DEBUG - write: print(display.MEASURE_DCAMPS)
+2019-05-20 12:49:12,315 - keithley2600.keithley_driver - DEBUG - read: 0.00000e+00
+2019-05-20 12:49:12,317 - keithley2600.keithley_driver - DEBUG - write: display.smub.measure.func = 0
+2019-05-20 12:49:12,319 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.count = 142
+2019-05-20 12:49:12,321 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.count = 142
+2019-05-20 12:49:12,323 - keithley2600.keithley_driver - DEBUG - write: print(smua.ENABLE)
+2019-05-20 12:49:12,326 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,327 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.measure.action = 1
+2019-05-20 12:49:12,330 - keithley2600.keithley_driver - DEBUG - write: print(smub.ENABLE)
+2019-05-20 12:49:12,333 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,334 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.measure.action = 1
+2019-05-20 12:49:12,336 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.measure.iv(smua.nvbuffer1, smua.nvbuffer2))
+2019-05-20 12:49:12,339 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,341 - keithley2600.keithley_driver - DEBUG - write: print(smub.trigger.measure.iv(smub.nvbuffer1, smub.nvbuffer2))
+2019-05-20 12:49:12,344 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,345 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.SOURCE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:12,348 - keithley2600.keithley_driver - DEBUG - read: 4.60000e+01
+2019-05-20 12:49:12,349 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.measure.stimulus = 46
+2019-05-20 12:49:12,352 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.SOURCE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:12,354 - keithley2600.keithley_driver - DEBUG - read: 4.60000e+01
+2019-05-20 12:49:12,356 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.measure.stimulus = 46
+2019-05-20 12:49:12,358 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.endpulse.action = 1
+2019-05-20 12:49:12,360 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.endpulse.action = 1
+2019-05-20 12:49:12,363 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.endsweep.action = 1
+2019-05-20 12:49:12,365 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.endsweep.action = 1
+2019-05-20 12:49:12,368 - keithley2600.keithley_driver - DEBUG - write: print(trigger.EVENT_ID)
+2019-05-20 12:49:12,371 - keithley2600.keithley_driver - DEBUG - read: 2.90000e+01
+2019-05-20 12:49:12,372 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.arm.stimulus = 29
+2019-05-20 12:49:12,374 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[1].orenable = true
+2019-05-20 12:49:12,376 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.ARMED_EVENT_ID)
+2019-05-20 12:49:12,379 - keithley2600.keithley_driver - DEBUG - read: 4.80000e+01
+2019-05-20 12:49:12,381 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[1].stimulus[1] = 48
+2019-05-20 12:49:12,383 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.PULSE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:12,386 - keithley2600.keithley_driver - DEBUG - read: 4.70000e+01
+2019-05-20 12:49:12,387 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[1].stimulus[2] = 47
+2019-05-20 12:49:12,389 - keithley2600.keithley_driver - DEBUG - write: print(trigger.blender[1].EVENT_ID)
+2019-05-20 12:49:12,392 - keithley2600.keithley_driver - DEBUG - read: 5.70000e+01
+2019-05-20 12:49:12,393 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.source.stimulus = 57
+2019-05-20 12:49:12,396 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[2].orenable = false
+2019-05-20 12:49:12,398 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.MEASURE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:12,401 - keithley2600.keithley_driver - DEBUG - read: 4.50000e+01
+2019-05-20 12:49:12,402 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[2].stimulus[1] = 45
+2019-05-20 12:49:12,404 - keithley2600.keithley_driver - DEBUG - write: print(smub.trigger.MEASURE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:12,407 - keithley2600.keithley_driver - DEBUG - read: 5.10000e+01
+2019-05-20 12:49:12,409 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[2].stimulus[2] = 51
+2019-05-20 12:49:12,411 - keithley2600.keithley_driver - DEBUG - write: print(trigger.blender[2].EVENT_ID)
+2019-05-20 12:49:12,414 - keithley2600.keithley_driver - DEBUG - read: 5.80000e+01
+2019-05-20 12:49:12,416 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.endpulse.stimulus = 58
+2019-05-20 12:49:12,418 - keithley2600.keithley_driver - DEBUG - write: print(smua.OUTPUT_ON)
+2019-05-20 12:49:12,421 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,422 - keithley2600.keithley_driver - DEBUG - write: smua.source.output = 1
+2019-05-20 12:49:12,424 - keithley2600.keithley_driver - DEBUG - write: print(smub.OUTPUT_ON)
+2019-05-20 12:49:12,427 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:12,429 - keithley2600.keithley_driver - DEBUG - write: smub.source.output = 1
+2019-05-20 12:49:12,431 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.initiate())
+2019-05-20 12:49:12,637 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,639 - keithley2600.keithley_driver - DEBUG - write: print(smub.trigger.initiate())
+2019-05-20 12:49:12,846 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:12,848 - keithley2600.keithley_driver - DEBUG - write: *trg
+2019-05-20 12:49:12,850 - keithley2600.keithley_driver - DEBUG - write: print(status.operation.sweeping.condition)
+2019-05-20 12:49:12,854 - keithley2600.keithley_driver - DEBUG - read: 6.00000e+00
+2019-05-20 12:49:12,856 - keithley2600.keithley_driver - DEBUG - write: print(status.operation.sweeping.condition)
+2019-05-20 12:49:12,859 - keithley2600.keithley_driver - DEBUG - read: 6.00000e+00
+# many more - cut for brevity
+2019-05-20 12:49:29,896 - keithley2600.keithley_driver - DEBUG - write: print(status.operation.sweeping.condition)
+2019-05-20 12:49:29,900 - keithley2600.keithley_driver - DEBUG - read: 0.00000e+00
+# sweep is done! reading all buffers...
+2019-05-20 12:49:29,902 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.n)
+2019-05-20 12:49:29,905 - keithley2600.keithley_driver - DEBUG - read: 1.42000e+02
+2019-05-20 12:49:29,907 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.readings[1])
+2019-05-20 12:49:29,910 - keithley2600.keithley_driver - DEBUG - read: 3.49402e-11
+2019-05-20 12:49:29,912 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.readings[2])
+2019-05-20 12:49:29,916 - keithley2600.keithley_driver - DEBUG - read: -3.07393e-10
+# many more - cut for brevity
+2019-05-20 12:49:30,586 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.n)
+2019-05-20 12:49:30,589 - keithley2600.keithley_driver - DEBUG - read: 1.42000e+02
+2019-05-20 12:49:30,591 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.readings[1])
+2019-05-20 12:49:30,594 - keithley2600.keithley_driver - DEBUG - read: 9.99931e+00
+2019-05-20 12:49:30,595 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.readings[2])
+2019-05-20 12:49:30,598 - keithley2600.keithley_driver - DEBUG - read: 8.99933e+00
+# many more - cut for brevity
+2019-05-20 12:49:31,284 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.n)
+2019-05-20 12:49:31,287 - keithley2600.keithley_driver - DEBUG - read: 1.42000e+02
+2019-05-20 12:49:31,288 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.readings[1])
+2019-05-20 12:49:31,291 - keithley2600.keithley_driver - DEBUG - read: -3.74079e-11
+2019-05-20 12:49:31,293 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.readings[2])
+2019-05-20 12:49:31,298 - keithley2600.keithley_driver - DEBUG - read: -5.98431e-12
+# many more - cut for brevity
+2019-05-20 12:49:31,950 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.n)
+2019-05-20 12:49:31,954 - keithley2600.keithley_driver - DEBUG - read: 1.42000e+02
+2019-05-20 12:49:31,955 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.readings[1])
+2019-05-20 12:49:31,960 - keithley2600.keithley_driver - DEBUG - read: -5.00075e+00
+2019-05-20 12:49:31,962 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.readings[2])
+2019-05-20 12:49:31,964 - keithley2600.keithley_driver - DEBUG - read: -5.00081e+00
+# many more - cut for brevity
+2019-05-20 12:49:32,786 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.clear())
+2019-05-20 12:49:32,798 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:32,800 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.clear())
+2019-05-20 12:49:32,803 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:32,804 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.clearcache())
+2019-05-20 12:49:32,807 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:32,808 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.clearcache())
+2019-05-20 12:49:32,811 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:32,813 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.clear())
+2019-05-20 12:49:32,815 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:32,817 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.clear())
+2019-05-20 12:49:32,820 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:32,823 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.clearcache())
+2019-05-20 12:49:32,835 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:32,837 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.clearcache())
+2019-05-20 12:49:32,843 - keithley2600.keithley_driver - DEBUG - read:
+# starting second sweep
+2019-05-20 12:49:32,844 - keithley2600.keithley_driver - DEBUG - write: mylist = {}
+2019-05-20 12:49:32,847 - keithley2600.keithley_driver - DEBUG - write: table.insert(mylist, 10.0)
+2019-05-20 12:49:32,849 - keithley2600.keithley_driver - DEBUG - write: table.insert(mylist, 9.0)
+# many more - cut for brevity
+2019-05-20 12:49:33,216 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.source.listv(mylist))
+2019-05-20 12:49:33,219 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,221 - keithley2600.keithley_driver - DEBUG - write: mylist = {}
+2019-05-20 12:49:33,223 - keithley2600.keithley_driver - DEBUG - write: table.insert(mylist, -60.0)
+2019-05-20 12:49:33,225 - keithley2600.keithley_driver - DEBUG - write: table.insert(mylist, -60.0)
+# many more - cut for brevity
+2019-05-20 12:49:33,622 - keithley2600.keithley_driver - DEBUG - write: print(smub.trigger.source.listv(mylist))
+2019-05-20 12:49:33,626 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,629 - keithley2600.keithley_driver - DEBUG - write: print(smua.ENABLE)
+2019-05-20 12:49:33,632 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,633 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.source.action = 1
+2019-05-20 12:49:33,635 - keithley2600.keithley_driver - DEBUG - write: print(smub.ENABLE)
+2019-05-20 12:49:33,638 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,642 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.source.action = 1
+2019-05-20 12:49:33,644 - keithley2600.keithley_driver - DEBUG - write: print(localnode.linefreq)
+2019-05-20 12:49:33,647 - keithley2600.keithley_driver - DEBUG - read: 5.00000e+01
+2019-05-20 12:49:33,648 - keithley2600.keithley_driver - DEBUG - write: smua.measure.nplc = 5.0
+2019-05-20 12:49:33,650 - keithley2600.keithley_driver - DEBUG - write: print(localnode.linefreq)
+2019-05-20 12:49:33,653 - keithley2600.keithley_driver - DEBUG - read: 5.00000e+01
+2019-05-20 12:49:33,661 - keithley2600.keithley_driver - DEBUG - write: smub.measure.nplc = 5.0
+2019-05-20 12:49:33,664 - keithley2600.keithley_driver - DEBUG - write: smua.measure.delay = -1.0
+2019-05-20 12:49:33,666 - keithley2600.keithley_driver - DEBUG - write: smub.measure.delay = -1.0
+2019-05-20 12:49:33,669 - keithley2600.keithley_driver - DEBUG - write: print(smua.AUTORANGE_ON)
+2019-05-20 12:49:33,674 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,675 - keithley2600.keithley_driver - DEBUG - write: smua.measure.autorangei = 1
+2019-05-20 12:49:33,678 - keithley2600.keithley_driver - DEBUG - write: print(smub.AUTORANGE_ON)
+2019-05-20 12:49:33,717 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,721 - keithley2600.keithley_driver - DEBUG - write: smub.measure.autorangei = 1
+2019-05-20 12:49:33,724 - keithley2600.keithley_driver - DEBUG - write: print(smua.OUTPUT_DCVOLTS)
+2019-05-20 12:49:33,733 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,735 - keithley2600.keithley_driver - DEBUG - write: smua.source.func = 1
+2019-05-20 12:49:33,740 - keithley2600.keithley_driver - DEBUG - write: print(smub.OUTPUT_DCVOLTS)
+2019-05-20 12:49:33,743 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,745 - keithley2600.keithley_driver - DEBUG - write: smub.source.func = 1
+2019-05-20 12:49:33,749 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.clear())
+2019-05-20 12:49:33,756 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,759 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.clear())
+2019-05-20 12:49:33,763 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,764 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.clearcache())
+2019-05-20 12:49:33,767 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,770 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.clearcache())
+2019-05-20 12:49:33,780 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,784 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.clear())
+2019-05-20 12:49:33,789 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,793 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.clear())
+2019-05-20 12:49:33,796 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,803 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.clearcache())
+2019-05-20 12:49:33,806 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,814 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.clearcache())
+2019-05-20 12:49:33,823 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,824 - keithley2600.keithley_driver - DEBUG - write: print(display.MEASURE_DCAMPS)
+2019-05-20 12:49:33,827 - keithley2600.keithley_driver - DEBUG - read: 0.00000e+00
+2019-05-20 12:49:33,836 - keithley2600.keithley_driver - DEBUG - write: display.smua.measure.func = 0
+2019-05-20 12:49:33,839 - keithley2600.keithley_driver - DEBUG - write: print(display.MEASURE_DCAMPS)
+2019-05-20 12:49:33,842 - keithley2600.keithley_driver - DEBUG - read: 0.00000e+00
+2019-05-20 12:49:33,843 - keithley2600.keithley_driver - DEBUG - write: display.smub.measure.func = 0
+2019-05-20 12:49:33,845 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.count = 142
+2019-05-20 12:49:33,848 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.count = 142
+2019-05-20 12:49:33,856 - keithley2600.keithley_driver - DEBUG - write: print(smua.ENABLE)
+2019-05-20 12:49:33,859 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,860 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.measure.action = 1
+2019-05-20 12:49:33,862 - keithley2600.keithley_driver - DEBUG - write: print(smub.ENABLE)
+2019-05-20 12:49:33,865 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,867 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.measure.action = 1
+2019-05-20 12:49:33,875 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.measure.iv(smua.nvbuffer1, smua.nvbuffer2))
+2019-05-20 12:49:33,878 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,880 - keithley2600.keithley_driver - DEBUG - write: print(smub.trigger.measure.iv(smub.nvbuffer1, smub.nvbuffer2))
+2019-05-20 12:49:33,883 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,884 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.SOURCE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:33,889 - keithley2600.keithley_driver - DEBUG - read: 4.60000e+01
+2019-05-20 12:49:33,890 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.measure.stimulus = 46
+2019-05-20 12:49:33,893 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.SOURCE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:33,896 - keithley2600.keithley_driver - DEBUG - read: 4.60000e+01
+2019-05-20 12:49:33,897 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.measure.stimulus = 46
+2019-05-20 12:49:33,899 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.endpulse.action = 1
+2019-05-20 12:49:33,901 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.endpulse.action = 1
+2019-05-20 12:49:33,904 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.endsweep.action = 1
+2019-05-20 12:49:33,908 - keithley2600.keithley_driver - DEBUG - write: smub.trigger.endsweep.action = 1
+2019-05-20 12:49:33,910 - keithley2600.keithley_driver - DEBUG - write: print(trigger.EVENT_ID)
+2019-05-20 12:49:33,913 - keithley2600.keithley_driver - DEBUG - read: 2.90000e+01
+2019-05-20 12:49:33,915 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.arm.stimulus = 29
+2019-05-20 12:49:33,919 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[1].orenable = true
+2019-05-20 12:49:33,921 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.ARMED_EVENT_ID)
+2019-05-20 12:49:33,924 - keithley2600.keithley_driver - DEBUG - read: 4.80000e+01
+2019-05-20 12:49:33,926 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[1].stimulus[1] = 48
+2019-05-20 12:49:33,928 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.PULSE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:33,931 - keithley2600.keithley_driver - DEBUG - read: 4.70000e+01
+2019-05-20 12:49:33,932 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[1].stimulus[2] = 47
+2019-05-20 12:49:33,936 - keithley2600.keithley_driver - DEBUG - write: print(trigger.blender[1].EVENT_ID)
+2019-05-20 12:49:33,939 - keithley2600.keithley_driver - DEBUG - read: 5.70000e+01
+2019-05-20 12:49:33,941 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.source.stimulus = 57
+2019-05-20 12:49:33,943 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[2].orenable = false
+2019-05-20 12:49:33,945 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.MEASURE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:33,948 - keithley2600.keithley_driver - DEBUG - read: 4.50000e+01
+2019-05-20 12:49:33,950 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[2].stimulus[1] = 45
+2019-05-20 12:49:33,952 - keithley2600.keithley_driver - DEBUG - write: print(smub.trigger.MEASURE_COMPLETE_EVENT_ID)
+2019-05-20 12:49:33,955 - keithley2600.keithley_driver - DEBUG - read: 5.10000e+01
+2019-05-20 12:49:33,956 - keithley2600.keithley_driver - DEBUG - write: trigger.blender[2].stimulus[2] = 51
+2019-05-20 12:49:33,958 - keithley2600.keithley_driver - DEBUG - write: print(trigger.blender[2].EVENT_ID)
+2019-05-20 12:49:33,961 - keithley2600.keithley_driver - DEBUG - read: 5.80000e+01
+2019-05-20 12:49:33,963 - keithley2600.keithley_driver - DEBUG - write: smua.trigger.endpulse.stimulus = 58
+2019-05-20 12:49:33,965 - keithley2600.keithley_driver - DEBUG - write: print(smua.OUTPUT_ON)
+2019-05-20 12:49:33,968 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,969 - keithley2600.keithley_driver - DEBUG - write: smua.source.output = 1
+2019-05-20 12:49:33,971 - keithley2600.keithley_driver - DEBUG - write: print(smub.OUTPUT_ON)
+2019-05-20 12:49:33,974 - keithley2600.keithley_driver - DEBUG - read: 1.00000e+00
+2019-05-20 12:49:33,976 - keithley2600.keithley_driver - DEBUG - write: smub.source.output = 1
+2019-05-20 12:49:33,978 - keithley2600.keithley_driver - DEBUG - write: print(smua.trigger.initiate())
+2019-05-20 12:49:33,984 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,985 - keithley2600.keithley_driver - DEBUG - write: print(smub.trigger.initiate())
+2019-05-20 12:49:33,991 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:33,992 - keithley2600.keithley_driver - DEBUG - write: *trg
+2019-05-20 12:49:33,995 - keithley2600.keithley_driver - DEBUG - write: print(status.operation.sweeping.condition)
+2019-05-20 12:49:33,998 - keithley2600.keithley_driver - DEBUG - read: 6.00000e+00
+2019-05-20 12:49:34,000 - keithley2600.keithley_driver - DEBUG - write: print(status.operation.sweeping.condition)
+2019-05-20 12:49:34,002 - keithley2600.keithley_driver - DEBUG - read: 6.00000e+00
+# many more - cut for brevity
+2019-05-20 12:49:50,742 - keithley2600.keithley_driver - DEBUG - write: print(status.operation.sweeping.condition)
+2019-05-20 12:49:50,746 - keithley2600.keithley_driver - DEBUG - read: 0.00000e+00
+# sweep is done! reading all buffers...
+2019-05-20 12:49:50,748 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.n)
+2019-05-20 12:49:50,751 - keithley2600.keithley_driver - DEBUG - read: 1.42000e+02
+2019-05-20 12:49:50,753 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.readings[1])
+2019-05-20 12:49:50,756 - keithley2600.keithley_driver - DEBUG - read: 5.55122e-10
+2019-05-20 12:49:50,758 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.readings[2])
+2019-05-20 12:49:50,761 - keithley2600.keithley_driver - DEBUG - read: -2.68114e-10
+# many more - cut for brevity
+2019-05-20 12:49:51,424 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.n)
+2019-05-20 12:49:51,427 - keithley2600.keithley_driver - DEBUG - read: 1.42000e+02
+2019-05-20 12:49:51,428 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.readings[1])
+2019-05-20 12:49:51,432 - keithley2600.keithley_driver - DEBUG - read: 9.99941e+00
+2019-05-20 12:49:51,433 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.readings[2])
+2019-05-20 12:49:51,436 - keithley2600.keithley_driver - DEBUG - read: 8.99943e+00
+# many more - cut for brevity
+2019-05-20 12:49:52,121 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.n)
+2019-05-20 12:49:52,124 - keithley2600.keithley_driver - DEBUG - read: 1.42000e+02
+2019-05-20 12:49:52,125 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.readings[1])
+2019-05-20 12:49:52,128 - keithley2600.keithley_driver - DEBUG - read: -1.11954e-09
+2019-05-20 12:49:52,130 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.readings[2])
+2019-05-20 12:49:52,135 - keithley2600.keithley_driver - DEBUG - read: -1.94538e-10
+# many more - cut for brevity
+2019-05-20 12:49:52,834 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.n)
+2019-05-20 12:49:52,837 - keithley2600.keithley_driver - DEBUG - read: 1.42000e+02
+2019-05-20 12:49:52,838 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.readings[1])
+2019-05-20 12:49:52,841 - keithley2600.keithley_driver - DEBUG - read: -6.00075e+01
+2019-05-20 12:49:52,842 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.readings[2])
+2019-05-20 12:49:52,845 - keithley2600.keithley_driver - DEBUG - read: -6.00075e+01
+# many more - cut for brevity
+2019-05-20 12:49:53,526 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.clear())
+2019-05-20 12:49:53,529 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:53,531 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.clear())
+2019-05-20 12:49:53,534 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:53,535 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer1.clearcache())
+2019-05-20 12:49:53,540 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:53,542 - keithley2600.keithley_driver - DEBUG - write: print(smua.nvbuffer2.clearcache())
+2019-05-20 12:49:53,545 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:53,547 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.clear())
+2019-05-20 12:49:53,549 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:53,551 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.clear())
+2019-05-20 12:49:53,554 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:53,556 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer1.clearcache())
+2019-05-20 12:49:53,561 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:53,567 - keithley2600.keithley_driver - DEBUG - write: print(smub.nvbuffer2.clearcache())
+2019-05-20 12:49:53,570 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:53,571 - keithley2600.keithley_driver - DEBUG - write: print(reset())
+2019-05-20 12:49:53,596 - keithley2600.keithley_driver - DEBUG - read: 
+2019-05-20 12:49:53,597 - keithley2600.keithley_driver - DEBUG - write: print(beeper.beep(0.3, 2400))
+2019-05-20 12:49:53,901 - keithley2600.keithley_driver - DEBUG - read: 
