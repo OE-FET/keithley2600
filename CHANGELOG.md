@@ -1,4 +1,4 @@
-#### v1.2.2-dev (2019-05-21):
+#### v1.2.2 (2019-05-21):
 
 _Added:_
 - Added `shape` property to `ResultTable`.
