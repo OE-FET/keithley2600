@@ -36,8 +36,8 @@ class ColumnTitle(object):
     :param str name: Column name.
     :param str unit: Column unit.
     :param str unit_fmt: Formatting directive for units when generating string
-        representation. Defaults to '[{}]', such that units are appended to the column
-        title in square brackets (e.g., "Gate voltage [V]").
+        representations. By default, units are enclosed in square brackets (e.g.,
+        "Gate voltage [V]").
     """
 
     def __init__(self, name, unit=None, unit_fmt='[{}]'):
@@ -69,9 +69,8 @@ class ResultTable(object):
     Class that holds measurement data. All data is stored internally as a numpy array with
     the first index designating rows and the second index designating columns.
 
-    Columns must have titles, to designate the measurement variable, and can have units.
-    It is possible to access the data in a column by its title in a dictionary type
-    notation.
+    Columns must have titles and can have units. It is possible to access the data in a
+    column by its title in a dictionary type notation.
 
     :param list column_titles: List of column titles.
     :param list units: List of column units.
@@ -83,8 +82,7 @@ class ResultTable(object):
 
     :Example:
 
-        Create a :class:`ResultTable` to hold current-vs-time data, for instance for
-        a bias stress test of a device:
+        Create a :class:`ResultTable` to hold current-vs-time data:
 
         >>> import time
         >>> import numpy as np
@@ -103,22 +101,22 @@ class ResultTable(object):
         >>> for v in range(11):  # measure IV characteristics from 0 to 10 V
         ...     k.applyVoltage(k.smua, 10)
         ...     i = k.smua.measure.i()
-        ...     rt.append_row([v, i])  # add values to ResultTable
+        ...     rt.append_row([v, i])
         ...     time.sleep(1)
 
         Print a preview of data to the console:
 
         >>> print(rt)
-        Voltage /V   Current /A
+        Voltage [V]   Current [A]
         0.0000e+00   1.0232e-04
         1.0000e+00   2.2147e-04
         2.0000e+00   3.6077e-04
         3.0000e+00   5.2074e-04
         4.0000e+00   6.9927e-04
 
-        Save and plot the recorded data:
+        Save the recorded data to a tab-delimited text file:
 
-        >>> rt.save('~/Desktop/stress_test.txt')  # save the ResultTable
+        >>> rt.save('~/Desktop/stress_test.txt')
 
     """
 
@@ -200,8 +198,7 @@ class ResultTable(object):
 
     def has_unit(self, col):
         """
-        Returns ``True`` if column_units of column ``col`` have been set, ``False``
-        otherwise.
+        Returns ``True`` column units have been set and ``False`` otherwise.
 
         :param col: Column index or name.
         :type col: int or str
@@ -250,7 +247,7 @@ class ResultTable(object):
 
     def append_row(self, data):
         """
-        Appends a row to data array.
+        Appends a single row to the data array.
 
         :param data: Iterable with the same number of elements as columns in the data
             array.
@@ -262,7 +259,7 @@ class ResultTable(object):
 
     def append_rows(self, data):
         """
-        Appends multiple rows to data array.
+        Appends multiple rows to the data array.
 
         :param data: List of lists or numpy array with dimensions matching the data array.
         """
@@ -271,7 +268,7 @@ class ResultTable(object):
 
     def append_column(self, data, name, unit=None):
         """
-        Appends a new column to data array.
+        Appends a single column to the data array.
 
         :param data: Iterable with the same number of elements as rows in the data array.
         :param str name: Name of new column.
@@ -376,7 +373,7 @@ class ResultTable(object):
 
     def _parse_param_string(self, header):
         """
-        Parses comment section of header to extract measurement parameters
+        Parses comment section of _header to extract measurement parameters
 
         :returns: Dictionary containing measurement parameters.
         :rtype: dict
@@ -403,10 +400,10 @@ class ResultTable(object):
 
         return params
 
-    def header(self):
+    def _header(self):
         """
-        Outputs full header with comment section containing measurement parameters and
-        column titles including units.
+        Outputs a full _header string with measurement parameters and column titles
+        (including units).
 
         :returns: Header as string.
         :rtype: str
@@ -417,10 +414,10 @@ class ResultTable(object):
 
         return self.LINE_BREAK.join([params_string, titles_string])
 
-    def parse_header(self, header):
+    def _parse_header(self, header):
         """
-        Parses header. Returns list of :class:`ColumnTitle` objects and measurement
-        parameters in dictionary.
+        Parses a _header string . Returns list of :class:`ColumnTitle` objects and
+        measurement parameters in dictionary.
 
         :param str header: Header to parse.
         :returns: Tuple with titles and params.
@@ -438,7 +435,7 @@ class ResultTable(object):
         """
         Saves the result table to a text file. The file format is:
 
-        - The header contains all measurement parameters as comments.
+        - The _header contains all measurement parameters as comments.
         - Column titles contain column_names and column_units of measured quantity.
         - Delimited columns contain the data.
 
@@ -454,13 +451,13 @@ class ResultTable(object):
         filename = base_name + ext
 
         np.savetxt(filename, self.data, delimiter=self.DELIMITER, newline=self.LINE_BREAK,
-                   header=self.header(), comments=self.COMMENT)
+                   header=self._header(), comments=self.COMMENT)
 
     def save_csv(self, filename):
         """
         Saves the result table to a csv file. The file format is:
 
-        - The header contains all measurement parameters as comments.
+        - The _header contains all measurement parameters as comments.
         - Column titles contain column_names and column_units of measured quantity.
         - Comma delimited columns contain the data.
 
@@ -483,7 +480,7 @@ class ResultTable(object):
 
     def load(self, filename):
         """
-        Loads data from csv or tab delimited tex file. The header is searched for
+        Loads data from csv or tab delimited tex file. The _header is searched for
         measurement parameters.
 
         :param str filename: Absolute or relative path of file to load.
@@ -504,7 +501,7 @@ class ResultTable(object):
         header_length = sum([l.startswith(self.COMMENT) for l in lines])
         header = ''.join(lines[:header_length])
 
-        self.titles, self.params = self.parse_header(header)
+        self.titles, self.params = self._parse_header(header)
 
         # read data as 2D numpy array
         self.data = np.loadtxt(filename)
@@ -653,12 +650,54 @@ class ResultTable(object):
         return self.ncols
 
 
+class FETResultTable(ResultTable):
+    """
+    Class to handle, store and load transfer and output characteristic data of FETs.
+    :class:`TransistorSweepData` inherits from :class:`ResultTable` and overrides the
+    plot method.
+    """
+
+    @property
+    def sweep_type(self):
+        if 'sweep_type' in self.params.keys():
+            return self.params['sweep_type']
+        else:
+            return ''
+
+    @sweep_type.setter
+    def sweep_type(self, sweep_type):
+        self.params['sweep_type'] = sweep_type
+
+    def plot(self, *args, **kwargs):
+        """
+        Plots the transfer or output curves. Overrides :func:`ResultTable.plot`.
+        Absolute values are plotted, on a linear scale for output characteristics
+        and a logarithmic scale for transfer characteristics. Takes the same arguments
+        as :func:`ResultTable.plot`.
+
+        :returns: :class:`ResultTablePlot` instance with Matplotlib figure.
+        :rtype: :class:`ResultTablePlot`
+
+        :raises ImportError: If import of matplotlib fails.
+        """
+
+        plot = ResultTable.plot(self, func=np.abs, *args, **kwargs)
+        plot.ax.set_ylabel('I [A]')
+
+        if self.sweep_type == 'transfer':
+            plot.ax.set_yscale('log')
+        else:
+            plot.ax.set_yscale('linear')
+
+        return plot
+
+
 class ResultTablePlot(object):
     """
     Plots the data from a given :class:`ResultTable` instance. Axes labels are
     automatically generated from column titles and units. This class requires Matplotlib
-    to be installed and accepts, in addition to the arguments documented here, the same
-    keyword arguments as :func:`matplotlib.pyplot.plot`.
+    to be installed. In addition to the arguments documented here, class:`ResultTable`
+    accepts the same keyword arguments as :func:`matplotlib.pyplot.plot`.
 
     :param result_table: :class:`ResultTable` instance with data to plot.
     :type result_table: :class:`ResultTable`
@@ -760,45 +799,3 @@ class ResultTablePlot(object):
             c = self.result_table.column_names.index(c)
 
         return c
-
-
-class FETResultTable(ResultTable):
-    """
-    Class to handle, store and load transfer and output characteristic data of FETs.
-    :class:`TransistorSweepData` inherits from :class:`ResultTable` and overrides the
-    plot method.
-    """
-
-    @property
-    def sweep_type(self):
-        if 'sweep_type' in self.params.keys():
-            return self.params['sweep_type']
-        else:
-            return ''
-
-    @sweep_type.setter
-    def sweep_type(self, sweep_type):
-        self.params['sweep_type'] = sweep_type
-
-    def plot(self, *args, **kwargs):
-        """
-        Plots the transfer or output curves. Overrides :func:`ResultTable.plot`.
-        Absolute values are plotted, on a linear scale for output characteristics
-        and a logarithmic scale for transfer characteristics. Takes the same arguments
-        as :func:`ResultTable.plot`.
-
-        :returns: :class:`ResultTablePlot` instance with Matplotlib figure.
-        :rtype: :class:`ResultTablePlot`
-
-        :raises ImportError: If import of matplotlib fails.
-        """
-
-        plot = ResultTable.plot(self, func=np.abs, *args, **kwargs)
-        plot.ax.set_ylabel('I [A]')
-
-        if self.sweep_type == 'transfer':
-            plot.ax.set_yscale('log')
-        else:
-            plot.ax.set_yscale('linear')
-
-        return plot

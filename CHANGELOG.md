@@ -2,7 +2,15 @@
 
 _Added:_
 
-- Accept `range` as input type for TSP lists (or `xrange` in Python 2).
+- Accept `range` as input for voltage sweep lists in Python 3 (`xrange` in Python 2).
+
+Changed:
+
+- Methods `header` and `parse_header` of `ResultTable` are now private.
+
+_Fixed:_
+
+- Cleaned up and updated documentation.
 
 #### v1.2.2 (2019-06-27):
 
@@ -75,16 +83,16 @@ _Changed:_
    slightly changed:
 
 	- The line with column headers is now  marked as a comment and starts with '#'.
-	- All given measurement parameters are saved in the file's header. Specifically,
+	- All given measurement parameters are saved in the file's _header. Specifically,
 	  `TrasistorSweepData.load()` expects the parameter `sweep_type` to be present in the
-	  header and have one of the values: 'transfer' or 'output'.
+	  _header and have one of the values: 'transfer' or 'output'.
 	- Options to read and write in CSV format instead of tab-delimited columns are given.
 
 	As a result, data files created by versions < 1.0.0 need to be modified as follows to
 	be recognized:
 
 	- Prepend '#' to the line with column titles.
-	- Add the line '# sweep_type: type' to the header where type can be 'transfer',
+	- Add the line '# sweep_type: type' to the _header where type can be 'transfer',
 	  'output', or 'iv'.
 
 _Removed:_

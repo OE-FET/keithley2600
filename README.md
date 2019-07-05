@@ -16,13 +16,13 @@ Python.
 
 There are currently only heuristic checks for allowed arguments in the base commands. See the
 [Keithley 2600 reference manual](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
-for all available commands and arguments. Almost all Keithley TSP commands can be
-used with this driver. Not supported are:
+for all available commands and arguments. Almost all Keithley TSP commands can be used 
+with this driver. Not supported are:
 
 * All Keithley IV sweep commands. We implement our own in the `Keithley2600` class.
-* Keithley TSP functions that have same name as a Keihley TSP attribute (and vice versa). The
-  driver cannot decide whether to handle them as a function call or attribute access. Currently,
-  there is only one such case:
+* Keithley TSP functions that have same name as a Keithley TSP attribute (and vice 
+  versa). The driver cannot decide whether to handle them as a function call or 
+  attribute access. Currently, there is only one such case:
   - `io.output()` has been dropped because it conflicts with `smuX.source.output`, which is more
       commonly used.
 * Keithley TSP commands that have the same name as built-in attributes of the driver. Currently,
@@ -85,8 +85,8 @@ True
 
 The methods `voltageSweepSingleSMU` and `voltageSweepDualSMU` return lists with the
 measured voltages and currents. The higher level commands `transferMeasurement` and
-`outputMeasurement` return `ResultTable` objects which are somewat similar to pandas
-dataframes but inlcude support for column units. `ResultTable` stores the measurement
+`outputMeasurement` return `ResultTable` objects which are somewhat similar to pandas
+dataframes but include support for column units. `ResultTable` stores the measurement
 data internally as a numpy array and provides information about column titles and units.
 It also provides a dictionary-like interface to access columns by name, methods to load
 and save the data to text files, and live plotting of the data (requires matplotlib).
