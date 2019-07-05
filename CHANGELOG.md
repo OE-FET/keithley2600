@@ -1,3 +1,9 @@
+#### v1.2.3-dev1 (2019-07-05):
+
+_Added:_
+
+- Accept `range` as input type for TSP lists (or `xrange` in Python 2).
+
 #### v1.2.2 (2019-06-27):
 
 _Added:_

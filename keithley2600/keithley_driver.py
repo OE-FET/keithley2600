@@ -22,7 +22,7 @@ from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
                                        CLASSES, PROPERTY_LISTS)
 from keithley2600.result_table import FETResultTable
 
-__version__ = 'v1.2.2'
+__version__ = 'v1.2.3-dev1'
 
 PY2 = sys.version[0] == '2'
 logger = logging.getLogger(__name__)
@@ -336,7 +336,7 @@ class Keithley2600Base(MagicClass):
     connected = False
     busy = False
 
-    TO_TSP_LIST = (list, np.ndarray, tuple, set)
+    TO_TSP_LIST = (list, np.ndarray, tuple, set, xrange if PY2 else range)
     CHUNK_SIZE = 50
 
     def __init__(self, visa_address, visa_library='@py', **kwargs):
