@@ -1,16 +1,21 @@
-#### v1.3.0-dev1 (2019-07-05):
+#### v1.3.0 (2019-07-19):
+
+This version inlcudes some API changes and updates to the documentation and doc strings.
 
 _Added:_
 
-- Accept `range` as input for voltage sweep lists in Python 3 (`xrange` in Python 2).
+- Accept `range` (Python 2 and 3) and `xrange` (Python 2) as input for voltage sweep lists.
 
-Changed:
+_Changed:_
 
 - Methods `header` and `parse_header` of `ResultTable` are now private.
-
-_Fixed:_
-
 - Cleaned up and updated documentation.
+
+_Removed:_
+
+- Removed deprecated function `Keithley2600.clearBuffer()`. Use `buffer.clear()` and
+  `buffer.clearcache()` insead where `buffer` is a Keithley buffer instance, such as
+  `Keithley2600.smua.nvbuffer1`.
 
 #### v1.2.2 (2019-06-27):
 
