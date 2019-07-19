@@ -317,7 +317,7 @@ class Keithley2600Base(MagicClass):
          - ``io.output()``: conflicts with ``smuX.source.output``
          - All Keithley IV sweep commands. We implement our own in :class:`Keithley2600`.
 
-    :Example:
+    :Examples:
 
     >>> keithley = Keithley2600Base('TCPIP0::192.168.2.121::INSTR')
     >>> keithley.smua.measure.v()  # measures voltage at smuA
@@ -498,7 +498,7 @@ class Keithley2600(Keithley2600Base):
     :cvar bool connected: `True` if connected to an instrument, `False` otherwise.
     :cvar bool busy: `True` if a measurement is running, `False` otherwise.
 
-    :Example:
+    :Examples:
 
     *Base commands from Keithley TSP*:
 
