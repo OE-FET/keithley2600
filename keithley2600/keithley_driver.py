@@ -603,21 +603,6 @@ class Keithley2600(Keithley2600Base):
 
         return list_out
 
-    def clearBuffer(self, smu):
-        """
-        Clears buffer of a given smu.
-
-        .. note::
-            This function has been deprecated. Please use `buffer.clear()` or
-            `buffer.clearcache()` instead, where `buffer` is a Keithley buffer instance
-            such as :attr:`smua.nvbuffer1`.
-        """
-
-        raise DeprecationWarning(
-            "'clearBuffer()' has been deprecated. Please use 'buffer.clear()' and " +
-            "'buffer.clearcache()' instead, where 'buffer' is a Keithley2600 buffer " +
-            "instance such as 'k.smua.nvbuffer1'.")
-
     def setIntegrationTime(self, smu, t_int):
         """
         Sets the integration time of SMU for measurements in sec.
