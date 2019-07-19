@@ -498,15 +498,6 @@ class Keithley2600(Keithley2600Base):
     :cvar bool connected: `True` if connected to an instrument, `False` otherwise.
     :cvar bool busy: `True` if a measurement is running, `False` otherwise.
 
-    .. note::
-
-        See the Keithley 2600 reference manual for all available commands and arguments.
-        Almost all Keithley TSP commands can be used with this driver. Not supported are:
-
-         - ``lan.trigger[N].connected``: conflicts with the connected attribute
-         - ``io.output()``: conflicts with ``smuX.source.output``
-         - All Keithley IV sweep commands. We implement our own here.
-
     :Example:
 
     *Base commands from Keithley TSP*:
