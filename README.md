@@ -128,6 +128,11 @@ or the latest development version from GitHub:
 $ pip install git+https://github.com/OE-FET/keithley2600
 ```
 
+## System requirements
+
+- Linux or macOS
+- Python 2.7 or 3.x
+
 ##  Documentation
 
 See the Keithley 2600 reference manual
