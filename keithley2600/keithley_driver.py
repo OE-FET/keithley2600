@@ -148,13 +148,13 @@ class MagicClass(object):
 
     :Examples:
 
-    >>> inst = MagicClass('keithley')
-    >>> inst.reset()  # Dynamically creates a new attribute 'reset' as an instance
-    ...               # of MagicFunction, then calls it.
-    >>> inst.beeper  # Dynamically creates new attribute 'beeper' and sets it to
-    ...              # a new MagicClass instance.
-    >>> inst.beeper.enable  # Fakes the property 'enable' of 'beeper'
-    ...                     # with _write as setter and _query as getter.
+        >>> inst = MagicClass('keithley')
+        >>> inst.reset()  # Dynamically creates a new attribute 'reset' as an instance
+        ...               # of MagicFunction, then calls it.
+        >>> inst.beeper  # Dynamically creates new attribute 'beeper' and sets it to
+        ...              # a new MagicClass instance.
+        >>> inst.beeper.enable  # Fakes the property 'enable' of 'beeper'
+        ...                     # with _write as setter and _query as getter.
 
     """
 
@@ -319,9 +319,9 @@ class Keithley2600Base(MagicClass):
 
     :Examples:
 
-    >>> keithley = Keithley2600Base('TCPIP0::192.168.2.121::INSTR')
-    >>> keithley.smua.measure.v()  # measures voltage at smuA
-    >>> keithley.smua.source.levelv = -40  # applies -40V to smuA
+        >>> keithley = Keithley2600Base('TCPIP0::192.168.2.121::INSTR')
+        >>> keithley.smua.measure.v()  # measures voltage at smuA
+        >>> keithley.smua.source.levelv = -40  # applies -40V to smuA
 
     """
 
@@ -500,35 +500,35 @@ class Keithley2600(Keithley2600Base):
 
     :Examples:
 
-    *Base commands from Keithley TSP*:
+        *Base commands from Keithley TSP*:
 
-    >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
-    >>> volts = k.smua.measure.v()  # measures and returns the smuA voltage
-    >>> k.smua.source.levelv = -40  # sets source level of smuA
-    >>> k.smua.nvbuffer1.clear()  # clears nvbuffer1 of smuA
+        >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
+        >>> volts = k.smua.measure.v()  # measures and returns the smuA voltage
+        >>> k.smua.source.levelv = -40  # sets source level of smuA
+        >>> k.smua.nvbuffer1.clear()  # clears nvbuffer1 of smuA
 
-    *New mid-level commands*:
+        *New mid-level commands*:
 
-    >>> data = k.readBuffer(k.smua.nvbuffer1)
-    >>> errs = k.readErrorQueue()
-    >>> k.setIntegrationTime(k.smua, 0.001) # in sec
+        >>> data = k.readBuffer(k.smua.nvbuffer1)
+        >>> errs = k.readErrorQueue()
+        >>> k.setIntegrationTime(k.smua, 0.001) # in sec
 
-    >>> k.applyVoltage(k.smua, -60) # applies -60V to smuA
-    >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
-    >>> k.rampToVoltage(k.smua, 10, delay=0.1, step_size=1)
+        >>> k.applyVoltage(k.smua, -60) # applies -60V to smuA
+        >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
+        >>> k.rampToVoltage(k.smua, 10, delay=0.1, step_size=1)
 
-    >>> # voltage sweeps, single and dual SMU
-    >>> k.voltageSweepSingleSMU(smu=k.smua, smu_sweeplist=range(0, 61),
-    ...                         t_int=0.1, delay=-1, pulsed=False)
-    >>> k.voltageSweepDualSMU(smu1=k.smua, smu2=k.smub,
-    ...                       smu1_sweeplist=range(0, 61),
-    ...                       smu2_sweeplist=range(0, 61),
-    ...                       t_int=0.1, delay=-1, pulsed=False)
+        >>> # voltage sweeps, single and dual SMU
+        >>> k.voltageSweepSingleSMU(smu=k.smua, smu_sweeplist=range(0, 61),
+        ...                         t_int=0.1, delay=-1, pulsed=False)
+        >>> k.voltageSweepDualSMU(smu1=k.smua, smu2=k.smub,
+        ...                       smu1_sweeplist=range(0, 61),
+        ...                       smu2_sweeplist=range(0, 61),
+        ...                       t_int=0.1, delay=-1, pulsed=False)
 
-    *New high-level commands*:
+        *New high-level commands*:
 
-    >>> data1 = k.outputMeasurement(...) # records output curve
-    >>> data2 = k.transferMeasurement(...) # records transfer curve
+        >>> data1 = k.outputMeasurement(...) # records output curve
+        >>> data2 = k.transferMeasurement(...) # records transfer curve
 
     """
 

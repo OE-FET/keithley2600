@@ -80,7 +80,7 @@ class ResultTable(object):
     :type data: numpy.ndarray or NoneType
     :param dict params: Dictionary of measurement parameters.
 
-    :Example:
+    :Examples:
 
         Create a :class:`ResultTable` to hold current-vs-time data:
 
