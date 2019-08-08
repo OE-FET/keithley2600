@@ -7,7 +7,7 @@
 A full Python driver for the Keithley 2600 series of source measurement units.
 
 ## About
-Keithley driver with access to base functions and higher level functions such as IV
+keithley2600 provides access to base functions and higher level functions such as IV
 measurements, transfer and output curves, etc. Base commands replicate the functionality
 and syntax from the Keithley's internal TSP functions, which have a syntax similar to
 Python.
@@ -16,18 +16,18 @@ Python.
 
 There are currently only heuristic checks for allowed arguments in the base commands. See the
 [Keithley 2600 reference manual](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
-for all available commands and arguments. Almost all Keithley TSP commands can be used 
+for all available commands and arguments. Almost all Keithley TSP commands can be used
 with this driver. Not supported are:
 
 * All Keithley IV sweep commands. We implement our own in the `Keithley2600` class.
-* Keithley TSP functions that have same name as a Keithley TSP attribute (and vice 
-  versa). The driver cannot decide whether to handle them as a function call or 
+* Keithley TSP functions that have the same name as a Keithley TSP attribute (and vice
+  versa). The driver cannot decide whether to handle them as a function call or as an
   attribute access. Currently, there is only one such case:
-  - `io.output()` has been dropped because it conflicts with `smuX.source.output`, which is more
-      commonly used.
-* Keithley TSP commands that have the same name as built-in attributes of the driver. Currently,
-  this is only:
-  - `lan.trigger[N].connected`: conflicts with the connected attribute of `Keithley2600`.
+  - `io.output()` has been dropped because it conflicts with `smuX.source.output`, which
+      is more commonly used.
+* Keithley TSP commands that have the same name as built-in attributes of the driver.
+  Currently, this is only:
+  - `lan.trigger[N].connected`: conflicts with the attribute `Keithley2600.connected`.
 
 ## Usage
 
@@ -103,12 +103,12 @@ rt = ResultTable(column_titles=['Voltage', 'Current'], units=['V', 'A'],
                  params={'recorded': time.asctime(), 'sweep_type': 'iv'})
 
 # create live plot which updates as data is added
-rt.plot(live=True)  
+rt.plot(live=True)
 
 # measure some currents
 for v in range(0, 20):
     k.applyVoltage(k.smua, 10)
-    i = k.smua.measure.i() 
+    i = k.smua.measure.i()
     rt.append_row([v, i])
 
 # save the data
