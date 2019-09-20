@@ -23,7 +23,7 @@ from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
                                        CLASSES, PROPERTY_LISTS)
 from keithley2600.result_table import FETResultTable
 
-__version__ = 'v1.3.0'
+__version__ = 'v1.3.1-beta1'
 
 PY2 = sys.version[0] == '2'
 logger = logging.getLogger(__name__)
@@ -301,6 +301,10 @@ class Keithley2600Base(MagicClass):
     :param str visa_address: Visa address of the instrument.
     :param str visa_library: PyVisa backend specification. Defaults to "@py" for pyvisa-py
         but NI-VISA may be appropriate, depending on the interface type.
+    :param bool raise_keithley_errors: If ``True``, all Keithley errors will be raised as
+        Python errors instead of ignoring them. This causes significant communication
+        overhead because the Keithley's error queue is read after each command. Defaults
+        to ``False``.
     :param kwargs: Keyword arguments passed on to the visa connection, for instance
         baude-rate or timeout. If not given, reasonable defaults will be used.
 
@@ -525,6 +529,10 @@ class Keithley2600(Keithley2600Base):
     :param str visa_address: Visa address of the instrument.
     :param str visa_library: PyVisa backend specification. Defaults to "@py" for pyvisa-py
         but NI-VISA may be appropriate, depending on the interface type.
+    :param bool raise_keithley_errors: If ``True``, all Keithley errors will be raised as
+        Python errors instead of ignoring them. This causes significant communication
+        overhead because the Keithley's error queue is read after each command. Defaults
+        to ``False``.
     :param kwargs: Keyword arguments passed on to the visa connection, for instance
         baude-rate or timeout. If not given, reasonable defaults will be used.
 
