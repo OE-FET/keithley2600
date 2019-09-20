@@ -285,6 +285,11 @@ class KeithleyIOError(Exception):
     pass
 
 
+class KeithleyError(Exception):
+    """Raised for error messages from the Keithley itself."""
+    pass
+
+
 class Keithley2600Base(MagicClass):
     """Keithley2600 driver
 
@@ -332,7 +337,10 @@ class Keithley2600Base(MagicClass):
     TO_TSP_LIST = (list, np.ndarray, tuple, set, xrange if PY2 else range)
     CHUNK_SIZE = 50
 
-    def __init__(self, visa_address, visa_library='@py', **kwargs):
+    _lock = Lock()
+
+    def __init__(self, visa_address, visa_library='@py', raise_keithley_errors=False,
+                 **kwargs):
 
         MagicClass.__init__(self, name='', parent=self)
         self._name = ''
@@ -341,6 +349,8 @@ class Keithley2600Base(MagicClass):
 
         self.visa_address = visa_address
         self.visa_library = visa_library
+
+        self.raise_keithley_errors = raise_keithley_errors
 
         # open visa resource manager with selected library / backend
         self.rm = visa.ResourceManager(self.visa_library)
@@ -409,36 +419,57 @@ class Keithley2600Base(MagicClass):
         """
         Writes text to Keithley. Input must be a string.
         """
+
         logger.debug('write: %s' % value)
 
         if self.connection:
+
+            if self.raise_keithley_errors and 'errorqueue' not in value:
+                self.errorqueue.clear()
+
             self.connection.write(value)
+
+            if self.raise_keithley_errors and 'errorqueue' not in value:
+                err = self.errorqueue.next()
+                if err[0] != 0:
+                    raise KeithleyError("Error during command '{0}': {1}".format(
+                        value, err[1]))
         else:
             raise KeithleyIOError(
-                'No connection to keithley present. Try to call connect().')
+                "No connection to keithley present. Try to call 'connect'.")
 
     def _query(self, value):
         """
         Queries and expects response from Keithley. Input must be a string.
         """
-        logger.debug('write: print(%s)' % value)
 
+        logger.debug('write: print(%s)' % value)
         if self.connection:
+
+            if self.raise_keithley_errors and 'errorqueue' not in value:
+                self.errorqueue.clear()
+
             r = self.connection.query('print(%s)' % value)
             logger.debug('read: %s' % r)
+
+            if self.raise_keithley_errors and 'errorqueue' not in value:
+                err = self.errorqueue.next()
+                if err[0] != 0:
+                    raise KeithleyError("Error during command '{0}': {1}".format(
+                        value, err[1]))
 
             return self._parse_response(r)
         else:
             raise KeithleyIOError(
-                'No connection to keithley present. Try to call connect().')
+                "No connection to keithley present. Try to call 'connect'.")
 
     @staticmethod
     def _parse_single_response(string):
 
         # Dictionary to convert from Keithley TSP to Python types.
         # Note that emtpy strings are converted to `None`. This is necessary
-        # since `self.connection.query('print(myfunc())')` returns an empty
-        # string if the TSP function `myfunc()` returns 'nil'.
+        # since `self.connection.query('print(func())')` returns an empty
+        # string if the TSP function `func()` returns 'nil'.
         conversion_dict = {'true': True, 'false': False, 'nil': None, '': None}
 
         try:
@@ -534,8 +565,10 @@ class Keithley2600(Keithley2600Base):
 
     SMU_LIST = ['smua', 'smub']
 
-    def __init__(self, visa_address, visa_library='@py', **kwargs):
-        Keithley2600Base.__init__(self, visa_address, visa_library, **kwargs)
+    def __init__(self, visa_address, visa_library='@py', raise_keithley_errors=False,
+                 **kwargs):
+        Keithley2600Base.__init__(self, visa_address, visa_library,
+                                  raise_keithley_errors=raise_keithley_errors, **kwargs)
 
     def __repr__(self):
         return '<%s(%s)>' % (type(self).__name__, self.visa_address)
@@ -1313,11 +1346,11 @@ class Keithley2600Factory(object):
         Create new instance for a new visa_address, otherwise return existing instance.
         """
         if args[0] in cls._instances:
-            logger.debug('Returning existing instance with address %s.' % args[0])
+            logger.debug("Returning existing instance with address '%s'." % args[0])
 
             return cls._instances[args[0]]
         else:
-            logger.debug('Creating new instance with address %s.' % args[0])
+            logger.debug("Creating new instance with address '%s'." % args[0])
             instance = Keithley2600(*args, **kwargs)
             cls._instances[args[0]] = instance
 
