@@ -16,6 +16,7 @@ import logging
 import threading
 import numpy as np
 import time
+from threading import Lock
 
 # local import
 from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
@@ -420,48 +421,50 @@ class Keithley2600Base(MagicClass):
         Writes text to Keithley. Input must be a string.
         """
 
-        logger.debug('write: %s' % value)
+        with self._lock:
+            logger.debug('write: %s' % value)
 
-        if self.connection:
+            if self.connection:
 
-            if self.raise_keithley_errors and 'errorqueue' not in value:
-                self.errorqueue.clear()
+                if self.raise_keithley_errors and 'errorqueue' not in value:
+                    self.errorqueue.clear()
 
-            self.connection.write(value)
+                self.connection.write(value)
 
-            if self.raise_keithley_errors and 'errorqueue' not in value:
-                err = self.errorqueue.next()
-                if err[0] != 0:
-                    raise KeithleyError("Error during command '{0}': {1}".format(
-                        value, err[1]))
-        else:
-            raise KeithleyIOError(
-                "No connection to keithley present. Try to call 'connect'.")
+                if self.raise_keithley_errors and 'errorqueue' not in value:
+                    err = self.errorqueue.next()
+                    if err[0] != 0:
+                        raise KeithleyError("Error during command '{0}': {1}".format(
+                            value, err[1]))
+            else:
+                raise KeithleyIOError(
+                    "No connection to keithley present. Try to call 'connect'.")
 
     def _query(self, value):
         """
         Queries and expects response from Keithley. Input must be a string.
         """
 
-        logger.debug('write: print(%s)' % value)
-        if self.connection:
+        with self._lock:
+            logger.debug('write: print(%s)' % value)
+            if self.connection:
 
-            if self.raise_keithley_errors and 'errorqueue' not in value:
-                self.errorqueue.clear()
+                if self.raise_keithley_errors and 'errorqueue' not in value:
+                    self.errorqueue.clear()
 
-            r = self.connection.query('print(%s)' % value)
-            logger.debug('read: %s' % r)
+                r = self.connection.query('print(%s)' % value)
+                logger.debug('read: %s' % r)
 
-            if self.raise_keithley_errors and 'errorqueue' not in value:
-                err = self.errorqueue.next()
-                if err[0] != 0:
-                    raise KeithleyError("Error during command '{0}': {1}".format(
-                        value, err[1]))
+                if self.raise_keithley_errors and 'errorqueue' not in value:
+                    err = self.errorqueue.next()
+                    if err[0] != 0:
+                        raise KeithleyError("Error during command '{0}': {1}".format(
+                            value, err[1]))
 
-            return self._parse_response(r)
-        else:
-            raise KeithleyIOError(
-                "No connection to keithley present. Try to call 'connect'.")
+                return self._parse_response(r)
+            else:
+                raise KeithleyIOError(
+                    "No connection to keithley present. Try to call 'connect'.")
 
     @staticmethod
     def _parse_single_response(string):
