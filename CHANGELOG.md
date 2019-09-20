@@ -1,6 +1,20 @@
+#### v1.3.1 (2019-09-20):
+
+_Added:_
+
+- Optional argument `raise_keithley_errors`: If `True`, the Keithley's error queue will be
+  checked after each command and any Keithley errors will be raised as Python errors
+  `keithley_driver.KeithleyError`. This causes significant communication overhead but
+   facilitates the debugging of faulty scripts.
+   
+_Fixed:_
+
+- Thread safety of communication with Keithley. `Keithley2600Base` now uses its own lock
+  instead of relying on PyVisa's thread safety.
+
 #### v1.3.0 (2019-07-19):
 
-This version inlcudes some API changes and updates to the documentation and doc strings.
+This version includes some API changes and updates to the documentation and doc strings.
 
 _Added:_
 
@@ -14,7 +28,7 @@ _Changed:_
 _Removed:_
 
 - Removed deprecated function `Keithley2600.clearBuffer()`. Use `buffer.clear()` and
-  `buffer.clearcache()` insead where `buffer` is a Keithley buffer instance, such as
+  `buffer.clearcache()` instead where `buffer` is a Keithley buffer instance, such as
   `Keithley2600.smua.nvbuffer1`.
 
 #### v1.2.2 (2019-06-27):
