@@ -467,8 +467,9 @@ class Keithley2600Base(MagicClass):
                 if self.raise_keithley_errors and 'errorqueue' not in value:
                     err = self.errorqueue.next()
                     if err[0] != 0:
+                        err_msg = err[1].replace('TSP Runtime error at line 1: ', '')
                         raise KeithleyError("Error during command '{0}': {1}".format(
-                            value, err[1]))
+                            value, err_msg))
 
                 return self._parse_response(r)
             else:
