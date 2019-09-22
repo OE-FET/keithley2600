@@ -14,20 +14,25 @@ Python.
 
 *Warning:*
 
-There are currently only heuristic checks for allowed arguments in the base commands. See the
-[Keithley 2600 reference manual](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
-for all available commands and arguments. Almost all Keithley TSP commands can be used
-with this driver. Not supported are:
+There are currently only heuristic checks for allowed commands and arguments by the driver
+itself. See the [Keithley 2600 reference manual](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
+for all available commands. To enable command checking, set the keyword argument argument
+`raise_keithley_errors = True` in the constructor. When `raise_keithley_errors` is set,
+all invalid commands will be raised as Python errors. This is done by reading the
+Keithley's error queue after every command and will triple the communication overhead.
+
+Almost all Keithley TSP commands can be used with this driver. Not supported are:
 
 * All Keithley IV sweep commands. We implement our own in the `Keithley2600` class.
 * Keithley TSP functions that have the same name as a Keithley TSP attribute (and vice
   versa). The driver cannot decide whether to handle them as a function call or as an
   attribute access. Currently, there is only one such case:
   - `io.output()` has been dropped because it conflicts with `smuX.source.output`, which
-      is more commonly used.
+    is more commonly used.
 * Keithley TSP commands that have the same name as built-in attributes of the driver.
   Currently, this is only:
   - `lan.trigger[N].connected`: conflicts with the attribute `Keithley2600.connected`.
+
 
 ## Usage
 

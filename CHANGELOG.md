@@ -3,10 +3,11 @@
 _Added:_
 
 - Optional argument `raise_keithley_errors`: If `True`, the Keithley's error queue will be
-  checked after each command and any Keithley errors will be raised as Python errors
-  `keithley_driver.KeithleyError`. This causes significant communication overhead but
-   facilitates the debugging of faulty scripts.
-   
+  checked after each command and any Keithley errors will be raised as Python`.
+  This causes significant communication overhead but facilitates the debugging of faulty
+  scripts since any invalid command will raise a descriptive error instead of failing
+  silently.
+
 _Fixed:_
 
 - Thread safety of communication with Keithley. `Keithley2600Base` now uses its own lock
