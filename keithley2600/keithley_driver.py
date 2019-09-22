@@ -16,7 +16,7 @@ import logging
 import threading
 import numpy as np
 import time
-from threading import Lock
+from threading import RLock
 
 # local import
 from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
@@ -342,7 +342,7 @@ class Keithley2600Base(MagicClass):
     TO_TSP_LIST = (list, np.ndarray, tuple, set, xrange if PY2 else range)
     CHUNK_SIZE = 50
 
-    _lock = Lock()
+    _lock = RLock()
 
     def __init__(self, visa_address, visa_library='@py', raise_keithley_errors=False,
                  **kwargs):
