@@ -17,6 +17,7 @@ import threading
 import numpy as np
 import time
 from threading import RLock
+from xdrlib import Error as XDRError
 
 # local import
 from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
@@ -456,8 +457,12 @@ class Keithley2600Base(MagicClass):
                 if self.raise_keithley_errors and 'errorqueue' not in value:
                     self.errorqueue.clear()
 
-                r = self.connection.query('print(%s)' % value)
-                logger.debug('read: %s' % r)
+                try:
+                    r = self.connection.query('print(%s)' % value)
+                    logger.debug('read: %s' % r)
+                except XDRError:
+                    r = 'nil'
+                    logger.debug('read failed: unpack-error')
 
                 if self.raise_keithley_errors and 'errorqueue' not in value:
                     err = self.errorqueue.next()
