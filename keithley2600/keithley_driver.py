@@ -24,7 +24,7 @@ from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
                                        CLASSES, PROPERTY_LISTS)
 from keithley2600.result_table import FETResultTable
 
-__version__ = 'v1.3.1-beta1'
+__version__ = 'v1.3.1'
 
 PY2 = sys.version[0] == '2'
 logger = logging.getLogger(__name__)
