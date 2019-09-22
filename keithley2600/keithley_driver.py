@@ -310,8 +310,8 @@ class Keithley2600Base(MagicClass):
         baude-rate or timeout. If not given, reasonable defaults will be used.
 
     :cvar connection: Attribute holding a reference to the actual connection.
-    :cvar bool connected: `True` if connected to an instrument, `False` otherwise.
-    :cvar bool busy: `True` if a measurement is running, `False` otherwise.
+    :cvar bool connected: ``True`` if connected to an instrument, ``False`` otherwise.
+    :cvar bool busy: ``True`` if a measurement is running, ``False`` otherwise.
     :cvar list TO_TSP_LIST: List of python types which will be converted to Keithley TSP
         lists by this driver and can be used as inputs. Currently, those are
         :class:`list`, :class:`numpy.ndarray`, :class:`tuple`, :class:`set` and
@@ -543,8 +543,8 @@ class Keithley2600(Keithley2600Base):
         baude-rate or timeout. If not given, reasonable defaults will be used.
 
     :cvar connection: Attribute holding a reference to the actual connection.
-    :cvar bool connected: `True` if connected to an instrument, `False` otherwise.
-    :cvar bool busy: `True` if a measurement is running, `False` otherwise.
+    :cvar bool connected: ``True`` if connected to an instrument, ``False`` otherwise.
+    :cvar bool busy: ``True`` if a measurement is running, ``False`` otherwise.
 
     :Examples:
 
@@ -759,7 +759,7 @@ class Keithley2600(Keithley2600Base):
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before measurement. Set ``delay = -1`` for
             an automatic measurement once the current is stable.
-        :param bool pulsed: `True` or `False` for pulsed or continuous sweep.
+        :param bool pulsed: ``True`` or ``False`` for pulsed or continuous sweep.
 
         :returns: Lists of voltages and currents measured during the sweep (in Volt and
             Ampere, respectively): ``(v_smu, i_smu)``.
@@ -948,7 +948,7 @@ class Keithley2600(Keithley2600Base):
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before measurement. Set ``delay = -1`` for
             an automatic measurement once the current is stable.
-        :param bool pulsed: `True` or `False` for pulsed or continuous sweep.
+        :param bool pulsed: ``True`` or ``False`` for pulsed or continuous sweep.
 
         :returns: Lists of voltages and currents measured during the sweep (in Volt and
             Ampere, respectively): ``(v_smu1, i_smu1, v_smu2, i_smu2)``.
@@ -1177,7 +1177,7 @@ class Keithley2600(Keithley2600Base):
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before measurement. Set ``delay = -1`` for
             an automatic measurement once the current is stable.
-        :param bool pulsed: `True` or `False` for pulsed or continuous sweep.
+        :param bool pulsed: ``True`` or ``False`` for pulsed or continuous sweep.
 
         :returns: Transfer curve data.
         :rtype: :class:`sweep_data.TransistorSweepData`
@@ -1252,7 +1252,7 @@ class Keithley2600(Keithley2600Base):
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before measurement. Set ``delay = -1`` for
             an automatic measurement once the current is stable.
-        :param bool pulsed: `True` or `False` for pulsed or continuous sweep.
+        :param bool pulsed: ``True`` or ``False`` for pulsed or continuous sweep.
 
         :returns: Output curve data.
         :rtype: :class:`sweep_data.TransistorSweepData`
