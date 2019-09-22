@@ -303,7 +303,7 @@ class Keithley2600Base(MagicClass):
     :param str visa_library: PyVisa backend specification. Defaults to "@py" for pyvisa-py
         but NI-VISA may be appropriate, depending on the interface type.
     :param bool raise_keithley_errors: If ``True``, all Keithley errors will be raised as
-        Python errors instead of ignoring them. This causes significant communication
+        Python errors instead of being ignored. This causes significant communication
         overhead because the Keithley's error queue is read after each command. Defaults
         to ``False``.
     :param kwargs: Keyword arguments passed on to the visa connection, for instance
@@ -536,7 +536,7 @@ class Keithley2600(Keithley2600Base):
     :param str visa_library: PyVisa backend specification. Defaults to "@py" for pyvisa-py
         but NI-VISA may be appropriate, depending on the interface type.
     :param bool raise_keithley_errors: If ``True``, all Keithley errors will be raised as
-        Python errors instead of ignoring them. This causes significant communication
+        Python errors instead of being ignored. This causes significant communication
         overhead because the Keithley's error queue is read after each command. Defaults
         to ``False``.
     :param kwargs: Keyword arguments passed on to the visa connection, for instance
