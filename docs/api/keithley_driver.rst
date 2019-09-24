@@ -7,6 +7,6 @@ Keithley driver
 ===============
 
 .. automodule:: keithley_driver
-   :members: KeithleyIOError, Keithley2600Base, Keithley2600
+   :members: KeithleyIOError, KeithleyError, Keithley2600Base, Keithley2600
    :show-inheritance:
 

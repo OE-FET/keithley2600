@@ -283,7 +283,7 @@ class MagicClass(object):
 
 
 class KeithleyIOError(Exception):
-    """Raised when trying to communicate with the Keithley while none is connected."""
+    """Raised when no Keithley instrument is connected."""
     pass
 
 
