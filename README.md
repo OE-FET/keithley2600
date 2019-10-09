@@ -19,7 +19,8 @@ itself. See the [Keithley 2600 reference manual](https://www.tek.com/keithley-so
 for all available commands. To enable command checking, set the keyword argument argument
 `raise_keithley_errors = True` in the constructor. When `raise_keithley_errors` is set,
 all invalid commands will be raised as Python errors. This is done by reading the
-Keithley's error queue after every command and will triple the communication overhead.
+Keithley's error queue after every command and will therefore result in significant
+communication overhead.
 
 Almost all Keithley TSP commands can be used with this driver. Not supported are:
 
