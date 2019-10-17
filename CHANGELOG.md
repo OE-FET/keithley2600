@@ -1,3 +1,10 @@
+#### v1.3.2-dev
+
+_Fixed_:
+
+- Fixed a bug in `rampToVoltage` where the target voltage would not be set correctly if it was
+  smaller than the step size.
+
 #### v1.3.1 (2019-09-20):
 
 _Added:_

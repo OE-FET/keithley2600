@@ -737,12 +737,12 @@ class Keithley2600(Keithley2600Base):
 
         step = np.sign(target_volt - vcurr) * abs(step_size)
 
-        for v in np.arange(vcurr, target_volt + step, step):
+        for v in np.arange(vcurr, target_volt, step):
             smu.source.levelv = v
             smu.measure.v()
             time.sleep(delay)
 
-        target_volt = smu.measure.v()
+        smu.source.levelv = target_volt
         logger.info('Gate voltage set to Vg = %s V.' % round(target_volt))
 
         self.beeper.beep(0.3, 2400)
