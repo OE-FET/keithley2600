@@ -1,5 +1,7 @@
 #### v1.3.2
 
+This release drops support for Python 2.7. Only Python 3.6 and higher are supported
+
 _Fixed_:
 
 - Fixed a bug in `rampToVoltage` where the target voltage would not be set correctly if it was
