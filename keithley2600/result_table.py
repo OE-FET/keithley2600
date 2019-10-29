@@ -14,11 +14,6 @@ import os
 import re
 import numpy as np
 
-PY2 = sys.version[0] == '2'
-
-if not PY2:
-    basestring = str  # in Python 3
-
 
 def find_numbers(string):
 
@@ -172,7 +167,7 @@ class ResultTable(object):
     @column_names.setter
     def column_names(self, names_list):
         """Setter: List of strings with column names."""
-        if not all(isinstance(x, basestring) for x in names_list):
+        if not all(isinstance(x, str) for x in names_list):
             raise ValueError("All column names must be of type 'str'.")
         elif not len(names_list) == self.ncols:
             raise ValueError('Number of column names does not match number of columns.')
@@ -188,7 +183,7 @@ class ResultTable(object):
     @column_units.setter
     def column_units(self, units_list):
         """Setter: List of strings with column units."""
-        if not all(isinstance(x, basestring) for x in units_list):
+        if not all(isinstance(x, str) for x in units_list):
             raise ValueError("All column_units must be of type 'str'.")
         elif not len(units_list) == self.ncols:
             raise ValueError('Number of column_units does not match number of columns.')
