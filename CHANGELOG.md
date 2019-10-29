@@ -1,11 +1,11 @@
-#### v1.3.2-dev
+#### v1.3.2
 
 _Fixed_:
 
 - Fixed a bug in `rampToVoltage` where the target voltage would not be set correctly if it was
   smaller than the step size.
 
-#### v1.3.1 (2019-09-20):
+#### v1.3.1
 
 _Added:_
 
@@ -20,7 +20,7 @@ _Fixed:_
 - Thread safety of communication with Keithley. `Keithley2600Base` now uses its own lock
   instead of relying on PyVisa's thread safety.
 
-#### v1.3.0 (2019-07-19):
+#### v1.3.0
 
 This version includes some API changes and updates to the documentation and doc strings.
 
@@ -39,7 +39,7 @@ _Removed:_
   `buffer.clearcache()` instead where `buffer` is a Keithley buffer instance, such as
   `Keithley2600.smua.nvbuffer1`.
 
-#### v1.2.2 (2019-06-27):
+#### v1.2.2
 
 _Added:_
 
@@ -47,14 +47,14 @@ _Added:_
 - Added string representation of `ResultTable` which returns the first 7 rows as neatly
   formatted columns (similar to pandas dataframes).
 
-#### v1.2.1 (2019-05-20):
+#### v1.2.1
 
 _Fixed:_
 
 - Fixed a critical error when initializing and appending columns to an emtpy `ResultTable`
   instance.
 
-#### v1.2.0 (2019-05-16):
+#### v1.2.0
 
 _Added:_
 
@@ -80,20 +80,20 @@ _Removed:_
 
 - Removed `IVSweepData`. The was no clear added value over using `ResultTable` directly.
 
-#### v1.1.1 (2019-05-01):
+#### v1.1.1
 
 _Fixed:_
 
 - Fixed a thread safety bug: Fixed a bug that could cause the wrong result to be returned
   by a query when using `Keithley2600` from multiple threads.
 
-#### v1.1.0 (2019-02-07):
+#### v1.1.0
 
 _Added:_
 
 - Sphinx documentation.
 
-#### v1.0.0 (2019-01-17):
+#### v1.0.0
 
 _Added:_
 
@@ -128,7 +128,7 @@ _Removed:_
   directly with `buffer.clear()` instead, where `buffer` is a keithley buffer instance
   such as `k.smua.nvbuffer1`.
 
-#### v0.3.0 (2018-11-13):
+#### v0.3.0
 
 _Added:_
 
