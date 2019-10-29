@@ -9,7 +9,6 @@ Core driver with the low level functions.
 """
 
 # system imports
-from __future__ import absolute_import, division, print_function
 import sys
 import visa
 import logging
@@ -26,11 +25,7 @@ from keithley2600.result_table import FETResultTable
 
 __version__ = 'v1.3.2'
 
-PY2 = sys.version[0] == '2'
 logger = logging.getLogger(__name__)
-
-if not PY2:
-    basestring = str  # in Python 3
 
 
 def log_to_screen(level=logging.DEBUG):
@@ -63,7 +58,7 @@ class MagicPropertyList(object):
     """
 
     def __init__(self, name, parent):
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
@@ -112,7 +107,7 @@ class MagicFunction(object):
     """
 
     def __init__(self, name, parent):
-        if not isinstance(name, basestring):
+        if not isinstance(name, str):
             raise ValueError('First argument must be of type str.')
         self._name = name
         self._parent = parent
@@ -164,7 +159,7 @@ class MagicClass(object):
     _parent = None
 
     def __init__(self, name, parent=None):
-        assert isinstance(name, basestring)
+        assert isinstance(name, str)
         self._name = name
         if parent is not None:
             self._parent = parent
@@ -340,7 +335,7 @@ class Keithley2600Base(MagicClass):
     connected = False
     busy = False
 
-    TO_TSP_LIST = (list, np.ndarray, tuple, set, xrange if PY2 else range)
+    TO_TSP_LIST = (list, np.ndarray, tuple, set, range)
     CHUNK_SIZE = 50
 
     _lock = RLock()
@@ -377,7 +372,6 @@ class Keithley2600Base(MagicClass):
         :param kwargs: Keyword arguments for Visa connection.
 
         """
-        connection_error = OSError if PY2 else ConnectionError
         # noinspection PyBroadException
         try:
             self.connection = self.rm.open_resource(self.visa_address, **kwargs)
@@ -388,7 +382,7 @@ class Keithley2600Base(MagicClass):
             self.connection = None
             self.connected = False
             raise
-        except connection_error:
+        except ConnectionError:
             logger.info('Connection error. Please check that ' +
                         'no other program is connected.')
             self.connection = None
