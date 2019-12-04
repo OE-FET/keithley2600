@@ -1,3 +1,11 @@
+#### v1.3.3-dev1
+
+_Changed_:
+
+- Remember PyVisa connection settings which are passed as keyword arguments to
+  `Keithley2600`. Previously, calling `Keithley2600.connect(...)` would revert to default
+  settings.
+
 #### v1.3.2
 
 This release drops support for Python 2.7. Only Python 3.6 and higher are supported
