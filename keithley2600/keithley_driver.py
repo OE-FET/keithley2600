@@ -340,8 +340,7 @@ class Keithley2600Base(MagicClass):
 
     _lock = RLock()
 
-    def __init__(self, visa_address, visa_library='@py', raise_keithley_errors=False,
-                 **kwargs):
+    def __init__(self, visa_address, visa_library='@py', raise_keithley_errors=False, **kwargs):
 
         MagicClass.__init__(self, name='', parent=self)
         self._name = ''
@@ -350,6 +349,7 @@ class Keithley2600Base(MagicClass):
 
         self.visa_address = visa_address
         self.visa_library = visa_library
+        self._connection_kwargs = kwargs
 
         self.raise_keithley_errors = raise_keithley_errors
 
@@ -372,7 +372,7 @@ class Keithley2600Base(MagicClass):
         :param kwargs: Keyword arguments for Visa connection.
 
         """
-        # noinspection PyBroadException
+        kwargs = kwargs or self._connection_kwargs  # use specified or remembered kwargs
         try:
             self.connection = self.rm.open_resource(self.visa_address, **kwargs)
             self.connection.read_termination = '\n'
