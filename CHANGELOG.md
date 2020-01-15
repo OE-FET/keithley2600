@@ -6,6 +6,10 @@ _Changed_:
   `Keithley2600`. Previously, calling `Keithley2600.connect(...)` would revert to default
   settings.
 
+_Fixed_:
+
+- Explicitly set source mode in `Keithley2600.applyCurrent` and `Keithley2600.applyVoltage`.
+
 #### v1.3.2
 
 This release drops support for Python 2.7. Only Python 3.6 and higher are supported
