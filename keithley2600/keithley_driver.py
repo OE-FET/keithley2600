@@ -688,6 +688,8 @@ class Keithley2600(Keithley2600Base):
         """
         Measures a voltage at the specified SMU.
 
+        :param smu: A keithley smu instance.
+
         :returns: Measured voltage in Volts.
         :rtype: float
         """
@@ -699,6 +701,8 @@ class Keithley2600(Keithley2600Base):
     def measureCurrent(self, smu):
         """
         Measures a current at the specified SMU.
+
+        :param smu: A keithley smu instance.
 
         :returns: Measured current in Ampere.
         :rtype: float
