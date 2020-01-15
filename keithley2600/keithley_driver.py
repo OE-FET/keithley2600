@@ -670,7 +670,7 @@ class Keithley2600(Keithley2600Base):
         self._check_smu(smu)
 
         smu.source.levelv = voltage
-        smu.source.function = smu.OUTPUT_DCVOLTS
+        smu.source.func = smu.OUTPUT_DCVOLTS
         smu.source.output = smu.OUTPUT_ON
 
     def applyCurrent(self, smu, curr):
@@ -683,7 +683,7 @@ class Keithley2600(Keithley2600Base):
         self._check_smu(smu)
 
         smu.source.leveli = curr
-        smu.source.function = smu.OUTPUT_DCAMPS
+        smu.source.func = smu.OUTPUT_DCAMPS
         smu.source.output = smu.OUTPUT_ON
 
     def measureVoltage(self, smu):
