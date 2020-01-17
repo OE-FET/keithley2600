@@ -9,7 +9,6 @@ Core driver with the low level functions.
 """
 
 # system imports
-import sys
 import visa
 import logging
 import threading
@@ -20,7 +19,7 @@ from xdrlib import Error as XDRError
 
 # local import
 from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
-                                       CLASSES, PROPERTY_LISTS)
+                                       CLASSES, PROPERTY_LISTS, ALL_CMDS, PLACEHOLDERS)
 from keithley2600.result_table import FETResultTable
 
 __version__ = 'v1.3.3-dev1'
@@ -270,6 +269,14 @@ class MagicClass(object):
 
     def __iter__(self):
         return self
+
+    def __dir__(self):
+        prefix = self._name + '.' if self._name else ''
+
+        sub_cmds = (c.replace(prefix, '') for c in ALL_CMDS if c.startswith(prefix))
+        sub_cmds = list(set(c.split('.')[0] for c in sub_cmds))
+
+        return sub_cmds
 
     def getdoc(self):
         """Prevent pydoc from trying to document this class. This could
