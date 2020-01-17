@@ -1,5 +1,10 @@
 #### v1.3.3-dev1
 
+_Added_:
+
+- Added `__dir__` proprty to Keithley2600 and its classes to support autocompletion.
+  The dictionary of commands is craeted from the Keithley reference manual.
+
 _Changed_:
 
 - Remember PyVisa connection settings which are passed as keyword arguments to
