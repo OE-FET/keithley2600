@@ -274,11 +274,6 @@ class MagicClass(object):
 
         return sub_cmds
 
-    def getdoc(self):
-        """Prevent pydoc from trying to document this class. This could
-        conflict with on-demand creation of attributes."""
-        pass
-
 
 class KeithleyIOError(Exception):
     """Raised when no Keithley instrument is connected."""
