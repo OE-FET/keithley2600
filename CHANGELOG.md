@@ -1,3 +1,9 @@
+#### v1.3.4
+
+_Fixed_:
+
+- Fixed a typo in the column labels of the dataset returned by `outputMeasurement`.
+
 #### v1.3.3
 
 _Added_:
