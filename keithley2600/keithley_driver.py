@@ -1309,9 +1309,9 @@ class Keithley2600(Keithley2600Base):
 
             if not self.abort_event.is_set():
                 i_s = np.array(i_d) + np.array(i_g)
-                rt.append_column(i_s, name='Source current (Vd = %s)' % vgate, unit='A')
-                rt.append_column(i_d, name='Drain current (Vd = %s)' % vgate, unit='A')
-                rt.append_column(i_g, name='Gate current (Vd = %s)' % vgate, unit='A')
+                rt.append_column(i_s, name='Source current (Vg = %s)' % vgate, unit='A')
+                rt.append_column(i_d, name='Drain current (Vg = %s)' % vgate, unit='A')
+                rt.append_column(i_g, name='Gate current (Vg = %s)' % vgate, unit='A')
 
         self.reset()
         self.beeper.beep(0.3, 2400)
