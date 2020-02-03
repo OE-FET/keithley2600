@@ -1,3 +1,10 @@
+#### v1.3.5-dev
+
+_Added_:
+
+- Save time stamps with measurement data.
+
+
 #### v1.3.4
 
 _Fixed_:
