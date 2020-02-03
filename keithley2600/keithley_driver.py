@@ -19,7 +19,7 @@ from xdrlib import Error as XDRError
 
 # local import
 from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
-                                       CLASSES, PROPERTY_LISTS, ALL_CMDS, PLACEHOLDERS)
+                                       CLASSES, PROPERTY_LISTS, ALL_CMDS)
 from keithley2600.result_table import FETResultTable
 
 __version__ = 'v1.3.4'
