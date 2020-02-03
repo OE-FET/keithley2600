@@ -1211,8 +1211,14 @@ class Keithley2600(Keithley2600Base):
         sweeplist_gate = np.append(sweeplist_gate_fwd, sweeplist_gate_rvs)
 
         # create ResultTable instance
-        params = {'sweep_type': 'transfer', 't_int': t_int, 'delay': delay,
-                  'pulsed': pulsed}
+        params = {
+            'sweep_type': 'transfer',
+            'time': time.time(),
+            'time_str': time.strftime('%d/%m/%Y %H:%M'),
+            't_int': t_int,
+            'delay': delay,
+            'pulsed': pulsed,
+        }
         rt = FETResultTable(params=params)
         rt.append_column(sweeplist_gate, name='Gate voltage', unit='V')
 
@@ -1287,8 +1293,14 @@ class Keithley2600(Keithley2600Base):
         sweeplist_drain = np.append(sweeplist_drain_fwd, sweeplist_drain_rvs)
 
         # create ResultTable instance
-        params = {'sweep_type': 'output', 't_int': t_int, 'delay': delay,
-                  'pulsed': pulsed}
+        params = {
+            'sweep_type': 'output',
+            'time': time.time(),
+            'time_str': time.strftime('%d/%m/%Y %H:%M'),
+            't_int': t_int,
+            'delay': delay,
+            'pulsed': pulsed,
+        }
         rt = FETResultTable(params=params)
         rt.append_column(sweeplist_drain, name='Drain voltage', unit='V')
 
