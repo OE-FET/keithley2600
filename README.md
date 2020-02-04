@@ -3,7 +3,7 @@
 [![Build Status](https://travis-ci.com/OE-FET/keithley2600.svg?branch=master)](https://travis-ci.com/OE-FET/keithley2600)
 [![Documentation Status](https://readthedocs.org/projects/keithley2600/badge/?version=latest)](https://keithley2600.readthedocs.io/en/latest/?badge=latest)
 
-**Warning:** Version 1.3.2 only supports Python 3.6 and higher. Install version 1.3.1 if
+**Warning:** From version 1.3.2, keithley2600 only support Python 3.6 and higher. Install version 1.3.1 if
 you require support for Python 2.7.
 
 # keithley2600
@@ -139,10 +139,11 @@ $ pip install git+https://github.com/OE-FET/keithley2600
 
 ## System requirements
 
-- Python 2.7 or 3.x
+- Python 3.6 and higher
 
 ##  Documentation
 
-See the Keithley 2600 reference manual
-[here](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
-for all available commands and arguments.
+* API documentation of keithley2600: [https://keithley2600.readthedocs.io/en/latest/](https://keithley2600.readthedocs.io/en/latest/)
+
+* Keithley 2600 reference manual with all commands:
+[https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
