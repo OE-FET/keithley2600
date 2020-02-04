@@ -141,9 +141,9 @@ for all available methods.
 
 keithley2600 uses [PyVISA](https://pyvisa.readthedocs.io/) to connect to instruments.
 PyVISA supports both proprietray IVI libraries such as NI-VISA, Keysight VISA, R&S VISA,
-tekVISA etc. and the purely Python [PyVISA-py](https://pyvisa-py.readthedocs.io/en/latest/)
-backend. You can select a specific backend by giving its path to the `Keithley2600`
-constructor in the `visa_library` argument. For example:
+tekVISA etc. and the purely Python backend [PyVISA-py](https://pyvisa-py.readthedocs.io/en/latest/).
+You can select a specific backend by giving its path to the `Keithley2600` constructor
+in the `visa_library` argument. For example:
 
 ```python
 from  keithley2600 import Keithley2600
@@ -153,7 +153,7 @@ k = Keithley2600('TCPIP0::192.168.2.121::INSTR', visa_library='/usr/lib/libvisa.
 
 keithley2600 defaults to using the PyVISA-py backend, selected by `visa_library='@py'`,
 since this is only a pip-install away. If you pass an empty string, keithley2600 will use
-an installed IVI library if it can find one in standard locations and fall back to the
+an installed IVI library if it can find one in standard locations and fall back to
 PyVISA-py otherwise.
 
 You can find more information about selecting the backend in the
