@@ -146,7 +146,7 @@ backend. You can select a specific backend by giving its path to the `Keithley26
 constructor in the `visa_library` argument. For example:
 
 ```python
-from  keithley2600 import Keithley2600, ResultTable
+from  keithley2600 import Keithley2600
 
 k = Keithley2600('TCPIP0::192.168.2.121::INSTR', visa_library='/usr/lib/libvisa.so.7')
 ```
