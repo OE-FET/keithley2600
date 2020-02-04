@@ -294,9 +294,10 @@ class Keithley2600Base(MagicClass):
     type commands.
 
     :param str visa_address: Visa address of the instrument.
-    :param str visa_library: PyVisa backend specification. Defaults to "@py"
-        for pyvisa-py but NI-VISA may be appropriate, depending on the
-        interface type.
+    :param str visa_library: Path to visa library. Defaults to "@py" for pyvisa-py
+        but another IVI library may be appropriate (NI-VISA, Keysight VISA, R&S VISA,
+        tekVISA etc.). If an empty string is given, an IVI library will be used if
+        installed and pyvisa-py otherwise.
     :param bool raise_keithley_errors: If ``True``, all Keithley errors will be
         raised as Python errors instead of being ignored. This causes
         significant communication overhead because the Keithley's error queue
@@ -531,9 +532,10 @@ class Keithley2600(Keithley2600Base):
     syntax of Keithley TSP functions.
 
     :param str visa_address: Visa address of the instrument.
-    :param str visa_library: PyVisa backend specification. Defaults to "@py"
-        for pyvisa-py but NI-VISA may be appropriate, depending on the
-        interface type.
+    :param str visa_library: Path to visa library. Defaults to "@py" for pyvisa-py
+        but another IVI library may be appropriate (NI-VISA, Keysight VISA, R&S VISA,
+        tekVISA etc.). If an empty string is given, an IVI library will be used if
+        installed and pyvisa-py otherwise.
     :param bool raise_keithley_errors: If ``True``, all Keithley errors will be
         raised as Python errors instead of being ignored. This causes
         significant communication overhead because the Keithley's error queue

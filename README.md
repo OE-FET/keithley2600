@@ -38,6 +38,16 @@ Almost all Keithley TSP commands can be used with this driver. Not supported are
   - `lan.trigger[N].connected`: conflicts with the attribute `Keithley2600.connected`.
 
 
+## Installation
+Install the stable version from PyPi by running
+```console
+$ pip install keithley2600
+```
+or the latest development version from GitHub:
+```console
+$ pip install git+https://github.com/OE-FET/keithley2600
+```
+
 ## Usage
 
 Connect to the Keithley 2600 and perform some base commands:
@@ -127,15 +137,27 @@ rt.save('~/iv_curve.txt')
 See the [documentation](https://keithley2600.readthedocs.io/en/latest/api/result_table.html)
 for all available methods.
 
-## Installation
-Install the stable version from PyPi by running
-```console
-$ pip install keithley2600
+## Backend selection
+
+keithley2600 uses [PyVISA](https://pyvisa.readthedocs.io/) to connect to instruments.
+PyVISA supports both proprietray IVI libraries such as NI-VISA, Keysight VISA, R&S VISA,
+tekVISA etc. and the purely Python [PyVISA-py](https://pyvisa-py.readthedocs.io/en/latest/)
+backend. You can select a specific backend by giving its path to the `Keithley2600`
+constructor in the `visa_library` argument. For example:
+
+```python
+from  keithley2600 import Keithley2600, ResultTable
+
+k = Keithley2600('TCPIP0::192.168.2.121::INSTR', visa_library=' /usr/lib/libvisa.so.7')
 ```
-or the latest development version from GitHub:
-```console
-$ pip install git+https://github.com/OE-FET/keithley2600
-```
+
+keithley2600 defaults to using the PyVISA-py backend, selected by `visa_library='@py'`,
+since this is only a pip-install away. If you pass an empty string, keithley2600 will use
+an installed IVI library if it can find one in standard locations and fall back to the
+PyVISA-py otherwise.
+
+You can find more information about selecting the backend in the
+[PyVISA docs](https://pyvisa.readthedocs.io/en/latest/introduction/configuring.html).
 
 ## System requirements
 
@@ -145,6 +167,4 @@ $ pip install git+https://github.com/OE-FET/keithley2600
 
 * API documentation of keithley2600: [https://keithley2600.readthedocs.io/en/latest/](https://keithley2600.readthedocs.io/en/latest/)
 
-* Keithley 2600 reference manual with all commands:
-
-  [https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
+* Keithley 2600 reference manual with all commands: [https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
