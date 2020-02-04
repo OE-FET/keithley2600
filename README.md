@@ -146,4 +146,5 @@ $ pip install git+https://github.com/OE-FET/keithley2600
 * API documentation of keithley2600: [https://keithley2600.readthedocs.io/en/latest/](https://keithley2600.readthedocs.io/en/latest/)
 
 * Keithley 2600 reference manual with all commands:
-[https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
+
+  [https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8)
