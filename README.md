@@ -148,7 +148,7 @@ constructor in the `visa_library` argument. For example:
 ```python
 from  keithley2600 import Keithley2600, ResultTable
 
-k = Keithley2600('TCPIP0::192.168.2.121::INSTR', visa_library=' /usr/lib/libvisa.so.7')
+k = Keithley2600('TCPIP0::192.168.2.121::INSTR', visa_library='/usr/lib/libvisa.so.7')
 ```
 
 keithley2600 defaults to using the PyVISA-py backend, selected by `visa_library='@py'`,
