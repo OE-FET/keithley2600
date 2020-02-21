@@ -9,7 +9,6 @@ Submodule defining classes to store, plot, and save measurement results.
 
 """
 
-import sys
 import os
 import re
 import numpy as np
@@ -520,8 +519,11 @@ class ResultTable(object):
         :param list y_clmns: List of column numbers or column names for y-axis data. If
             not given, all columns will be plotted against the x-axis column.
         :param function func: Function to apply to y-data before plotting.
-        :param bool live: If ``True``, update plot when new rows are added (default:
-            ``False``).
+        :param bool live: If ``True``, update the plot when new data is added (default:
+            ``False``). Plotting will be carried out in the main (GUI) thread, therefore
+            take care not to block the thread. This can be achieved for instance by adding
+            data in a background thread which carries out the measurement, or by calling
+            `matplotlib.pyplot.pause` after adding data to give the GUI time to update.
 
         :returns: :class:`ResultTablePlot` instance with Matplotlib figure.
         :rtype: :class:`ResultTablePlot`
@@ -702,8 +704,11 @@ class ResultTablePlot(object):
         all columns will be plotted against the x-axis column.
     :type y_clmns: list(int or str)
     :param function func: Function to apply to y-data before plotting.
-    :param bool live: If ``True``, update plot when new rows are added. Default to
-        `False``.
+    :param bool live: If ``True``, update the plot when new data is added (default:
+        ``False``). Plotting will be carried out in the main (GUI) thread, therefore
+        take care not to block the thread. This can be achieved for instance by adding
+        data in a background thread which carries out the measurement, or by calling
+        `matplotlib.pyplot.pause` after adding data to give the GUI time to update.
     """
 
     def __init__(self, result_table, x_clmn=0, y_clmns=None, func=lambda x: x,
@@ -771,10 +776,17 @@ class ResultTablePlot(object):
             self._timer.start(100)
 
     def show(self):
+        """
+        Shows the plot.
+        """
 
         self.fig.show()
 
     def update(self):
+        """
+        Updates the plot with the data of the corresponding :class:`ResultTable`.
+        This will be called periodically when :param:``live`` is ``True``.
+        """
 
         x = self.result_table.data[:, self.x_clmn]
 
