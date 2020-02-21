@@ -767,14 +767,14 @@ class ResultTablePlot(object):
 
         if live and matplotlib.get_backend() == 'Qt5Agg':
             self._timer = self.fig.canvas.new_timer()
-            self._timer.add_callback(self.update_plot)
+            self._timer.add_callback(self.update)
             self._timer.start(100)
 
     def show(self):
 
         self.fig.show()
 
-    def update_plot(self):
+    def update(self):
 
         x = self.result_table.data[:, self.x_clmn]
 
