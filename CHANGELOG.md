@@ -1,9 +1,13 @@
-#### v1.3.5-dev
+#### v1.4.0-dev
 
 _Added_:
 
 - Save time stamps with measurement data.
 
+_Changed_:
+
+- Renamed `ResultTablePlot.update_plot` to `ResultTablePlot.update`.
+- Improved documentation of (live) plotting.
 
 #### v1.3.4
 
