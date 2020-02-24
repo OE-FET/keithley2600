@@ -8,6 +8,12 @@ _Changed_:
 
 - Renamed `ResultTablePlot.update_plot` to `ResultTablePlot.update`.
 - Improved documentation of (live) plotting.
+- Added `SENSE_LOCAL`, `SENSE_REMOTE` and `SENSE_CALA` to dictionary.
+
+_Fixed_:
+
+- Fixed explicitly defined methods such as `Keithley2600.applyVoltage` not appearing in
+  dictionary.
 
 #### v1.3.4
 
