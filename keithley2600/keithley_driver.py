@@ -272,6 +272,8 @@ class MagicClass(object):
         sub_cmds = (c.replace(prefix, '') for c in ALL_CMDS if c.startswith(prefix))
         sub_cmds = list(set(c.split('.')[0] for c in sub_cmds))
 
+        sub_cmds += super().__dir__()
+
         return sub_cmds
 
 
