@@ -22,7 +22,7 @@ from keithley2600.keithley_doc import (CONSTANTS, FUNCTIONS, PROPERTIES,
                                        CLASSES, PROPERTY_LISTS, ALL_CMDS)
 from keithley2600.result_table import FETResultTable
 
-__version__ = 'v1.4.0-dev1'
+__version__ = 'v1.4.0'
 
 logger = logging.getLogger(__name__)
 
