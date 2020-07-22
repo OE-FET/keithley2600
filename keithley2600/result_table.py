@@ -11,6 +11,7 @@ Submodule defining classes to store, plot, and save measurement results.
 
 import os
 import re
+import warnings
 import numpy as np
 
 
@@ -538,7 +539,7 @@ class ResultTable(object):
             raise ImportError('Matplotlib is required for plotting.')
 
         if live and not matplotlib.get_backend() == 'Qt5Agg':
-            print("'Qt5Agg' backend to Matplotlib is required for live plotting.")
+            warnings.warn("'Qt5Agg' backend to Matplotlib is required for live plotting.")
             live = False
 
         plot = ResultTablePlot(self, x_clmn, y_clmns, func, live=live, **kwargs)
@@ -721,7 +722,7 @@ class ResultTablePlot(object):
             raise ImportError('Matplotlib is required for plotting.')
 
         if live and not matplotlib.get_backend() == 'Qt5Agg':
-            print("'Qt5Agg' backend to Matplotlib is required for live plotting.")
+            warnings.warn("'Qt5Agg' backend to Matplotlib is required for live plotting.")
             live = False
 
         # input processing
