@@ -800,6 +800,7 @@ class ResultTablePlot(object):
         self.ax.relim()
         self.ax.autoscale_view(True, True, True)
         self.fig.canvas.draw()
+        self.fig.canvas.flush_events()
 
     def _to_column_number(self, c):
 
