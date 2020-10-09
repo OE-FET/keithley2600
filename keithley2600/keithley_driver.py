@@ -9,7 +9,7 @@ Core driver with the low level functions.
 """
 
 # system imports
-import visa
+import pyvisa
 import logging
 import threading
 import numpy as np
@@ -361,7 +361,7 @@ class Keithley2600Base(MagicClass):
         self.raise_keithley_errors = raise_keithley_errors
 
         # open visa resource manager with selected library / backend
-        self.rm = visa.ResourceManager(self.visa_library)
+        self.rm = pyvisa.ResourceManager(self.visa_library)
         # connect to keithley
         self.connect(**kwargs)
 
