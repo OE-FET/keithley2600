@@ -1,3 +1,9 @@
+#### v1.4.1
+
+_Changed_:
+
+- Replaced deprecated `visa` import with `pyvisa`.
+
 #### v1.4.0
 
 _Added_:
