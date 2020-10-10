@@ -26,3 +26,6 @@ OTHER DEALINGS IN THE SOFTWARE.
 from keithley2600.result_table import ResultTable, FETResultTable
 from keithley2600.keithley_driver import Keithley2600Factory as Keithley2600
 from keithley2600.keithley_driver import log_to_screen
+
+
+__version__ = 'v1.4.1'
