@@ -26,6 +26,7 @@ project = 'keithley2600'
 copyright = '2019, Sam Schott'
 author = 'Sam Schott'
 
+
 def get_metadata(relpath, varname):
     """Read metadata info from a file without importing it."""
     from os.path import dirname, join
@@ -45,9 +46,9 @@ def get_metadata(relpath, varname):
 
 
 # The short X.Y version
-version = get_metadata("../keithley2600/keithley_driver.py", "__version__")
+version = get_metadata("../keithley2600/__init__.py", "__version__")
 # The full version, including alpha/beta/rc tags
-release = get_metadata("../keithley2600/keithley_driver.py", "__version__")
+release = version
 
 
 # -- General configuration ---------------------------------------------------
