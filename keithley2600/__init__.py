@@ -28,4 +28,4 @@ from keithley2600.keithley_driver import Keithley2600Factory as Keithley2600
 from keithley2600.keithley_driver import log_to_screen
 
 
-__version__ = 'v1.4.1'
+__version__ = 'v1.4.2.dev0'

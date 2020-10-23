@@ -1,3 +1,10 @@
+#### v1.4.2.dev
+
+_Fixed_:
+
+- Disable automatically setting the current range (autorange) in all sweeps if the SMU is
+  in high-capacitance mode.
+
 #### v1.4.1
 
 _Changed_:
