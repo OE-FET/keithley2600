@@ -17,7 +17,7 @@ import numpy as np
 
 def find_numbers(string):
 
-    fmt = r'[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?'
+    fmt = r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?"
     string_list = re.findall(fmt, string)
     float_list = [float(s) for s in string_list]
 
@@ -35,25 +35,26 @@ class ColumnTitle(object):
         "Gate voltage [V]").
     """
 
-    def __init__(self, name, unit=None, unit_fmt='[{}]'):
+    def __init__(self, name, unit=None, unit_fmt="[{}]"):
 
         self.name = name
-        self.unit = '' if unit is None else unit
+        self.unit = "" if unit is None else unit
         self.unit_fmt = unit_fmt
 
     def has_unit(self):
-        return self.unit != ''
+        return self.unit != ""
 
     def set_unit(self, unit):
         self.unit = unit
 
     def __repr__(self):
         return "<{0}(title='{1}', unit='{2}')>".format(
-            self.__class__.__name__, self.name, self.unit)
+            self.__class__.__name__, self.name, self.unit
+        )
 
     def __str__(self):
         if self.has_unit():
-            return self.name + ' ' + self.unit_fmt.format(self.unit)
+            return self.name + " " + self.unit_fmt.format(self.unit)
         else:
             return self.name
 
@@ -115,11 +116,11 @@ class ResultTable(object):
 
     """
 
-    COMMENT = '# '
-    DELIMITER = '\t'
-    PARAM_DELIMITER = ': '
-    LINE_BREAK = '\n'
-    UNIT_FORMAT = '[{}]'
+    COMMENT = "# "
+    DELIMITER = "\t"
+    PARAM_DELIMITER = ": "
+    LINE_BREAK = "\n"
+    UNIT_FORMAT = "[{}]"
 
     def __init__(self, column_titles=None, units=None, data=None, params=None):
 
@@ -129,13 +130,14 @@ class ResultTable(object):
         ncols = len(column_titles)
 
         if units is None:
-            units = [''] * ncols
+            units = [""] * ncols
 
-        self.titles = [ColumnTitle(n, u, self.UNIT_FORMAT)
-                       for n, u in zip(column_titles, units)]
+        self.titles = [
+            ColumnTitle(n, u, self.UNIT_FORMAT) for n, u in zip(column_titles, units)
+        ]
 
         if data is None:
-            self.data = np.array([[]]*ncols).transpose()
+            self.data = np.array([[]] * ncols).transpose()
         else:
             self.data = np.array(data)
 
@@ -170,7 +172,7 @@ class ResultTable(object):
         if not all(isinstance(x, str) for x in names_list):
             raise ValueError("All column names must be of type 'str'.")
         elif not len(names_list) == self.ncols:
-            raise ValueError('Number of column names does not match number of columns.')
+            raise ValueError("Number of column names does not match number of columns.")
 
         for title, name in zip(self.titles, names_list):
             title.name = name
@@ -186,7 +188,7 @@ class ResultTable(object):
         if not all(isinstance(x, str) for x in units_list):
             raise ValueError("All column_units must be of type 'str'.")
         elif not len(units_list) == self.ncols:
-            raise ValueError('Number of column_units does not match number of columns.')
+            raise ValueError("Number of column_units does not match number of columns.")
 
         for title, unit in zip(self.titles, units_list):
             title.unit = unit
@@ -204,7 +206,7 @@ class ResultTable(object):
         if not isinstance(col, int):
             col = self.column_names.index(col)
 
-        return self.titles[col].unit != ''
+        return self.titles[col].unit != ""
 
     def get_unit(self, col):
         """
@@ -238,7 +240,7 @@ class ResultTable(object):
         """
         Clears all data.
         """
-        self.data = np.array([[]]*self.ncols).transpose()
+        self.data = np.array([[]] * self.ncols).transpose()
 
     def append_row(self, data):
         """
@@ -248,7 +250,7 @@ class ResultTable(object):
             array.
         """
         if not len(data) == self.ncols:
-            raise ValueError('Length must match number of columns: %s' % self.ncols)
+            raise ValueError("Length must match number of columns: %s" % self.ncols)
 
         self.data = np.append(self.data, [data], 0)
 
@@ -330,12 +332,13 @@ class ResultTable(object):
 
         # use only alphabetic characters in `unique`
         # otherwise `re.escape` may inadvertently escape them in Python < 3.7
-        unique = 'UNIQUESTRING'
+        unique = "UNIQUESTRING"
         assert unique not in self.UNIT_FORMAT
 
-        regexp_name = '(?P<name>.*) '
-        regexp_unit = re.escape(self.UNIT_FORMAT.format(unique)).replace(unique,
-                                                                         '(?P<unit>.*)')
+        regexp_name = "(?P<name>.*) "
+        regexp_unit = re.escape(self.UNIT_FORMAT.format(unique)).replace(
+            unique, "(?P<unit>.*)"
+        )
 
         strings = title_string.split(self.DELIMITER)
 
@@ -346,8 +349,9 @@ class ResultTable(object):
             if m is None:
                 titles.append(ColumnTitle(s, unit_fmt=self.UNIT_FORMAT))
             else:
-                titles.append(ColumnTitle(m.group('name'), m.group('unit'),
-                                          self.UNIT_FORMAT))
+                titles.append(
+                    ColumnTitle(m.group("name"), m.group("unit"), self.UNIT_FORMAT)
+                )
 
         return titles
 
@@ -379,16 +383,19 @@ class ResultTable(object):
         lines = header.split(self.LINE_BREAK)
 
         for line in lines:
-            if (line.startswith(self.COMMENT) and self.PARAM_DELIMITER in line
-                    and self.DELIMITER not in line):
+            if (
+                line.startswith(self.COMMENT)
+                and self.PARAM_DELIMITER in line
+                and self.DELIMITER not in line
+            ):
                 contents = line.lstrip(self.COMMENT)
                 key, value = contents.split(self.PARAM_DELIMITER)
                 try:
                     params[key] = float(value)
                 except ValueError:
-                    if value in ['True', 'true']:
+                    if value in ["True", "true"]:
                         params[key] = True
-                    elif value in ['False', 'false']:
+                    elif value in ["False", "false"]:
                         params[key] = False
                     else:
                         params[key] = value
@@ -426,7 +433,7 @@ class ResultTable(object):
 
         return titles, params
 
-    def save(self, filename, ext='.txt'):
+    def save(self, filename, ext=".txt"):
         """
         Saves the result table to a text file. The file format is:
 
@@ -445,8 +452,14 @@ class ResultTable(object):
         base_name = os.path.splitext(filename)[0]
         filename = base_name + ext
 
-        np.savetxt(filename, self.data, delimiter=self.DELIMITER, newline=self.LINE_BREAK,
-                   header=self._header(), comments=self.COMMENT)
+        np.savetxt(
+            filename,
+            self.data,
+            delimiter=self.DELIMITER,
+            newline=self.LINE_BREAK,
+            header=self._header(),
+            comments=self.COMMENT,
+        )
 
     def save_csv(self, filename):
         """
@@ -465,10 +478,10 @@ class ResultTable(object):
 
         old_delim = self.DELIMITER
         old_line_break = self.LINE_BREAK
-        self.DELIMITER = ','
-        self.LINE_BREAK = '\n'
+        self.DELIMITER = ","
+        self.LINE_BREAK = "\n"
 
-        self.save(filename, ext='.csv')
+        self.save(filename, ext=".csv")
 
         self.DELIMITER = old_delim
         self.LINE_BREAK = old_line_break
@@ -485,16 +498,16 @@ class ResultTable(object):
 
         base_name, ext = os.path.splitext(filename)
 
-        if ext == '.csv':
-            self.DELIMITER = ','
-            self.LINE_BREAK = '\n'
+        if ext == ".csv":
+            self.DELIMITER = ","
+            self.LINE_BREAK = "\n"
 
         # read info string and header
         with open(filename) as f:
             lines = f.readlines()
 
         header_length = sum([l.startswith(self.COMMENT) for l in lines])
-        header = ''.join(lines[:header_length])
+        header = "".join(lines[:header_length])
 
         self.titles, self.params = self._parse_header(header)
 
@@ -536,10 +549,12 @@ class ResultTable(object):
             import matplotlib
             import matplotlib.pyplot as plt
         except ImportError:
-            raise ImportError('Matplotlib is required for plotting.')
+            raise ImportError("Matplotlib is required for plotting.")
 
-        if live and not matplotlib.get_backend() == 'Qt5Agg':
-            warnings.warn("'Qt5Agg' backend to Matplotlib is required for live plotting.")
+        if live and not matplotlib.get_backend() == "Qt5Agg":
+            warnings.warn(
+                "'Qt5Agg' backend to Matplotlib is required for live plotting."
+            )
             live = False
 
         plot = ResultTablePlot(self, x_clmn, y_clmns, func, live=live, **kwargs)
@@ -548,32 +563,35 @@ class ResultTable(object):
 
     def __repr__(self):
         titles = [str(t) for t in self.titles]
-        return '<{0}(columns={1}, data=array(...))>'.format(
-                self.__class__.__name__, str(titles))
+        return "<{0}(columns={1}, data=array(...))>".format(
+            self.__class__.__name__, str(titles)
+        )
 
     def __str__(self):
         # print first 7 rows of ResultTable to console
 
         n = min(7, self.nrows)
 
-        spacer = 3*' '
+        spacer = 3 * " "
 
         title_strings = [str(t) for t in self.titles]
         max_lengths = [max(len(ts), 11) for ts in title_strings]
 
-        row_strings = [spacer.join([t.rjust(m) for t, m in zip(title_strings, max_lengths)])]
+        row_strings = [
+            spacer.join([t.rjust(m) for t, m in zip(title_strings, max_lengths)])
+        ]
 
         for row in self.data[0:n, :]:
-            strings = ['{:.4e}'.format(x) for x in row]
+            strings = ["{:.4e}".format(x) for x in row]
             strings = [s.rjust(m) for s, m in zip(strings, max_lengths)]
             row_strings.append(spacer.join(strings))
 
-        return '\n'.join(row_strings)
+        return "\n".join(row_strings)
 
-# =============================================================================
-# Dictionary compatibility functions. This allows access to all columns of the
-# table with their names as keys.
-# =============================================================================
+    # =============================================================================
+    # Dictionary compatibility functions. This allows access to all columns of the
+    # table with their names as keys.
+    # =============================================================================
 
     def keys(self):
         return self.column_names
@@ -657,14 +675,14 @@ class FETResultTable(ResultTable):
 
     @property
     def sweep_type(self):
-        if 'sweep_type' in self.params.keys():
-            return self.params['sweep_type']
+        if "sweep_type" in self.params.keys():
+            return self.params["sweep_type"]
         else:
-            return ''
+            return ""
 
     @sweep_type.setter
     def sweep_type(self, sweep_type):
-        self.params['sweep_type'] = sweep_type
+        self.params["sweep_type"] = sweep_type
 
     def plot(self, *args, **kwargs):
         """
@@ -680,12 +698,12 @@ class FETResultTable(ResultTable):
         """
 
         plot = ResultTable.plot(self, func=np.abs, *args, **kwargs)
-        plot.ax.set_ylabel('I [A]')
+        plot.ax.set_ylabel("I [A]")
 
-        if self.sweep_type == 'transfer':
-            plot.ax.set_yscale('log')
+        if self.sweep_type == "transfer":
+            plot.ax.set_yscale("log")
         else:
-            plot.ax.set_yscale('linear')
+            plot.ax.set_yscale("linear")
 
         return plot
 
@@ -712,17 +730,26 @@ class ResultTablePlot(object):
         `matplotlib.pyplot.pause` after adding data to give the GUI time to update.
     """
 
-    def __init__(self, result_table, x_clmn=0, y_clmns=None, func=lambda x: x,
-                 live=False, **kwargs):
+    def __init__(
+        self,
+        result_table,
+        x_clmn=0,
+        y_clmns=None,
+        func=lambda x: x,
+        live=False,
+        **kwargs
+    ):
 
         try:
             import matplotlib
             import matplotlib.pyplot as plt
         except ImportError:
-            raise ImportError('Matplotlib is required for plotting.')
+            raise ImportError("Matplotlib is required for plotting.")
 
-        if live and not matplotlib.get_backend() == 'Qt5Agg':
-            warnings.warn("'Qt5Agg' backend to Matplotlib is required for live plotting.")
+        if live and not matplotlib.get_backend() == "Qt5Agg":
+            warnings.warn(
+                "'Qt5Agg' backend to Matplotlib is required for live plotting."
+            )
             live = False
 
         # input processing
@@ -760,18 +787,18 @@ class ResultTablePlot(object):
 
         y_label = os.path.commonprefix(line_labels)
         y_unit = os.path.commonprefix(line_units)
-        if y_unit == '':
-            label_text = '%s' % y_label
+        if y_unit == "":
+            label_text = "%s" % y_label
         else:
-            label_text = y_label + ' ' + self.result_table.UNIT_FORMAT.format(y_unit)
+            label_text = y_label + " " + self.result_table.UNIT_FORMAT.format(y_unit)
         self.ax.set_ylabel(label_text)
 
-        self.ax.autoscale(enable=True, axis='x', tight=True)
+        self.ax.autoscale(enable=True, axis="x", tight=True)
         self.fig.tight_layout()
 
         self.fig.show()
 
-        if live and matplotlib.get_backend() == 'Qt5Agg':
+        if live and matplotlib.get_backend() == "Qt5Agg":
             self._timer = self.fig.canvas.new_timer()
             self._timer.add_callback(self.update)
             self._timer.start(100)
