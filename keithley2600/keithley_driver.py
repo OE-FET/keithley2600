@@ -809,7 +809,10 @@ class Keithley2600(Keithley2600Base):
 
         # CONFIGURE SETTLING TIME FOR GATE VOLTAGE, I-LIMIT, ETC...
         smu.measure.delay = delay
-        smu.measure.autorangei = smu.AUTORANGE_ON
+
+        # enable autorange if not in high capacitance mode
+        if smu.source.highc == smu.DISABLE:
+            smu.measure.autorangei = smu.AUTORANGE_ON
 
         # smu.trigger.source.limiti = 0.1
 
@@ -1019,8 +1022,11 @@ class Keithley2600(Keithley2600Base):
         smu1.measure.delay = delay
         smu2.measure.delay = delay
 
-        smu1.measure.autorangei = smu1.AUTORANGE_ON
-        smu2.measure.autorangei = smu2.AUTORANGE_ON
+        # enable autorange if not in high capacitance mode
+        if smu1.source.highc == smu1.DISABLE:
+            smu1.measure.autorangei = smu1.AUTORANGE_ON
+        if smu2.source.highc == smu2.DISABLE:
+            smu2.measure.autorangei = smu2.AUTORANGE_ON
 
         # smu1.trigger.source.limiti = 0.1
         # smu2.trigger.source.limiti = 0.1
