@@ -9,13 +9,14 @@ Core driver with the low level functions.
 """
 
 # system imports
-import pyvisa
+import re
 import logging
 import threading
 import numpy as np
 import time
 from threading import RLock
 from xdrlib import Error as XDRError
+import pyvisa
 
 # local import
 from keithley2600.keithley_doc import (
@@ -274,11 +275,28 @@ class MagicClass(object):
         return self
 
     def __dir__(self):
+        # look for all commands that start with our own name (= prefix)
+        # and possible subscript indexing
         prefix = self._name + "." if self._name else ""
+        prefix = re.sub("\[\d\]", "[N]", prefix)
 
-        sub_cmds = (c.replace(prefix, "") for c in ALL_CMDS if c.startswith(prefix))
-        sub_cmds = list(set(c.split(".")[0] for c in sub_cmds))
+        sub_cmds = []
 
+        for cmd in ALL_CMDS:
+            if cmd.startswith(prefix):
+                # remove prefix from command
+                cmd = cmd.replace(prefix, "")
+                # remove subscript expressions
+                cmd = cmd.replace("[N]", "")
+                # take the immediate child command
+                cmd = cmd.split(".")[0]
+                # add to dir
+                sub_cmds.append(cmd)
+
+        # retain unique entries only
+        sub_cmds = list(set(sub_cmds))
+
+        # and native (non-Keithley) dir
         sub_cmds += super().__dir__()
 
         return sub_cmds
