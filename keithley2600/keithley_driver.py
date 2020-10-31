@@ -338,10 +338,6 @@ class Keithley2600Base(MagicClass):
     :cvar bool connected: ``True`` if connected to an instrument, ``False``
         otherwise.
     :cvar bool busy: ``True`` if a measurement is running, ``False`` otherwise.
-    :cvar list TO_TSP_LIST: List of python types which will be converted to
-        Keithley TSP lists by this driver and can be used as inputs. Currently,
-        those are :class:`list`, :class:`numpy.ndarray`, :class:`tuple`,
-        :class:`set` and :class:`range` (:class:`xrange` in Python 2).
     :cvar int CHUNK_SIZE: Maximum length of lists which can be sent to the
         Keithley. Longer lists will be transferred in chunks.
 
@@ -368,7 +364,6 @@ class Keithley2600Base(MagicClass):
     connected = False
     busy = False
 
-    TO_TSP_LIST = (list, np.ndarray, tuple, set, range)
     CHUNK_SIZE = 50
 
     SMU_LIST = []
@@ -563,9 +558,9 @@ class Keithley2600Base(MagicClass):
         if isinstance(value, bool):
             # convert bool True to string 'true'
             value = str(value).lower()
-        elif isinstance(value, self.TO_TSP_LIST):
+        elif hasattr(value, '__iter__'):
             # convert some iterables to a TSP type list '{1,2,3,4}'
-            value = "{%s}" % ", ".join(map(str, value))
+            value = "{" + ", ".join([str(v) for v in value]) + "}"
         elif isinstance(value, MagicClass):
             # convert keithley object to string with its name
             value = value._name
@@ -818,7 +813,7 @@ class Keithley2600(Keithley2600Base):
 
         :param smu: A keithley smu instance.
         :param smu_sweeplist: Voltages to sweep through (can be a numpy array,
-            list, tuple or range / xrange).
+             list, tuple or any other iterable with numbers).
         :param float t_int: Integration time per data point. Must be between
             0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before each measurement. A value of
@@ -1010,9 +1005,9 @@ class Keithley2600(Keithley2600Base):
         :param smu1: 1st keithley smu instance to be swept.
         :param smu2: 2nd keithley smu instance to be swept.
         :param smu1_sweeplist: Voltages to sweep at ``smu1`` (can be a numpy
-             array, list, tuple or range / xrange).
+             array, list, tuple or any other iterable with numbers).
         :param smu2_sweeplist: Voltages to sweep at ``smu2`` (can be a numpy
-             array, list, tuple, range / xrange).
+             array, list, tuple or any other iterable with numbers).
         :param float t_int: Integration time per data point. Must be
             between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
         :param float delay: Settling delay before each measurement. A value of
