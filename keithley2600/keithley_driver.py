@@ -162,7 +162,6 @@ class MagicClass(object):
     _parent = None
 
     def __init__(self, name, parent=None):
-        assert isinstance(name, str)
         self._name = name
         if parent is not None:
             self._parent = parent
@@ -829,7 +828,6 @@ class Keithley2600(Keithley2600Base):
 
         # input checks
         self._check_smu(smu)
-        assert isinstance(smu_sweeplist, self.TO_TSP_LIST)
 
         # set state to busy
         self.busy = True
@@ -1026,10 +1024,9 @@ class Keithley2600(Keithley2600Base):
         # input checks
         self._check_smu(smu1)
         self._check_smu(smu2)
-        assert isinstance(smu1_sweeplist, self.TO_TSP_LIST)
-        assert isinstance(smu2_sweeplist, self.TO_TSP_LIST)
 
-        assert len(smu1_sweeplist) == len(smu2_sweeplist)
+        if len(smu1_sweeplist) != len(smu2_sweeplist):
+            raise ValueError("Sweep lists must have equal lengths")
 
         # set state to busy
         self.busy = True
