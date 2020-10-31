@@ -1,9 +1,20 @@
 #### v1.4.2.dev
 
+_Added_:
+
+- Added support for built-in sweep functions of the Keithley 2600B series.
+
+_Changed_:
+
+- Detect available SMUs when connecting to the Keithley. This improves support for models
+  with a single SMU only.
+- Allow all iterables with numbers as values for sweep lists.
+
 _Fixed_:
 
 - Disable automatically setting the current range (autorange) in all sweeps if the SMU is
   in high-capacitance mode.
+- Added many missing constants to our dictionary for auto-completion. 
 
 #### v1.4.1
 
