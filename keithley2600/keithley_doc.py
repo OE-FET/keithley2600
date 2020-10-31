@@ -16,6 +16,15 @@ Submodule listing accepted Keithley TSP commands.
 import itertools
 
 
+__all__ = [
+    "CONSTANTS",
+    "FUNCTIONS",
+    "CLASSES",
+    "PROPERTIES",
+    "PROPERTY_LISTS",
+    "ALL_CMDS",
+]
+
 PROPERTIES = (
     "enable",
     "appendmode",
@@ -865,9 +874,6 @@ ALL_CMDS = set()
 # replace our placeholders
 for cmd in _ALL_CMDS_WITH_PLACEHOLDERS:
 
-    # strip syntax elements
-    cmd = cmd.replace("()", "")
-
     # find all placeholders in given command
     placeholders = [p for p in _PLACEHOLDERS if "{%s}" % p in cmd]
 
@@ -890,7 +896,10 @@ for cmd in _ALL_CMDS_WITH_PLACEHOLDERS:
         ALL_CMDS.add(cmd)
 
 
-_last_commands = [c.split(".")[-1] for c in ALL_CMDS]
+last_commands = [c.split(".")[-1] for c in ALL_CMDS]
 
-CONSTANTS = set(c for c in _last_commands if c.isupper())
-FUNCTIONS = set(c.rstrip("()") for c in _last_commands if c.endswith("()"))
+CONSTANTS = set(cmd for cmd in last_commands if cmd.isupper())
+FUNCTIONS = set(cmd.replace("()", "") for cmd in last_commands if cmd.endswith("()"))
+
+# strip syntax elements
+ALL_CMDS = set(cmd.replace("()", "") for cmd in ALL_CMDS)
