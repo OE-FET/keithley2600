@@ -372,6 +372,8 @@ class Keithley2600Base(MagicClass):
     TO_TSP_LIST = (list, np.ndarray, tuple, set, range)
     CHUNK_SIZE = 50
 
+    SMU_LIST = []
+
     _lock = RLock()
 
     def __init__(
@@ -433,6 +435,13 @@ class Keithley2600Base(MagicClass):
             logger.info("Could not connect to Keithley at %s." % self.visa_address)
             self.connection = None
             self.connected = False
+        else:
+            # get list of SMUs
+
+            for suffix in ("a", "b", "c", "d"):
+                smu_name = f"smu{suffix}"
+                if self._query(smu_name) is not None:
+                    self.SMU_LIST.append(smu_name)
 
     def disconnect(self):
         """
@@ -620,8 +629,6 @@ class Keithley2600(Keithley2600Base):
 
     """
 
-    SMU_LIST = ["smua", "smub"]
-
     def __init__(
         self, visa_address, visa_library="@py", raise_keithley_errors=False, **kwargs
     ):
@@ -642,11 +649,12 @@ class Keithley2600(Keithley2600Base):
 
         :param smu: A keithley smu instance.
         """
-        if self._get_smu_string(smu) not in self.SMU_LIST:
+
+        if self._get_smu_name(smu) not in self.SMU_LIST:
             raise RuntimeError("The specified SMU does not exist.")
 
     @staticmethod
-    def _get_smu_string(smu):
+    def _get_smu_name(smu):
         return smu._name.split(".")[-1]
 
     # =============================================================================
@@ -787,9 +795,6 @@ class Keithley2600(Keithley2600Base):
         if vcurr == target_volt:
             return
 
-        self.display.smua.measure.func = self.display.MEASURE_DCVOLTS
-        self.display.smub.measure.func = self.display.MEASURE_DCVOLTS
-
         step = np.sign(target_volt - vcurr) * abs(step_size)
 
         for v in np.arange(vcurr, target_volt, step):
@@ -873,8 +878,8 @@ class Keithley2600(Keithley2600Base):
         smu.nvbuffer2.clearcache()
 
         # display current values during measurement
-        self.display.smua.measure.func = self.display.MEASURE_DCAMPS
-        self.display.smub.measure.func = self.display.MEASURE_DCAMPS
+        smu_name = self._get_smu_name(smu)
+        getattr(self.display, smu_name).measure.func = self.display.MEASURE_DCAMPS
 
         # SETUP TRIGGER ARM AND COUNTS
         # trigger count = number of data points in measurement
@@ -1091,8 +1096,9 @@ class Keithley2600(Keithley2600Base):
             smu.nvbuffer2.clearcache()
 
         # display current values during measurement
-        self.display.smua.measure.func = self.display.MEASURE_DCAMPS
-        self.display.smub.measure.func = self.display.MEASURE_DCAMPS
+        for smu in (smu1, smu2):
+            smu_name = self._get_smu_name(smu)
+            getattr(self.display, smu_name).measure.func = self.display.MEASURE_DCAMPS
 
         # SETUP TRIGGER ARM AND COUNTS
         # trigger count = number of data points in measurement
@@ -1476,7 +1482,6 @@ class Keithley2600(Keithley2600Base):
 class Keithley2600Factory(object):
 
     _instances = {}
-    SMU_LIST = Keithley2600.SMU_LIST
 
     def __new__(cls, *args, **kwargs):
         """
