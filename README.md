@@ -28,7 +28,6 @@ a Python error but an error message will still be displayed by the Keithley itse
 
 Almost all Keithley TSP commands can be used with this driver. Not supported are:
 
-* All Keithley IV sweep commands. We implement our own in the `Keithley2600` class.
 * Keithley TSP functions that have the same name as a Keithley TSP attribute (and vice
   versa). The driver cannot decide whether to handle them as a function call or as an
   attribute access. Currently, there is only one such case:
