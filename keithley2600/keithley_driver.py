@@ -492,11 +492,15 @@ class Keithley2600Base(MagicClass):
         Queries and expects response from Keithley. Input must be a string.
         """
 
+        # only check for error when the query is not fetching the error queue
+        check_for_errors = self.raise_keithley_errors and "errorqueue" not in value
+
         with self._lock:
             logger.debug("write: print(%s)" % value)
             if self.connection:
 
-                if self.raise_keithley_errors and "errorqueue" not in value:
+                if check_for_errors:
+                    # clear any previous errors
                     self.errorqueue.clear()
 
                 try:
@@ -506,7 +510,8 @@ class Keithley2600Base(MagicClass):
                     r = "nil"
                     logger.debug("read failed: unpack-error")
 
-                if self.raise_keithley_errors and "errorqueue" not in value:
+                if check_for_errors:
+                    # read error queue to check for new errors
                     err = self.errorqueue.next()
                     if err[0] != 0:
                         err_msg = err[1].replace("TSP Runtime error at line 1: ", "")
