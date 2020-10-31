@@ -12,6 +12,8 @@ _Changed_:
 
 _Fixed_:
 
+- Fixes an issue with our sweep commands which assumed that there are always two SMUs
+  available.
 - Disable automatically setting the current range (autorange) in all sweeps if the SMU is
   in high-capacitance mode.
 - Added many missing constants to our dictionary for auto-completion. 
