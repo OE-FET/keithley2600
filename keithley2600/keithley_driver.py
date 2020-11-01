@@ -99,6 +99,9 @@ class MagicPropertyList(object):
         on-demand creation of attributes."""
         pass
 
+    def __repr__(self):
+        return f"<{self.__class__.__name__}({self._name})>"
+
 
 class MagicFunction(object):
     """Mimics a Keithley TSP function
@@ -130,6 +133,9 @@ class MagicFunction(object):
 
         # pass on a string representation of the function call to self._parent._query
         return self._parent._query("%s(%s)" % (self._name, args_string))
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}({self._name})>"
 
 
 class MagicClass(object):
@@ -299,6 +305,9 @@ class MagicClass(object):
         sub_cmds += super().__dir__()
 
         return sub_cmds
+
+    def __repr__(self):
+        return f"<{self.__class__.__name__}({self._name})>"
 
 
 class KeithleyIOError(Exception):
