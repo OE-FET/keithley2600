@@ -228,9 +228,7 @@ class MagicClass(object):
             self.__dict__[new_name] = handler
 
         else:
-            raise AttributeError(
-                "'%s' object has no attribute '%s'" % (type(self), attr_name)
-            )
+            raise AttributeError(f"{self} has no attribute '{attr_name}'")
 
         return handler
 
@@ -567,7 +565,7 @@ class Keithley2600Base(MagicClass):
         if isinstance(value, bool):
             # convert bool True to string 'true'
             value = str(value).lower()
-        elif hasattr(value, '__iter__'):
+        elif hasattr(value, "__iter__"):
             # convert some iterables to a TSP type list '{1,2,3,4}'
             value = "{" + ", ".join([str(v) for v in value]) + "}"
         elif isinstance(value, MagicClass):
@@ -645,7 +643,7 @@ class Keithley2600(Keithley2600Base):
             visa_address,
             visa_library,
             raise_keithley_errors=raise_keithley_errors,
-            **kwargs
+            **kwargs,
         )
 
     def __repr__(self):
