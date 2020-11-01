@@ -564,15 +564,15 @@ class Keithley2600Base(MagicClass):
         delimited string enclosed by curly brackets."""
         if isinstance(value, bool):
             # convert bool True to string 'true'
-            value = str(value).lower()
-        elif hasattr(value, "__iter__"):
-            # convert some iterables to a TSP type list '{1,2,3,4}'
-            value = "{" + ", ".join([str(v) for v in value]) + "}"
+            return str(value).lower()
         elif isinstance(value, MagicClass):
             # convert keithley object to string with its name
-            value = value._name
-
-        return value
+            return value._name
+        elif hasattr(value, "__iter__"):
+            # convert some iterables to a TSP type list '{1,2,3,4}'
+            return "{" + ", ".join([str(v) for v in value]) + "}"
+        else:
+            return value
 
 
 class Keithley2600(Keithley2600Base):
