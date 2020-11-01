@@ -51,7 +51,24 @@ def log_to_stream(stream_output, level=logging.DEBUG):
     logger.addHandler(ch)
 
 
-class MagicPropertyList(object):
+def removeprefix(self: str, prefix: str) -> str:
+    """
+    Removes the given prefix from a string. Only the first instance of the prefix is
+    removed. The original string is returned if it does not start with the given prefix.
+
+    This follows the Python 3.9 implementation of ``str.removeprefix``.
+
+    :param self: Original string.
+    :param prefix: Prefix to remove.
+    :returns: String without prefix.
+    """
+    if self.startswith(prefix):
+        return self[len(prefix) :]
+    else:
+        return self[:]
+
+
+class MagicPropertyList:
     """Mimics a Keithley TSP property list
 
     Class which mimics a Keithley TSP property list and can be dynamically
@@ -103,7 +120,7 @@ class MagicPropertyList(object):
         return f"<{self.__class__.__name__}({self._name})>"
 
 
-class MagicFunction(object):
+class MagicFunction:
     """Mimics a Keithley TSP function
 
     Class which mimics a function and can be dynamically created. It forwards
@@ -138,7 +155,7 @@ class MagicFunction(object):
         return f"<{self.__class__.__name__}({self._name})>"
 
 
-class MagicClass(object):
+class MagicClass:
     """Mimics a TSP command group
 
     Class which dynamically creates new attributes on access. These can be
@@ -181,7 +198,7 @@ class MagicClass(object):
         try:
             try:
                 # check if attribute already exists. return attr if yes.
-                return object.__getattr__(self, attr_name)
+                return super().__getattr__(attr_name)
             except AttributeError:
                 # check if key already exists. return value if yes.
                 return self.__dict__[attr_name]
@@ -288,7 +305,7 @@ class MagicClass(object):
         for cmd in ALL_CMDS:
             if cmd.startswith(prefix):
                 # remove prefix from command
-                cmd = cmd.replace(prefix, "")
+                cmd = removeprefix(cmd, prefix)
                 # remove subscript expressions
                 cmd = cmd.replace("[N]", "")
                 # take the immediate child command
