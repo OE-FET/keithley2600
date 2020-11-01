@@ -733,7 +733,7 @@ _ALL_CMDS_WITH_PLACEHOLDERS = (
     "smu{smu_name}.trigger.endpulse.set()",
     "smu{smu_name}.trigger.endpulse.stimulus",
     "smu{smu_name}.trigger.endsweep.action",
-    "smu{smu_name}.trigger.initiate",
+    "smu{smu_name}.trigger.initiate()",
     "smu{smu_name}.trigger.measure.{ivpr}()",
     "smu{smu_name}.trigger.measure.iv()",
     "smu{smu_name}.trigger.measure.action",
