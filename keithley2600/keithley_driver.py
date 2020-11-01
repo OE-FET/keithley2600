@@ -225,7 +225,7 @@ class MagicClass(object):
 
         elif attr_name in CLASSES:
             handler = MagicClass(new_name, parent=self)
-            self.__dict__[new_name] = handler
+            self.__dict__[attr_name] = handler
 
         else:
             raise AttributeError(f"{self} has no attribute '{attr_name}'")
