@@ -186,6 +186,7 @@ class MagicClass:
 
     def __init__(self, name, parent=None):
         self._name = name
+        self.__dict = {}
         if parent is not None:
             self._parent = parent
 
@@ -195,59 +196,28 @@ class MagicClass:
         Get attributes as usual if they exist. Otherwise, fall back to
         :func:`__get_global_handler`.
         """
+
+        if not self.__dict:
+            self._populate_dict()
+
         try:
             try:
                 # check if attribute already exists. return attr if yes.
                 return super().__getattr__(attr_name)
             except AttributeError:
                 # check if key already exists. return value if yes.
-                return self.__dict__[attr_name]
+                return self.__dict[attr_name]
         except KeyError:
-            # handle if not
-            return self.__get_global_handler(attr_name)
-
-    def __get_global_handler(self, attr_name):
-        """Custom getter
-
-        Creates an attribute as :class:`MagicClass`, :class:`MagicFunction` or
-        :class:`MagicPropertyList` instance if it is an expected Keithley TSP
-        command group, function or property list. Queries and returns the value
-        if the attribute corresponds to a Keithley TSP constant. Otherwise
-        raises a :class:`AttributeError`.
-
-        :param str attr_name: Attribute name.
-
-        :returns: Instance of :class:`MagicClass`, :class:`MagicFunction` or
-            :class:`MagicPropertyList`.
-
-        :raises: :class:`AttributeError` if attribute is not expected.
-        """
-
-        # create callable sub-class for new attr
-        new_name = "%s.%s" % (self._name, attr_name)
-        new_name = new_name.strip(".")
-
-        if attr_name in FUNCTIONS:
-            handler = MagicFunction(new_name, parent=self)
-            self.__dict__[new_name] = handler
-
-        elif attr_name in PROPERTY_LISTS:
-            handler = MagicPropertyList(new_name, parent=self)
-
-        elif attr_name in PROPERTIES or attr_name in CONSTANTS:
-            if new_name in PROPERTY_LISTS:
-                handler = MagicPropertyList(new_name, parent=self)
-            else:
-                handler = self._query(new_name)
-
-        elif attr_name in CLASSES:
-            handler = MagicClass(new_name, parent=self)
-            self.__dict__[attr_name] = handler
-
-        else:
             raise AttributeError(f"{self} has no attribute '{attr_name}'")
 
-        return handler
+    def _populate_dict(self):
+
+        var_name, var_type = self._query(f"next({self._name}, nil)")
+
+        if var_type.startswith("function"):
+            self.__dict[var_name] = MagicFunction(var_name, self)
+        elif var_type.startswith("table"):
+            self.__dict[var_name] = MagicClass(var_name, self)
 
     def __setattr__(self, attr_name, value):
         """Custom setter
@@ -295,31 +265,7 @@ class MagicClass:
         return self
 
     def __dir__(self):
-        # look for all commands that start with our own name (= prefix)
-        # and possible subscript indexing
-        prefix = self._name + "." if self._name else ""
-        prefix = re.sub("\[\d\]", "[N]", prefix)
-
-        sub_cmds = []
-
-        for cmd in ALL_CMDS:
-            if cmd.startswith(prefix):
-                # remove prefix from command
-                cmd = removeprefix(cmd, prefix)
-                # remove subscript expressions
-                cmd = cmd.replace("[N]", "")
-                # take the immediate child command
-                cmd = cmd.split(".")[0]
-                # add to dir
-                sub_cmds.append(cmd)
-
-        # retain unique entries only
-        sub_cmds = list(set(sub_cmds))
-
-        # and native (non-Keithley) dir
-        sub_cmds += super().__dir__()
-
-        return sub_cmds
+        return list(self.__dict.keys()) + super().__dir__()
 
     def __repr__(self):
         return f"<{self.__class__.__name__}({self._name})>"
