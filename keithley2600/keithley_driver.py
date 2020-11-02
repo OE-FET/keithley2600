@@ -95,6 +95,7 @@ class MagicProperty:
         if not isinstance(name, str):
             raise ValueError("First argument must be of type str.")
         self._name = name
+        self._name_display = removeprefix(name, "_G.")
         self._parent = parent
         self._read_only = read_only
 
@@ -108,7 +109,8 @@ class MagicProperty:
         self._parent._write(f"{self._name} = {value}")
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}({self._name})>"
+        local_name = removeprefix(self._name, "_G.")
+        return f"<{self.__class__.__name__}({local_name})>"
 
 
 class MagicFunction:
@@ -127,6 +129,7 @@ class MagicFunction:
         if not isinstance(name, str):
             raise ValueError("First argument must be of type str.")
         self._name = name
+        self._name_display = removeprefix(name, "_G.")
         self._parent = parent
 
     def __call__(self, *args, **kwargs):
@@ -143,7 +146,7 @@ class MagicFunction:
         return self._parent._query("%s(%s)" % (self._name, args_string))
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}({self._name})>"
+        return f"<{self.__class__.__name__}({self._name_display})>"
 
 
 class MagicClass:
@@ -161,6 +164,7 @@ class MagicClass:
 
     def __init__(self, name="", parent=None):
         self._name = name
+        self._name_display = removeprefix(name, "_G.")
         self._dict = {}
         if parent is not None:
             self._parent = parent
@@ -318,7 +322,7 @@ class MagicClass:
         return list(self._dict.keys()) + list(super().__dir__())
 
     def __repr__(self):
-        return f"<{self.__class__.__name__}({self._name})>"
+        return f"<{self.__class__.__name__}({self._name_display})>"
 
 
 class Keithley2600Base(MagicClass):
@@ -395,7 +399,7 @@ class Keithley2600Base(MagicClass):
         self.connect(**kwargs)
 
     def __repr__(self):
-        return "<%s(%s)>" % (type(self).__name__, self.visa_address)
+        return f"<{self.__class__.__name__}({self.visa_address})>"
 
     # =============================================================================
     # Connect to keithley
@@ -638,9 +642,6 @@ class Keithley2600(Keithley2600Base):
             raise_keithley_errors=raise_keithley_errors,
             **kwargs,
         )
-
-    def __repr__(self):
-        return "<%s(%s)>" % (type(self).__name__, self.visa_address)
 
     # =============================================================================
     # Define lower level control functions
