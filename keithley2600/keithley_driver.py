@@ -10,6 +10,7 @@ Core driver with the low level functions.
 
 # system imports
 import logging
+import re
 import threading
 import numpy as np
 import time
@@ -1444,6 +1445,12 @@ class Keithley2600(Keithley2600Base):
         freq = C4 * 2.0 ** (steps / 12)
 
         return freq
+
+    def _get_smu_name(self, smu: MagicClass) -> str:
+
+        if not re.match(r"^_G.smu([a-z])$", smu._name):
+            raise ValueError(f"{smu} is not a valid SMU")
+        return smu._name.split(".")[-1]
 
 
 class Keithley2600Factory(object):
