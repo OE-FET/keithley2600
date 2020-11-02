@@ -16,8 +16,10 @@ import numpy as np
 import time
 from threading import RLock
 from xdrlib import Error as XDRError
-import pyvisa
 from typing import IO, Optional, Any, Dict, Union, List, Tuple, Sequence, Iterable
+
+# external imports
+import pyvisa
 
 # local import
 from keithley2600.result_table import FETResultTable
@@ -114,7 +116,7 @@ class MagicProperty:
 
     def __repr__(self) -> str:
         local_name = removeprefix(self._name, "_G.")
-        return f"<{self.__class__.__name__}({local_name})>"
+        return f"<{self.__class__.__name__}({local_name}, read_only={self._read_only})>"
 
 
 class MagicFunction:
@@ -161,8 +163,12 @@ class MagicClass:
     have only numeric indices, they practically represent a list / sequence.
     """
 
-    _name = ""
-    _dict = {}
+    _protected_attrs = [
+        "_name",
+        "_name_display",
+        "_parent",
+        "_dict",
+    ]
 
     def __init__(self, name: str, parent: Optional["MagicClass"] = None) -> None:
         self._name = name
@@ -187,6 +193,20 @@ class MagicClass:
 
         except KeyError:
             raise AttributeError(f"{self} has no attribute '{attr_name}'")
+
+    def __setattr__(self, key: str, value: Any) -> None:
+
+        if key in self._protected_attrs:
+            super().__setattr__(key, value)
+        else:
+            # only set attribute on Keithley if it already exists
+            # this is allows us to set Python instance attributes if they don't mirror
+            # an existing Keithley command
+            if self._query(f"{self._name}.{key}") is not None:
+                value = self._convert_input(value)
+                self._write(f"{self._name}.{key} = {value}")
+            else:
+                AttributeError(f"'{self}' has not attribute '{key}'")
 
     def _iterate_lua_indices(
         self,
@@ -284,18 +304,6 @@ class MagicClass:
 
         return attributes
 
-    def __setattr__(self, name: str, value: Any) -> None:
-        try:
-            accessor = self._dict[name]
-
-            if isinstance(accessor, MagicProperty):
-                accessor.set(value)
-            else:
-                value = self._convert_input(value)
-                self._write(f"{self._name}.{name} = {value}")
-        except KeyError:
-            super().__setattr__(name, value)
-
     def _write(self, value: str) -> None:
         """Forward write calls to parent class."""
         self._parent._write(value)
@@ -311,13 +319,32 @@ class MagicClass:
         except AttributeError:
             return value
 
-    def __getitem__(self, index: Union[str, int]) -> Any:
+    def __getitem__(self, key: Union[str, int]) -> Any:
 
         if not self._dict:
             # will raise KeithleyIOError if not connected
             self._dict = self._iterate_lua_indices()
 
-        return self._dict[index]
+        accessor = self._dict[key]
+
+        if isinstance(accessor, MagicProperty):
+            return accessor.get()
+        else:
+            return accessor
+
+    def __setitem__(self, key: Union[str, int], value: Any):
+
+        if not self._dict:
+            # will raise KeithleyIOError if not connected
+            self._dict = self._iterate_lua_indices()
+
+        accessor = self._dict[key]
+
+        if isinstance(accessor, MagicProperty):
+            return accessor.set(value)
+        else:
+            value = self._convert_input(value)
+            self._write(f"{self._name}[{key}] = {value}")
 
     def __iter__(self) -> "MagicClass":
 
@@ -380,13 +407,22 @@ class Keithley2600Base(MagicClass):
 
     """
 
-    connection = None
-    connected = False
-    busy = False
+    _lock = RLock()
+    _protected_attrs = [
+        "rm",
+        "connection",
+        "connected",
+        "busy",
+        "visa_address",
+        "visa_library",
+        "_connection_kwargs",
+        "raise_keithley_errors",
+        "CHUNK_SIZE",
+        "_lock",
+        "abort_event"
+    ] + MagicClass._protected_attrs
 
     CHUNK_SIZE = 50
-
-    _lock = RLock()
 
     def __init__(
         self,
@@ -645,6 +681,8 @@ class Keithley2600(Keithley2600Base):
 
     """
 
+    _protected_attrs = ["busy"] + Keithley2600Base._protected_attrs
+
     def __init__(
         self,
         visa_address: str,
@@ -659,6 +697,8 @@ class Keithley2600(Keithley2600Base):
             raise_keithley_errors=raise_keithley_errors,
             **kwargs,
         )
+
+        self.busy = False
 
     # =============================================================================
     # Define lower level control functions
