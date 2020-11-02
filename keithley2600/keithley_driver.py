@@ -199,7 +199,7 @@ class MagicClass:
         attributes = {}
 
         def to_global_name(index):
-            if isinstance(var_name, int):
+            if isinstance(index, int):
                 global_name = f"{self._name}[{index}]"
             else:
                 global_name = f"{self._name}.{index}"
@@ -251,7 +251,7 @@ class MagicClass:
                         full_name = to_global_name(var_name)
 
                         # check if we also have a setter
-                        if self._query(f"mt.Setters.{var_name}"):
+                        if self._query(f"mt.Setters[{var_name!r}]"):
                             read_only = False
                         else:
                             read_only = True
