@@ -294,7 +294,7 @@ class MagicClass:
                 value = self._convert_input(value)
                 self._write(f"{self._name}.{name} = {value}")
         except KeyError:
-            super(MagicClass, self).__setattr__(name, value)
+            super().__setattr__(name, value)
 
     def _write(self, value: str) -> None:
         """Forward write calls to parent class."""
@@ -312,9 +312,19 @@ class MagicClass:
             return value
 
     def __getitem__(self, index: Union[str, int]) -> Any:
+
+        if not self._dict:
+            # will raise KeithleyIOError if not connected
+            self._dict = self._iterate_lua_indices()
+
         return self._dict[index]
 
     def __iter__(self) -> "MagicClass":
+
+        if not self._dict:
+            # will raise KeithleyIOError if not connected
+            self._dict = self._iterate_lua_indices()
+
         return self
 
     def __dir__(self) -> List[str]:
