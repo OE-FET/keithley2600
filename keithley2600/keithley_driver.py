@@ -202,14 +202,21 @@ class MagicClass:
         if key in self._protected_attrs:
             super().__setattr__(key, value)
         else:
-            # only set attribute on Keithley if it already exists
-            # this is allows us to set Python instance attributes if they don't mirror
-            # an existing Keithley command
-            if self._query(f"{self._name}.{key}") is not None:
-                value = self._convert_input(value)
-                self._write(f"{self._name}.{key} = {value}")
+
+            if not self._dict:
+                # will raise KeithleyIOError if not connected
+                self._dict = self._iterate_lua_indices()
+
+            if key in self._dict:
+                accessor = self._dict[key]
+
+                if isinstance(accessor, MagicProperty):
+                    accessor.set(value)
+                else:
+                    value = self._convert_input(value)
+                    self._write(f"{self._name}.{key} = {value}")
             else:
-                AttributeError(f"'{self}' has not attribute '{key}'")
+                super().__setattr__(key, value)
 
     def _iterate_lua_indices(
         self,
