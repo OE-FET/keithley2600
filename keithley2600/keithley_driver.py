@@ -183,7 +183,46 @@ class KeithleyClass:
         self._dict: Dict[str, LuaBridgeType] = {}
         self._lua_type: Optional[str] = None
 
-    def create_lua_attribute(self, attr_name: str, attr_type: LuaBridgeType, readonly: bool = False) -> None:
+    def create_lua_attribute(
+        self, attr_name: str, attr_type: Type[LuaBridgeType], readonly: bool = False
+    ) -> LuaBridgeType:
+        """
+        Creates an attribute / index of this table with the given type.
+
+        .. warning:: This may overwrite existing attributes of a Keithley command. Use
+            with caution.
+
+        :param attr_name: Attribute name.
+        :param attr_type: Attribute type. Only :class:`KeithleyClass` and
+            :class:`KeithleyProperty` are currently supported.
+        :param readonly: If the attribute type is :class:`KeithleyProperty`, this
+            determines whether it will be read-only from Python.
+        :returns: The accessor for the created attribute.
+        """
+
+        if attr_type is KeithleyClass:
+            self._write(f"{self._name}.{attr_name} = {{}}")
+            self._dict[attr_name] = attr_type(attr_name, self)
+        elif attr_type is KeithleyProperty:
+            # properties can be created ad-hoc in Lua
+            self._dict[attr_name] = attr_type(attr_name, self, readonly)
+        elif isinstance(attr_type, KeithleyFunction):
+            raise ValueError("Creating Lua functions is currently not supported")
+
+        return self._dict[attr_name]
+
+    def delete_lua_attribute(self, attr_name: str) -> None:
+        """
+        Deletes an attribute / index of this table.
+
+        .. warning:: This may delete existing attributes of a Keithley command. Use
+            with caution.
+
+        :param attr_name: Attribute name.
+        """
+
+        self._write(f"{self._name}.{attr_name} = nil")
+        del self._dict[attr_name]
 
     def __getattr__(self, attr_name: str) -> Any:
 
