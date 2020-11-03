@@ -306,14 +306,15 @@ class ResultTable:
 
     def get_row(self, i: int) -> np.ndarray:
         """
+        :param i: Index of row.
         :returns: Numpy array with data from row ``i``.
         """
         return self.data[i, :]
 
     def get_column(self, i: int) -> np.ndarray:
         """
+        :param i: Index of column.
         :returns: Numpy array with data from column ``i``.
-        :rtype: :class:`numpy.ndarray`
         """
         return self.data[:, i]
 
@@ -529,13 +530,13 @@ class ResultTable:
     ) -> "ResultTablePlot":
         """
         Plots the data. This method should not be called from a thread. The column
-        containing the x-axis data is specified (defaults to first column), all other data
-        is plotted on the y-axis. This method requires Matplotlib to be installed and
-        accepts, in addition to the arguments documented here, the same keyword arguments
-        as :func:`matplotlib.pyplot.plot`.
+        containing the x-axis data is specified (defaults to first column), all other
+        data is plotted on the y-axis. This method requires Matplotlib to be installed
+        and accepts, in addition to the arguments documented here, the same keyword
+        arguments as :func:`matplotlib.pyplot.plot`.
 
-        Column titles are taken as legend labels. :func:`plot` tries to determine a common
-        y-axis unit and name from all given labels.
+        Column titles are taken as legend labels. :func:`plot` tries to determine a
+        common y-axis unit and name from all given labels.
 
         :param x_clmn: Integer or name of column containing the x-axis data.
         :type x_clmn: int or str
@@ -719,8 +720,8 @@ class ResultTablePlot(object):
     :type result_table: :class:`ResultTable`
     :param x_clmn: Integer or name of column containing the x-axis data.
     :type x_clmn: int or str
-    :param y_clmns: List of column numbers or column names for y-axis data. If not given,
-        all columns will be plotted against the x-axis column.
+    :param y_clmns: List of column numbers or column names for y-axis data. If not
+        given, all columns will be plotted against the x-axis column.
     :type y_clmns: list(int or str)
     :param func: Function to apply to y-data before plotting.
     :param live: If ``True``, update the plot when new data is added (default:
