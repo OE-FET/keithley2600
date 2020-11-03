@@ -106,25 +106,25 @@ class KeithleyProperty:
     """
 
     def __init__(
-        self, name: str, parent: "KeithleyClass", read_only: bool = False
+        self, name: str, parent: "KeithleyClass", readonly: bool = False
     ) -> None:
         self._name = name
         self._name_display = removeprefix(name, "_G.")
         self._parent = parent
-        self._read_only = read_only
+        self._readonly = readonly
 
     def get(self) -> Any:
         return self._parent._query(self._name)
 
     def set(self, value: Any) -> None:
-        if self._read_only:
+        if self._readonly:
             raise AttributeError(f"'{self._name_display}' is read-only")
         value = self._parent._convert_input(value)
         self._parent._write(f"{self._name} = {value}")
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}({self._name_display}, " \
-               f"read_only={self._read_only})>"
+               f"readonly={self._readonly})>"
 
 
 class KeithleyFunction:
@@ -285,10 +285,10 @@ class KeithleyClass:
 
                         # check if we also have a setter
                         if self._query(f"mt.Setters[{var_name!r}]"):
-                            read_only = False
+                            readonly = False
                         else:
-                            read_only = True
-                        attributes[var_name] = KeithleyProperty(full_name, self, read_only)
+                            readonly = True
+                        attributes[var_name] = KeithleyProperty(full_name, self, readonly)
                     else:
                         break
 
@@ -310,7 +310,7 @@ class KeithleyClass:
                             attributes[var_name] = KeithleyClass(full_name, self)
                         else:
                             attributes[var_name] = KeithleyProperty(
-                                full_name, self, read_only=True
+                                full_name, self, readonly=True
                             )
                     else:
                         break
