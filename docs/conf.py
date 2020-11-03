@@ -27,26 +27,8 @@ copyright = '2019, Sam Schott'
 author = 'Sam Schott'
 
 
-def get_metadata(relpath, varname):
-    """Read metadata info from a file without importing it."""
-    from os.path import dirname, join
-
-    if "__file__" not in globals():
-        root = ".."
-    else:
-        root = dirname(__file__)
-
-    for line in open(join(root, relpath), "rb"):
-        line = line.decode("cp437")
-        if varname in line:
-            if '"' in line:
-                return line.split('"')[1]
-            elif "'" in line:
-                return line.split("'")[1]
-
-
 # The short X.Y version
-version = get_metadata("../keithley2600/__init__.py", "__version__")
+version = "2.0.0.dev0"
 # The full version, including alpha/beta/rc tags
 release = version
 
