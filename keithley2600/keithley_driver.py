@@ -883,6 +883,14 @@ class Keithley2600(Keithley2600Base):
         smu.source.levelv = target_volt
         logger.info("Gate voltage set to Vg = %s V.", round(target_volt))
 
+    def send_trigger(self) -> None:
+        """
+        Manually sends a trigger signal to the Keithley. This can be used for instance
+        to start a pre-programmed sweep.
+        """
+
+        self._write("*trg")
+
     def voltageSweepSingleSMU(
         self,
         smu: KeithleyClass,
@@ -1043,7 +1051,7 @@ class Keithley2600(Keithley2600Base):
         smu.trigger.initiate()
 
         # send trigger
-        self._write("*trg")
+        self.send_trigger()
 
         # CHECK STATUS BUFFER FOR MEASUREMENT TO FINISH
         # Possible return values:
@@ -1270,8 +1278,9 @@ class Keithley2600(Keithley2600Base):
         # prepare SMUs to wait for trigger
         smu1.trigger.initiate()
         smu2.trigger.initiate()
+
         # send trigger
-        self._write("*trg")
+        self.send_trigger()
 
         # CHECK STATUS BUFFER FOR MEASUREMENT TO FINISH
         # Possible return values:
