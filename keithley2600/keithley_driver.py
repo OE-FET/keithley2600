@@ -647,6 +647,7 @@ class Keithley2600Base(KeithleyClass):
         return r
 
     def _convert_input(self, value: Any) -> str:
+
         if isinstance(value, bool):
             # convert bool True to string 'true', False to string 'false'
             return str(value).lower()
@@ -658,8 +659,10 @@ class Keithley2600Base(KeithleyClass):
         elif hasattr(value, "__iter__"):
             # convert some iterables to a TSP type list '{1,2,3,4}'
             return "{" + ", ".join([str(v) for v in value]) + "}"
+        elif isinstance(value, (int, float, np.number)) and not isinstance(value, np.complex):
+            return str(value)
         else:
-            raise ValueError(f"Unsupported value type {type(value)} of input {value}")
+            raise ValueError(f"Unsupported value type {type(value).__name__} of input {value}")
 
 
 class Keithley2600(Keithley2600Base):
