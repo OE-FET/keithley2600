@@ -855,7 +855,7 @@ class Keithley2600(Keithley2600Base):
         step_size: float = 1,
     ) -> None:
         """
-        Ramps up the voltage of the specified SMU. Beeps when done.
+        Ramps up the voltage of the specified SMU.
 
         :param smu: A keithley smu instance.
         :param target_volt: Target voltage in Volts.
@@ -1489,12 +1489,11 @@ class Keithley2600(Keithley2600Base):
     ) -> None:
         """Plays a chord on the Keithley.
 
-        :param list notes: List of notes in scientific pitch notation, for
-            instance ``['F4', 'Ab4', 'C4']`` for a f-minor chord in the 4th
-            octave. Defaults to c-major in the 6th octave.
-        :param durations: List of durations for each note in sec. If a single
-            float is given, all notes will have the same duration. Defaults to
-            0.3 sec.
+        :param notes: List of notes in scientific pitch notation, for instance
+            ``['F4', 'Ab4', 'C4']`` for a f-minor chord in the 4th octave. Defaults to
+            c-major in the 6th octave.
+        :param durations: List of durations for each note in sec. If a single float is
+            given, all notes will have the same duration. Defaults to 0.3 sec.
         """
 
         freqs = [self._pitch_to_freq(p) for p in notes]
@@ -1547,8 +1546,7 @@ class Keithley2600Factory:
 
     def __new__(cls, *args, **kwargs) -> Keithley2600:
         """
-        Create new instance for a new visa_address, otherwise return existing
-        instance.
+        Create new instance for a new visa_address, otherwise return existing instance.
         """
         if args[0] in cls._instances:
             logger.debug("Returning existing instance with address '%s'.", args[0])
