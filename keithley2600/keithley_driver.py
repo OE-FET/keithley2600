@@ -428,7 +428,7 @@ class Keithley2600Base(MagicClass):
         "raise_keithley_errors",
         "CHUNK_SIZE",
         "_lock",
-        "abort_event"
+        "abort_event",
     ] + MagicClass._protected_attrs
 
     CHUNK_SIZE = 50
@@ -474,7 +474,7 @@ class Keithley2600Base(MagicClass):
             self.connection = self.rm.open_resource(self.visa_address, **kwargs)
             self.connection.read_termination = "\n"
             self.connected = True
-            logger.debug("Connected to Keithley at %s." % self.visa_address)
+            logger.debug("Connected to Keithley at %s.", self.visa_address)
         except ValueError:
             self.connection = None
             self.connected = False
@@ -486,11 +486,11 @@ class Keithley2600Base(MagicClass):
             self.connection = None
             self.connected = False
         except AttributeError:
-            logger.info("Invalid VISA address %s." % self.visa_address)
+            logger.info("Invalid VISA address %s.", self.visa_address)
             self.connection = None
             self.connected = False
         except Exception:
-            logger.info("Could not connect to Keithley at %s." % self.visa_address)
+            logger.info("Could not connect to Keithley at %s.", self.visa_address)
             self.connection = None
             self.connected = False
 
@@ -506,7 +506,7 @@ class Keithley2600Base(MagicClass):
                 self.connection = None
                 self.connected = False
                 del self.connection
-                logger.debug("Disconnected from Keithley at %s." % self.visa_address)
+                logger.debug("Disconnected from Keithley at %s.", self.visa_address)
             except AttributeError:
                 self.connected = False
                 pass
@@ -521,7 +521,7 @@ class Keithley2600Base(MagicClass):
         """
 
         with self._lock:
-            logger.debug("write: %s" % value)
+            logger.debug("write: %s", value)
 
             if self.connection:
 
@@ -551,7 +551,7 @@ class Keithley2600Base(MagicClass):
         check_for_errors = self.raise_keithley_errors and "errorqueue" not in value
 
         with self._lock:
-            logger.debug("write: print(%s)" % value)
+            logger.debug("write: print(%s)", value)
             if self.connection:
 
                 if check_for_errors:
@@ -559,8 +559,8 @@ class Keithley2600Base(MagicClass):
                     self.errorqueue.clear()
 
                 try:
-                    r = self.connection.query("print(%s)" % value)
-                    logger.debug("read: %s" % r)
+                    r = self.connection.query(f"print({value})")
+                    logger.debug("read: %s", r)
                 except XDRError:
                     r = "nil"
                     logger.debug("read failed: unpack-error")
@@ -571,7 +571,7 @@ class Keithley2600Base(MagicClass):
                     if err[0] != 0:
                         err_msg = err[1].replace("TSP Runtime error at line 1: ", "")
                         raise KeithleyError(
-                            "Error during command '{0}': {1}".format(value, err_msg)
+                            f"Error during command '{value}': {err_msg}"
                         )
 
                 return self._parse_response(r)
@@ -764,7 +764,7 @@ class Keithley2600(Keithley2600Base):
         if nplc < 0.001 or nplc > 25:
             raise ValueError(
                 "Integration time must be between 0.001 and 25 "
-                + "power line cycles of 1/(%s Hz)." % freq
+                f"power line cycles of 1/({freq} Hz)."
             )
         smu.measure.nplc = nplc
 
@@ -843,7 +843,7 @@ class Keithley2600(Keithley2600Base):
             time.sleep(delay)
 
         smu.source.levelv = target_volt
-        logger.info("Gate voltage set to Vg = %s V." % round(target_volt))
+        logger.info("Gate voltage set to Vg = %s V.", round(target_volt))
 
         self.beeper.beep(0.3, 2400)
 
@@ -887,7 +887,7 @@ class Keithley2600(Keithley2600Base):
         if len(smu_sweeplist) > self.CHUNK_SIZE:
             self._write("mylist = {}")
             for num in smu_sweeplist:
-                self._write("table.insert(mylist, %s)" % num)
+                self._write(f"table.insert(mylist, {num})")
             smu.trigger.source.listv("mylist")
         else:
             smu.trigger.source.listv(smu_sweeplist)
@@ -1089,7 +1089,7 @@ class Keithley2600(Keithley2600Base):
         if len(smu1_sweeplist) > self.CHUNK_SIZE:
             self._write("mylist = {}")
             for num in smu1_sweeplist:
-                self._write("table.insert(mylist, %s)" % num)
+                self._write(f"table.insert(mylist, {num})")
             smu1.trigger.source.listv("mylist")
         else:
             smu1.trigger.source.listv(smu1_sweeplist)
@@ -1097,7 +1097,7 @@ class Keithley2600(Keithley2600Base):
         if len(smu2_sweeplist) > self.CHUNK_SIZE:
             self._write("mylist = {}")
             for num in smu2_sweeplist:
-                self._write("table.insert(mylist, %s)" % num)
+                self._write(f"table.insert(mylist, {num})")
             smu2.trigger.source.listv("mylist")
         else:
             smu2.trigger.source.listv(smu2_sweeplist)
@@ -1307,11 +1307,7 @@ class Keithley2600(Keithley2600Base):
         self.busy = True
         self.abort_event.clear()
 
-        msg = "Recording transfer curve with Vg from %sV to %sV, Vd = %s V. " % (
-            vg_start,
-            vg_stop,
-            vd_list,
-        )
+        msg = f"Recording transfer curve with Vg from {vg_start}V to {vg_stop}V, Vd = {vd_list}V."
         logger.info(msg)
 
         # create array with gate voltage steps, always include a step >= VgStop
@@ -1360,11 +1356,9 @@ class Keithley2600(Keithley2600Base):
 
             if not self.abort_event.is_set():
                 i_s = np.array(i_d) + np.array(i_g)
-                rt.append_column(
-                    i_s, name="Source current (Vd = %s)" % vdrain, unit="A"
-                )
-                rt.append_column(i_d, name="Drain current (Vd = %s)" % vdrain, unit="A")
-                rt.append_column(i_g, name="Gate current (Vd = %s)" % vdrain, unit="A")
+                rt.append_column(i_s, name=f"Source current (Vd = {vdrain})", unit="A")
+                rt.append_column(i_d, name=f"Drain current (Vd = {vdrain})", unit="A")
+                rt.append_column(i_g, name=f"Gate current (Vd = {vdrain})", unit="A")
 
         self.reset()
         self.beeper.beep(0.3, 2400)
@@ -1406,11 +1400,7 @@ class Keithley2600(Keithley2600Base):
 
         self.busy = True
         self.abort_event.clear()
-        msg = "Recording output curve with Vd from %sV to %sV, Vg = %s V. " % (
-            vd_start,
-            vd_stop,
-            vg_list,
-        )
+        msg = f"Recording output curve with Vd from {vd_start}V to {vd_stop}V, Vg = {vg_list}V."
         logger.info(msg)
 
         # create array with drain voltage steps, always include a step >= VgStop
@@ -1453,9 +1443,9 @@ class Keithley2600(Keithley2600Base):
 
             if not self.abort_event.is_set():
                 i_s = np.array(i_d) + np.array(i_g)
-                rt.append_column(i_s, name="Source current (Vg = %s)" % vgate, unit="A")
-                rt.append_column(i_d, name="Drain current (Vg = %s)" % vgate, unit="A")
-                rt.append_column(i_g, name="Gate current (Vg = %s)" % vgate, unit="A")
+                rt.append_column(i_s, name=f"Source current (Vg = {vgate})", unit="A")
+                rt.append_column(i_d, name=f"Drain current (Vg = {vgate})", unit="A")
+                rt.append_column(i_g, name=f"Gate current (Vg = {vgate})", unit="A")
 
         self.reset()
         self.beeper.beep(0.3, 2400)
@@ -1532,11 +1522,11 @@ class Keithley2600Factory:
         instance.
         """
         if args[0] in cls._instances:
-            logger.debug("Returning existing instance with address '%s'." % args[0])
+            logger.debug("Returning existing instance with address '%s'.", args[0])
 
             return cls._instances[args[0]]
         else:
-            logger.debug("Creating new instance with address '%s'." % args[0])
+            logger.debug("Creating new instance with address '%s'.", args[0])
             instance = Keithley2600(*args, **kwargs)
             cls._instances[args[0]] = instance
 
