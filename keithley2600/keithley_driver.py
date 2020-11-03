@@ -183,51 +183,6 @@ class KeithleyClass:
         self._dict: Dict[str, LuaBridgeType] = {}
         self._lua_type: Optional[str] = None
 
-    def create_lua_attribute(
-        self, attr_name: str, attr_type: Type[LuaBridgeType], readonly: bool = False
-    ) -> LuaBridgeType:
-        """
-        Creates an attribute / index of this table with the given type. The initial
-        value will be None (nil) for a KeithleyProperty and an empty Lua table for a
-        KeithleyClass.
-
-        .. warning:: This may overwrite existing attributes of a Keithley command. Use
-            with caution.
-
-        :param attr_name: Attribute name.
-        :param attr_type: Attribute type. Only :class:`KeithleyClass` and
-            :class:`KeithleyProperty` are currently supported.
-        :param readonly: If the attribute type is :class:`KeithleyProperty`, this
-            determines whether it will be read-only from Python.
-        :returns: The accessor for the created attribute.
-        """
-
-        full_name = f"{self._name}.{attr_name}"
-
-        if attr_type is KeithleyClass:
-            self._write(f"{full_name} = {{}}")
-            self._dict[attr_name] = attr_type(full_name, self)
-        elif attr_type is KeithleyProperty:
-            # properties can be created ad-hoc in Lua
-            self._dict[attr_name] = attr_type(full_name, self, readonly)
-        elif isinstance(attr_type, KeithleyFunction):
-            raise ValueError("Creating Lua functions is currently not supported")
-
-        return self._dict[attr_name]
-
-    def delete_lua_attribute(self, attr_name: str) -> None:
-        """
-        Deletes an attribute / index of this table.
-
-        .. warning:: This may delete existing attributes of a Keithley command. Use
-            with caution.
-
-        :param attr_name: Attribute name.
-        """
-
-        self._write(f"{self._name}.{attr_name} = nil")
-        del self._dict[attr_name]
-
     def __getattr__(self, attr_name: str) -> Any:
 
         if not self._dict:
@@ -575,6 +530,58 @@ class Keithley2600Base(KeithleyClass):
                 self.connected = False
                 pass
 
+    def create_lua_var(
+        self, var_name: str, var_type: Type[LuaBridgeType], readonly: bool = False
+    ) -> LuaBridgeType:
+        """
+        Creates an attribute / index of this table with the given type. The initial
+        value will be 0 for a KeithleyProperty and an empty table for a KeithleyClass.
+
+        :param var_name: Attribute name.
+        :param var_type: Attribute type. Only :class:`KeithleyClass` and
+            :class:`KeithleyProperty` are currently supported.
+        :param readonly: If the attribute type is :class:`KeithleyProperty`, this
+            determines whether it will be read-only from Python.
+        :returns: The accessor for the created attribute.
+        """
+
+        full_name = f"{self._name}.{var_name}"
+
+        if "." in var_name:
+            raise ValueError("Variable name may not contain periods")
+
+        if self._query(full_name) is not None:
+            raise ValueError("Variable already exists in global namespace")
+
+        if var_type is KeithleyClass:
+            with self._error_check():
+                self._write(f"{full_name} = {{}}")
+            self._dict[var_name] = var_type(full_name, self)
+        elif var_type is KeithleyProperty:
+            with self._error_check():
+                self._write(f"{full_name} = 0")
+            self._dict[var_name] = var_type(full_name, self, readonly)
+        elif isinstance(var_type, KeithleyFunction):
+            raise ValueError("Creating Lua functions is currently not supported")
+
+        return self._dict[var_name]
+
+    def delete_lua_var(self, var_name: str) -> None:
+        """
+        Deletes an attribute / index of this table.
+
+        .. warning:: If you delete a Keithley command group, for example ``smua``, it
+            will no longer be available until you power-cycle the Keithley.
+
+        :param var_name: Attribute name.
+        """
+
+        if "." in var_name:
+            raise ValueError("Variable name may not contain periods")
+
+        self._write(f"{self._name}.{var_name} = nil")
+        del self._dict[var_name]
+
     # =============================================================================
     # Define I/O
     # =============================================================================
@@ -816,10 +823,8 @@ class Keithley2600(Keithley2600Base):
 
         error_list = []
 
-        err = self.errorqueue.next()
-        while err[0] != 0:
-            error_list += err
-            err = self.errorqueue.next()
+        while self.errorqueue.count > 0:
+            error_list.append(self.errorqueue.next())
 
         return error_list
 
@@ -983,11 +988,11 @@ class Keithley2600(Keithley2600Base):
         # setup smu to sweep through list on trigger
         # send sweep_list over in chunks if too long
         if len(smu_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_attribute("python_driver_list", KeithleyClass)
+            self.create_lua_var("python_driver_list", KeithleyClass)
             for num in smu_sweeplist:
                 self.table.insert(self.python_driver_list, num)
             smu.trigger.source.listv(self.python_driver_list)
-            self.delete_lua_attribute("python_driver_list")
+            self.delete_lua_var("python_driver_list")
         else:
             smu.trigger.source.listv(smu_sweeplist)
 
@@ -1186,20 +1191,20 @@ class Keithley2600(Keithley2600Base):
         # setup smu1 and smu2 to sweep through lists on trigger
         # send sweep_list over in chunks if too long
         if len(smu1_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_attribute("python_driver_list", KeithleyClass)
+            self.create_lua_var("python_driver_list", KeithleyClass)
             for num in smu1_sweeplist:
                 self.table.insert(self.python_driver_list, num)
             smu1.trigger.source.listv(self.python_driver_list)
-            self.delete_lua_attribute("python_driver_list")
+            self.delete_lua_var("python_driver_list")
         else:
             smu1.trigger.source.listv(smu1_sweeplist)
 
         if len(smu2_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_attribute("python_driver_list", KeithleyClass)
+            self.create_lua_var("python_driver_list", KeithleyClass)
             for num in smu2_sweeplist:
                 self.table.insert(self.python_driver_list, num)
             smu2.trigger.source.listv(self.python_driver_list)
-            self.delete_lua_attribute("python_driver_list")
+            self.delete_lua_var("python_driver_list")
         else:
             smu2.trigger.source.listv(smu2_sweeplist)
 
