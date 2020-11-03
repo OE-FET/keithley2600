@@ -979,10 +979,11 @@ class Keithley2600(Keithley2600Base):
         # setup smu to sweep through list on trigger
         # send sweep_list over in chunks if too long
         if len(smu_sweeplist) > self.CHUNK_SIZE:
-            self._write("mylist = {}")
+            self.create_lua_attribute("python_driver_list", KeithleyClass)
             for num in smu_sweeplist:
-                self._write(f"table.insert(mylist, {num})")
-            smu.trigger.source.listv("mylist")
+                self.table.insert(self.python_driver_list, num)
+            smu.trigger.source.listv(self.python_driver_list)
+            self.delete_lua_attribute("python_driver_list")
         else:
             smu.trigger.source.listv(smu_sweeplist)
 
@@ -1176,23 +1177,25 @@ class Keithley2600(Keithley2600Base):
             self.busy = False
             return v_smu1, i_smu1, v_smu2, i_smu2
 
-        # Setup smua/smub for sweep measurement.
+        # Setup smu1/smu2 for sweep measurement.
 
         # setup smu1 and smu2 to sweep through lists on trigger
         # send sweep_list over in chunks if too long
         if len(smu1_sweeplist) > self.CHUNK_SIZE:
-            self._write("mylist = {}")
+            self.create_lua_attribute("python_driver_list", KeithleyClass)
             for num in smu1_sweeplist:
-                self._write(f"table.insert(mylist, {num})")
-            smu1.trigger.source.listv("mylist")
+                self.table.insert(self.python_driver_list, num)
+            smu1.trigger.source.listv(self.python_driver_list)
+            self.delete_lua_attribute("python_driver_list")
         else:
             smu1.trigger.source.listv(smu1_sweeplist)
 
         if len(smu2_sweeplist) > self.CHUNK_SIZE:
-            self._write("mylist = {}")
+            self.create_lua_attribute("python_driver_list", KeithleyClass)
             for num in smu2_sweeplist:
-                self._write(f"table.insert(mylist, {num})")
-            smu2.trigger.source.listv("mylist")
+                self.table.insert(self.python_driver_list, num)
+            smu2.trigger.source.listv(self.python_driver_list)
+            self.delete_lua_attribute("python_driver_list")
         else:
             smu2.trigger.source.listv(smu2_sweeplist)
 
