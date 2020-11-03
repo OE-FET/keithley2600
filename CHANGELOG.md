@@ -17,6 +17,11 @@ Other changes include:
 - Type hints are used throughout.
 - The Python syntax has been modernised for Python 3.6.
 - The Keithley no longer beeps at the end of custom sweeps.
+- Added API `Keithley2600.send_trigger` to trigger a pre-programmed sweep.
+- Added API `Keithley2600.create_lua_var` to create a variable in the global Keithley
+  namespace.
+- Added API `Keithley2600.delete_lua_var` to remove a variable in the global Keithley
+  namespace.
 
 #### v1.4.1
 
