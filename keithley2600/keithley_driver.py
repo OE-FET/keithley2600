@@ -18,7 +18,7 @@ import time
 from contextlib import contextmanager
 from threading import RLock
 from xdrlib import Error as XDRError
-from typing import IO, Optional, Any, Dict, Union, List, Tuple, Sequence, Iterable
+from typing import IO, Optional, Any, Dict, Union, List, Tuple, Sequence, Iterable, Type
 
 # external imports
 import pyvisa
@@ -31,9 +31,7 @@ LuaReturnTypes = Union[float, str, bool, None, "_LuaFunction", "_LuaTable"]
 LuaBridgeType = Union["KeithleyFunction", "KeithleyClass", "KeithleyProperty"]
 
 
-formatter = logging.Formatter(
-    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-)
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
 
 _ch = logging.StreamHandler()
 _ch.setFormatter(formatter)
@@ -124,8 +122,10 @@ class KeithleyProperty:
         self._parent._write(f"{self._name} = {value}")
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}({self._name_display}, " \
-               f"readonly={self._readonly})>"
+        return (
+            f"<{self.__class__.__name__}({self._name_display}, "
+            f"readonly={self._readonly})>"
+        )
 
 
 class KeithleyFunction:
@@ -294,7 +294,9 @@ class KeithleyClass:
                             readonly = False
                         else:
                             readonly = True
-                        self._dict[var_name] = KeithleyProperty(full_name, self, readonly)
+                        self._dict[var_name] = KeithleyProperty(
+                            full_name, self, readonly
+                        )
                     else:
                         break
 
@@ -341,7 +343,9 @@ class KeithleyClass:
             # will raise KeithleyIOError if not connected
             self._load_lua_namespace()
 
-        if self._lua_type in ("reading_buffer", "synchronous_table") and isinstance(key, int):
+        if self._lua_type in ("reading_buffer", "synchronous_table") and isinstance(
+            key, int
+        ):
             # bypass verification and support all integer indices for reading buffers
             return self._query(f"{self._name}[{key}]")
 
@@ -386,8 +390,10 @@ class KeithleyClass:
 
     def __repr__(self) -> str:
         if self._lua_type:
-            return f"<{self.__class__.__name__}({self._name_display}, " \
-                   f"lua_type={self._lua_type})>"
+            return (
+                f"<{self.__class__.__name__}({self._name_display}, "
+                f"lua_type={self._lua_type})>"
+            )
         else:
             return f"<{self.__class__.__name__}({self._name_display})>"
 
@@ -665,10 +671,14 @@ class Keithley2600Base(KeithleyClass):
         elif hasattr(value, "__iter__"):
             # convert some iterables to a TSP type list '{1,2,3,4}'
             return "{" + ", ".join([str(v) for v in value]) + "}"
-        elif isinstance(value, (int, float, np.number)) and not isinstance(value, np.complex):
+        elif isinstance(value, (int, float, np.number)) and not isinstance(
+            value, np.complex
+        ):
             return str(value)
         else:
-            raise ValueError(f"Unsupported value type '{type(value).__name__}' of input '{value!r}'")
+            raise ValueError(
+                f"Unsupported value type '{type(value).__name__}' of input '{value!r}'"
+            )
 
 
 class Keithley2600(Keithley2600Base):
