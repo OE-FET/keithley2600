@@ -1,3 +1,6 @@
 pyvisa 
-sphinx>=1.8.4
 m2r
+sphinx==2.4.4
+sphinx-click
+sphinx-autodoc-typehints
+sphinx-autoapi
