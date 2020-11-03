@@ -11,6 +11,7 @@ Core driver with the low level functions.
 # system imports
 import logging
 import re
+import shlex
 import threading
 import numpy as np
 import time
@@ -74,7 +75,7 @@ class KeithleyError(Exception):
     """Raised for error messages from the Keithley itself."""
 
 
-class Nil:
+class _Nil:
     def __repr__(self) -> str:
         return "nil"
 
@@ -95,11 +96,16 @@ class _LuaFunction:
         return self._repr
 
 
-class MagicProperty:
-    """Mimics a Keithley TSP (Lua) bool, number or string"""
+class KeithleyProperty:
+    """Mimics a Keithley TSP Lua property (bool, number or string).
+
+    Getters and setters forward their calls to :func:`_query` and :func:`_write` methods
+    of the parent command. Booleans, numbers and strings are accepted natively, anything
+    else will be converted to a string.
+    """
 
     def __init__(
-        self, name: str, parent: "MagicClass", read_only: bool = False
+        self, name: str, parent: "KeithleyClass", read_only: bool = False
     ) -> None:
         self._name = name
         self._name_display = removeprefix(name, "_G.")
@@ -120,32 +126,28 @@ class MagicProperty:
                f"read_only={self._read_only})>"
 
 
-class MagicFunction:
+class KeithleyFunction:
     """Mimics a Keithley TSP (Lua) function
 
-    Class which mimics a function and can be dynamically created. It forwards
-    all calls to the :func:`_query` method of the parent class and returns the
-    result from :func:`_query`. Calls accept arbitrary arguments, as long as
-    :func:`_query` can handle them.
+    Class which mimics a function and can be dynamically created. It forwards all calls
+    to the :func:`_query` method of the parent command and returns the result from
+    :func:`_query`. Calls accept arbitrary arguments, as long as :func:`_query` can
+    handle them.
 
-    This class is designed to look like a Keithley TSP function, forward
-    function calls to the Keithley, and return the results.
+    This class is designed to look like a Keithley TSP function, forward function calls
+    to the Keithley, and return the results.
     """
 
-    def __init__(self, name: str, parent: "MagicClass") -> None:
+    def __init__(self, name: str, parent: "KeithleyClass") -> None:
         self._name = name
         self._name_display = removeprefix(name, "_G.")
         self._parent = parent
 
-    def __call__(self, *args, **kwargs) -> Any:
-        """Pass on calls to :func:`parent._write`, store result in variable.
-        Querying results from function calls directly may result in
-        a VisaIOError if the function does not return anything."""
+    def __call__(self, *args) -> Any:
 
-        # convert incompatible arguments, return all arguments as tuple
-        args = tuple(self._parent._convert_input(a) for a in args)
-        # remove outside brackets and all quotation marks
-        args_string = str(args).strip("(),").replace("'", "")
+        # convert all arguments
+        args = [self._parent._convert_input(a) for a in args]
+        args_string = ", ".join(args)
 
         # pass on a string representation of the function call to self._parent._query
         return self._parent._query(f"{self._name}({args_string})")
@@ -154,14 +156,14 @@ class MagicFunction:
         return f"<{self.__class__.__name__}({self._name_display})>"
 
 
-class MagicClass:
+class KeithleyClass:
     """Mimics a Keithley TSP (Lua) table
 
     Class which represents a Keithley TSP / Lua table. Tables act as the equivalent of
     objects in the Lua scripting language and table indices can be both numbers or
-    strings. Their values are accessible by index notation or as "attributes". For
-    instance, ``table["name"]`` and ``table.name`` will return the same value. If tables
-    have only numeric indices, they practically represent a list / sequence.
+    strings. Their values are accessible by index notation or as "attributes" in case of
+    string indices. For example, ``table["name"]`` and ``table.name`` access the same
+    field. If tables have numeric indices only, they practically serve as a list.
     """
 
     _protected_attrs = [
@@ -172,7 +174,7 @@ class MagicClass:
         "_lua_type",
     ]
 
-    def __init__(self, name: str, parent: Optional["MagicClass"] = None) -> None:
+    def __init__(self, name: str, parent: Optional["KeithleyClass"] = None) -> None:
         self._name = name
         self._name_display = removeprefix(name, "_G.")
         self._parent = parent
@@ -180,7 +182,6 @@ class MagicClass:
         self._lua_type = None
 
     def __getattr__(self, attr_name: str) -> Any:
-        """Get attributes from Keithley global namespace"""
 
         if not self._dict:
             # will raise KeithleyIOError if not connected
@@ -189,7 +190,7 @@ class MagicClass:
         try:
             accessor = self._dict[attr_name]
 
-            if isinstance(accessor, MagicProperty):
+            if isinstance(accessor, KeithleyProperty):
                 return accessor.get()
             else:
                 return accessor
@@ -210,7 +211,7 @@ class MagicClass:
             if key in self._dict:
                 accessor = self._dict[key]
 
-                if isinstance(accessor, MagicProperty):
+                if isinstance(accessor, KeithleyProperty):
                     accessor.set(value)
                 else:
                     value = self._convert_input(value)
@@ -220,12 +221,13 @@ class MagicClass:
 
     def _iterate_lua_indices(
         self,
-    ) -> Dict[str, Union[MagicFunction, "MagicClass", MagicProperty]]:
+    ) -> Dict[str, Union[KeithleyFunction, "KeithleyClass", KeithleyProperty]]:
         """
         Get all indices of the table, including those defined through the metatable.
+        This is the main method to get all support Keithley TSp commands.
         """
 
-        var_name = Nil()
+        var_name = _Nil()
         attributes = {}
 
         def to_global_name(index):
@@ -248,11 +250,11 @@ class MagicClass:
                 full_name = to_global_name(var_name)
 
                 if isinstance(var_value, _LuaFunction):
-                    attributes[var_name] = MagicFunction(full_name, self)
+                    attributes[var_name] = KeithleyFunction(full_name, self)
                 elif isinstance(var_value, _LuaTable):
-                    attributes[var_name] = MagicClass(full_name, self)
+                    attributes[var_name] = KeithleyClass(full_name, self)
                 else:
-                    attributes[var_name] = MagicProperty(full_name, self)
+                    attributes[var_name] = KeithleyProperty(full_name, self)
             else:
                 break
 
@@ -270,7 +272,7 @@ class MagicClass:
             # those will define "immutable objects" (numbers, strings, booleans)
             if self._query("mt.Getters"):
 
-                var_name = Nil()
+                var_name = _Nil()
 
                 while True:
 
@@ -285,14 +287,14 @@ class MagicClass:
                             read_only = False
                         else:
                             read_only = True
-                        attributes[var_name] = MagicProperty(full_name, self, read_only)
+                        attributes[var_name] = KeithleyProperty(full_name, self, read_only)
                     else:
                         break
 
             # get Objects, if any
             # those will define functions, tables or constants
             if self._query("mt.Objects"):
-                var_name = Nil()
+                var_name = _Nil()
 
                 while True:
 
@@ -302,11 +304,11 @@ class MagicClass:
                         var_name, var_value = res
                         full_name = to_global_name(var_name)
                         if isinstance(var_value, _LuaFunction):
-                            attributes[var_name] = MagicFunction(full_name, self)
+                            attributes[var_name] = KeithleyFunction(full_name, self)
                         elif isinstance(var_value, _LuaTable):
-                            attributes[var_name] = MagicClass(full_name, self)
+                            attributes[var_name] = KeithleyClass(full_name, self)
                         else:
-                            attributes[var_name] = MagicProperty(
+                            attributes[var_name] = KeithleyProperty(
                                 full_name, self, read_only=True
                             )
                     else:
@@ -317,15 +319,12 @@ class MagicClass:
         return attributes
 
     def _write(self, value: str) -> None:
-        """Forward write calls to parent class."""
         self._parent._write(value)
 
     def _query(self, value: str) -> Any:
-        """Forward query calls to parent class."""
         return self._parent._query(value)
 
     def _convert_input(self, value: Any) -> str:
-        """Forward convert_input calls to parent class."""
         try:
             return self._parent._convert_input(value)
         except AttributeError:
@@ -344,7 +343,7 @@ class MagicClass:
         # raises KeyError if the key does not exist
         accessor = self._dict[key]
 
-        if isinstance(accessor, MagicProperty):
+        if isinstance(accessor, KeithleyProperty):
             return accessor.get()
         else:
             return accessor
@@ -357,13 +356,13 @@ class MagicClass:
 
         accessor = self._dict[key]
 
-        if isinstance(accessor, MagicProperty):
+        if isinstance(accessor, KeithleyProperty):
             return accessor.set(value)
         else:
             value = self._convert_input(value)
             self._write(f"{self._name}[{key}] = {value}")
 
-    def __iter__(self) -> "MagicClass":
+    def __iter__(self) -> "KeithleyClass":
 
         if not self._dict:
             # will raise KeithleyIOError if not connected
@@ -388,13 +387,12 @@ class MagicClass:
             return f"<{self.__class__.__name__}({self._name_display})>"
 
 
-class Keithley2600Base(MagicClass):
+class Keithley2600Base(KeithleyClass):
     """Keithley2600 driver
 
     Keithley driver for base functionality. It replicates the functionality and
-    syntax from the Keithley TSP commands, which have a syntax similar to
-    python. Attributes are created on-access if they correspond to Keithley TSP
-    type commands.
+    syntax from the Keithley TSP commands, as provided by the Lua scripting language.
+    Attributes are created on-demand if they correspond to Keithley TSP commands.
 
     :param visa_address: Visa address of the instrument.
     :param visa_library: Path to visa library. Defaults to "@py" for pyvisa-py but
@@ -441,7 +439,7 @@ class Keithley2600Base(MagicClass):
         "CHUNK_SIZE",
         "_lock",
         "abort_event",
-    ] + MagicClass._protected_attrs
+    ] + KeithleyClass._protected_attrs
 
     CHUNK_SIZE = 50
 
@@ -462,9 +460,8 @@ class Keithley2600Base(MagicClass):
 
         self.raise_keithley_errors = raise_keithley_errors
 
-        # open visa resource manager with selected library / backend
+        # open visa resource manager and connect to keithley
         self.rm = pyvisa.ResourceManager(self.visa_library)
-        # connect to keithley
         self.connect(**kwargs)
 
     def __repr__(self) -> str:
@@ -530,6 +527,9 @@ class Keithley2600Base(MagicClass):
 
     @contextmanager
     def _error_check(self):
+        """
+        A contextmanager to check if a command resulted in a Keithley error.
+        """
 
         # clear any previous errors
         self.connection.write("errorqueue.clear()")
@@ -609,6 +609,19 @@ class Keithley2600Base(MagicClass):
                     "No connection to keithley present. Try to call 'connect'."
                 )
 
+    def _parse_response(
+        self, string: str
+    ) -> Union[LuaReturnTypes, Tuple[LuaReturnTypes, ...]]:
+
+        string_list = string.split("\t")
+
+        converted_tuple = tuple(self._parse_single_response(s) for s in string_list)
+
+        if len(converted_tuple) == 1:
+            return converted_tuple[0]
+        else:
+            return converted_tuple
+
     @staticmethod
     def _parse_single_response(string: str) -> LuaReturnTypes:
 
@@ -634,31 +647,20 @@ class Keithley2600Base(MagicClass):
 
         return r
 
-    def _parse_response(
-        self, string: str
-    ) -> Union[LuaReturnTypes, Tuple[LuaReturnTypes, ...]]:
-
-        string_list = string.split("\t")
-
-        converted_tuple = tuple(self._parse_single_response(s) for s in string_list)
-
-        if len(converted_tuple) == 1:
-            return converted_tuple[0]
-        else:
-            return converted_tuple
-
     def _convert_input(self, value: Any) -> str:
         if isinstance(value, bool):
             # convert bool True to string 'true', False to string 'false'
             return str(value).lower()
-        elif isinstance(value, MagicClass):
+        elif isinstance(value, KeithleyClass):
             # convert keithley object to string with its name
             return value._name
+        elif isinstance(value, str):
+            return shlex.quote(value)
         elif hasattr(value, "__iter__"):
             # convert some iterables to a TSP type list '{1,2,3,4}'
             return "{" + ", ".join([str(v) for v in value]) + "}"
         else:
-            return value
+            raise ValueError(f"Unsupported value type {type(value)} of input {value}")
 
 
 class Keithley2600(Keithley2600Base):
@@ -776,7 +778,7 @@ class Keithley2600(Keithley2600Base):
 
         return list_out
 
-    def setIntegrationTime(self, smu: MagicClass, t_int: float) -> None:
+    def setIntegrationTime(self, smu: KeithleyClass, t_int: float) -> None:
         """
         Sets the integration time of SMU for measurements in sec.
 
@@ -797,7 +799,7 @@ class Keithley2600(Keithley2600Base):
             )
         smu.measure.nplc = nplc
 
-    def applyVoltage(self, smu: MagicClass, voltage: float) -> None:
+    def applyVoltage(self, smu: KeithleyClass, voltage: float) -> None:
         """
         Turns on the specified SMU and applies a voltage.
 
@@ -809,7 +811,7 @@ class Keithley2600(Keithley2600Base):
         smu.source.func = smu.OUTPUT_DCVOLTS
         smu.source.output = smu.OUTPUT_ON
 
-    def applyCurrent(self, smu: MagicClass, curr: float) -> None:
+    def applyCurrent(self, smu: KeithleyClass, curr: float) -> None:
         """
         Turns on the specified SMU and sources a current.
 
@@ -821,7 +823,7 @@ class Keithley2600(Keithley2600Base):
         smu.source.func = smu.OUTPUT_DCAMPS
         smu.source.output = smu.OUTPUT_ON
 
-    def measureVoltage(self, smu: MagicClass) -> float:
+    def measureVoltage(self, smu: KeithleyClass) -> float:
         """
         Measures a voltage at the specified SMU.
 
@@ -831,7 +833,7 @@ class Keithley2600(Keithley2600Base):
 
         return smu.measure.v()
 
-    def measureCurrent(self, smu: MagicClass) -> float:
+    def measureCurrent(self, smu: KeithleyClass) -> float:
         """
         Measures a current at the specified SMU.
 
@@ -843,7 +845,7 @@ class Keithley2600(Keithley2600Base):
 
     def rampToVoltage(
         self,
-        smu: MagicClass,
+        smu: KeithleyClass,
         target_volt: float,
         delay: float = 0.1,
         step_size: float = 1,
@@ -878,7 +880,7 @@ class Keithley2600(Keithley2600Base):
 
     def voltageSweepSingleSMU(
         self,
-        smu: MagicClass,
+        smu: KeithleyClass,
         smu_sweeplist: Sequence[float],
         t_int: float,
         delay: float,
@@ -1069,8 +1071,8 @@ class Keithley2600(Keithley2600Base):
 
     def voltageSweepDualSMU(
         self,
-        smu1: MagicClass,
-        smu2: MagicClass,
+        smu1: KeithleyClass,
+        smu2: KeithleyClass,
         smu1_sweeplist: Sequence[float],
         smu2_sweeplist: Sequence[float],
         t_int: float,
@@ -1304,8 +1306,8 @@ class Keithley2600(Keithley2600Base):
 
     def transferMeasurement(
         self,
-        smu_gate: MagicClass,
-        smu_drain: MagicClass,
+        smu_gate: KeithleyClass,
+        smu_drain: KeithleyClass,
         vg_start: float,
         vg_stop: float,
         vg_step: float,
@@ -1397,8 +1399,8 @@ class Keithley2600(Keithley2600Base):
 
     def outputMeasurement(
         self,
-        smu_gate: MagicClass,
-        smu_drain: MagicClass,
+        smu_gate: KeithleyClass,
+        smu_drain: KeithleyClass,
         vd_start: float,
         vd_stop: float,
         vd_step: float,
@@ -1534,7 +1536,7 @@ class Keithley2600(Keithley2600Base):
 
         return freq
 
-    def _get_smu_name(self, smu: MagicClass) -> str:
+    def _get_smu_name(self, smu: KeithleyClass) -> str:
 
         if not re.match(r"^_G.smu([a-z])$", smu._name):
             raise ValueError(f"{smu} is not a valid SMU")
