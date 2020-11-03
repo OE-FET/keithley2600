@@ -189,7 +189,7 @@ class KeithleyClass:
 
         if not self._dict:
             # will raise KeithleyIOError if not connected
-            self._dict = self._iterate_lua_indices()
+            self._load_lua_namespace()
 
         try:
             accessor = self._dict[attr_name]
@@ -210,7 +210,7 @@ class KeithleyClass:
 
             if not self._dict:
                 # will raise KeithleyIOError if not connected
-                self._dict = self._iterate_lua_indices()
+                self._load_lua_namespace()
 
             if key in self._dict:
                 accessor = self._dict[key]
@@ -223,16 +223,19 @@ class KeithleyClass:
             else:
                 super().__setattr__(key, value)
 
-    def _iterate_lua_indices(
-        self,
-    ) -> Dict[str, Union[KeithleyFunction, "KeithleyClass", KeithleyProperty]]:
+    def _load_lua_namespace(self) -> None:
         """
-        Get all indices of the table, including those defined through the metatable.
-        This is the main method to get all support Keithley TSp commands.
+        Get all indices of the "namespace" defined by this table, including those
+        defined through the metatable. This is the main method to get all support
+        Keithley TSP commands.
+
+        .. note:: The Lua table ``_G`` holds all global namespace variables, including a
+            reference to itself.
         """
 
+        self._dict.clear()
+
         var_name = _Nil()
-        attributes = {}
 
         def to_global_name(index):
             if isinstance(index, int):
@@ -254,11 +257,11 @@ class KeithleyClass:
                 full_name = to_global_name(var_name)
 
                 if isinstance(var_value, _LuaFunction):
-                    attributes[var_name] = KeithleyFunction(full_name, self)
+                    self._dict[var_name] = KeithleyFunction(full_name, self)
                 elif isinstance(var_value, _LuaTable):
-                    attributes[var_name] = KeithleyClass(full_name, self)
+                    self._dict[var_name] = KeithleyClass(full_name, self)
                 else:
-                    attributes[var_name] = KeithleyProperty(full_name, self)
+                    self._dict[var_name] = KeithleyProperty(full_name, self)
             else:
                 break
 
@@ -291,7 +294,7 @@ class KeithleyClass:
                             readonly = False
                         else:
                             readonly = True
-                        attributes[var_name] = KeithleyProperty(full_name, self, readonly)
+                        self._dict[var_name] = KeithleyProperty(full_name, self, readonly)
                     else:
                         break
 
@@ -308,19 +311,17 @@ class KeithleyClass:
                         var_name, var_value = res
                         full_name = to_global_name(var_name)
                         if isinstance(var_value, _LuaFunction):
-                            attributes[var_name] = KeithleyFunction(full_name, self)
+                            self._dict[var_name] = KeithleyFunction(full_name, self)
                         elif isinstance(var_value, _LuaTable):
-                            attributes[var_name] = KeithleyClass(full_name, self)
+                            self._dict[var_name] = KeithleyClass(full_name, self)
                         else:
-                            attributes[var_name] = KeithleyProperty(
+                            self._dict[var_name] = KeithleyProperty(
                                 full_name, self, readonly=True
                             )
                     else:
                         break
 
             self._lua_type = self._query("mt.luatype")
-
-        return attributes
 
     def _write(self, value: str) -> None:
         self._parent._write(value)
@@ -338,7 +339,7 @@ class KeithleyClass:
 
         if not self._dict:
             # will raise KeithleyIOError if not connected
-            self._dict = self._iterate_lua_indices()
+            self._load_lua_namespace()
 
         if self._lua_type in ("reading_buffer", "synchronous_table") and isinstance(key, int):
             # bypass verification and support all integer indices for reading buffers
@@ -356,7 +357,7 @@ class KeithleyClass:
 
         if not self._dict:
             # will raise KeithleyIOError if not connected
-            self._dict = self._iterate_lua_indices()
+            self._load_lua_namespace()
 
         accessor = self._dict[key]
 
@@ -370,14 +371,14 @@ class KeithleyClass:
 
         if not self._dict:
             # will raise KeithleyIOError if not connected
-            self._dict = self._iterate_lua_indices()
+            self._load_lua_namespace()
 
         return self
 
     def __dir__(self) -> List[str]:
         if not self._dict:
             try:
-                self._dict = self._iterate_lua_indices()
+                self._load_lua_namespace()
             except KeithleyIOError:
                 pass
 
