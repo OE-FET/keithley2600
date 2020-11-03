@@ -187,7 +187,9 @@ class KeithleyClass:
         self, attr_name: str, attr_type: Type[LuaBridgeType], readonly: bool = False
     ) -> LuaBridgeType:
         """
-        Creates an attribute / index of this table with the given type.
+        Creates an attribute / index of this table with the given type. The initial
+        value will be None (nil) for a KeithleyProperty and an empty Lua table for a
+        KeithleyClass.
 
         .. warning:: This may overwrite existing attributes of a Keithley command. Use
             with caution.
@@ -200,12 +202,14 @@ class KeithleyClass:
         :returns: The accessor for the created attribute.
         """
 
+        full_name = f"{self._name}.{attr_name}"
+
         if attr_type is KeithleyClass:
-            self._write(f"{self._name}.{attr_name} = {{}}")
-            self._dict[attr_name] = attr_type(attr_name, self)
+            self._write(f"{full_name} = {{}}")
+            self._dict[attr_name] = attr_type(full_name, self)
         elif attr_type is KeithleyProperty:
             # properties can be created ad-hoc in Lua
-            self._dict[attr_name] = attr_type(attr_name, self, readonly)
+            self._dict[attr_name] = attr_type(full_name, self, readonly)
         elif isinstance(attr_type, KeithleyFunction):
             raise ValueError("Creating Lua functions is currently not supported")
 
