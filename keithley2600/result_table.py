@@ -10,12 +10,15 @@ Submodule defining classes to store, plot, and save measurement results.
 """
 
 import os
+import enum
 import re
 import warnings
+from typing import List, Tuple, Union, Optional, Dict, Any, Callable, Sequence, Iterable
+
 import numpy as np
 
 
-def find_numbers(string):
+def find_numbers(string: str) -> List[float]:
 
     fmt = r"[-+]?[.]?[\d]+(?:,\d\d\d)*[\.]?\d*(?:[eE][-+]?\d+)?"
     string_list = re.findall(fmt, string)
@@ -24,46 +27,45 @@ def find_numbers(string):
     return float_list
 
 
-class ColumnTitle(object):
+class ColumnTitle:
     """
     Class to hold a column title.
 
-    :param str name: Column name.
-    :param str unit: Column unit.
-    :param str unit_fmt: Formatting directive for units when generating string
+    :param name: Column name.
+    :param unit: Column unit.
+    :param unit_fmt: Formatting directive for units when generating string
         representations. By default, units are enclosed in square brackets (e.g.,
         "Gate voltage [V]").
     """
 
-    def __init__(self, name, unit=None, unit_fmt="[{}]"):
+    def __init__(
+        self, name: str, unit: Optional[str] = None, unit_fmt: str = "[{}]"
+    ) -> None:
 
         self.name = name
         self.unit = "" if unit is None else unit
         self.unit_fmt = unit_fmt
 
-    def has_unit(self):
+    def has_unit(self) -> bool:
         return self.unit != ""
 
-    def set_unit(self, unit):
+    def set_unit(self, unit: str) -> None:
         self.unit = unit
 
-    def __repr__(self):
-        return "<{0}(title='{1}', unit='{2}')>".format(
-            self.__class__.__name__, self.name, self.unit
-        )
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}(title='{self.name}', unit='{self.unit}')>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         if self.has_unit():
-            return self.name + " " + self.unit_fmt.format(self.unit)
+            return f"{self.name} {self.unit_fmt.format(self.unit)}"
         else:
             return self.name
 
 
-# noinspection PyTypeChecker
-class ResultTable(object):
+class ResultTable:
     """
-    Class that holds measurement data. All data is stored internally as a numpy array with
-    the first index designating rows and the second index designating columns.
+    Class that holds measurement data. All data is stored internally as a numpy array
+    with the first index designating rows and the second index designating columns.
 
     Columns must have titles and can have units. It is possible to access the data in a
     column by its title in a dictionary type notation.
@@ -71,10 +73,9 @@ class ResultTable(object):
     :param list column_titles: List of column titles.
     :param list units: List of column units.
     :param data: Numpy array holding the data with the first index designating rows and
-        the second index designating columns. If ``data`` is ``None``, an empty array with
-        the required number of columns is created.
-    :type data: numpy.ndarray or NoneType
-    :param dict params: Dictionary of measurement parameters.
+        the second index designating columns. If ``data`` is ``None``, an empty array
+        with the required number of columns is created.
+    :param params: Dictionary of measurement parameters.
 
     :Examples:
 
@@ -86,7 +87,7 @@ class ResultTable(object):
         >>> # create dictionary of relevant measurement parameters
         >>> pars = {'recorded': time.asctime(), 'sweep_type': 'iv'}
         >>> # create ResultTable with two columns
-        >>> rt = ResultTable(['Voltage', 'Current'], ['V', 'A'], pars)
+        >>> rt = ResultTable(['Voltage', 'Current'], ['V', 'A'], params=pars)
         >>> # create a live plot of the data
         >>> fig = rt.plot(live=True)
 
@@ -122,7 +123,13 @@ class ResultTable(object):
     LINE_BREAK = "\n"
     UNIT_FORMAT = "[{}]"
 
-    def __init__(self, column_titles=None, units=None, data=None, params=None):
+    def __init__(
+        self,
+        column_titles: Optional[List[str]] = None,
+        units: Optional[List[str]] = None,
+        data: Optional[Sequence[float]] = None,
+        params: Optional[Dict[str, Any]] = None,
+    ) -> None:
 
         if column_titles is None:
             column_titles = []
@@ -147,27 +154,27 @@ class ResultTable(object):
             self.params = params
 
     @property
-    def nrows(self):
+    def nrows(self) -> int:
         """Number of rows of the ResultTable."""
         return self.data.shape[0]
 
     @property
-    def ncols(self):
+    def ncols(self) -> int:
         """Number of columns of the ResultTable."""
         return len(self.titles)
 
     @property
-    def shape(self):
+    def shape(self) -> Tuple[int, int]:
         """A tuple representing the dimensionality of the ResultTable."""
         return self.data.shape[0], len(self.titles)
 
     @property
-    def column_names(self):
+    def column_names(self) -> List[str]:
         """List of strings with column names."""
         return [title.name for title in self.titles]
 
     @column_names.setter
-    def column_names(self, names_list):
+    def column_names(self, names_list: Sequence[str]) -> None:
         """Setter: List of strings with column names."""
         if not all(isinstance(x, str) for x in names_list):
             raise ValueError("All column names must be of type 'str'.")
@@ -178,12 +185,12 @@ class ResultTable(object):
             title.name = name
 
     @property
-    def column_units(self):
+    def column_units(self) -> List[str]:
         """List of strings with column units."""
         return [title.unit for title in self.titles]
 
     @column_units.setter
-    def column_units(self, units_list):
+    def column_units(self, units_list: Sequence[str]) -> None:
         """Setter: List of strings with column units."""
         if not all(isinstance(x, str) for x in units_list):
             raise ValueError("All column_units must be of type 'str'.")
@@ -193,83 +200,80 @@ class ResultTable(object):
         for title, unit in zip(self.titles, units_list):
             title.unit = unit
 
-    def has_unit(self, col):
+    def has_unit(self, col: Union[int, str]) -> bool:
         """
         Returns ``True`` column units have been set and ``False`` otherwise.
 
         :param col: Column index or name.
-        :type col: int or str
-
         :returns: ``True`` if column_units have been set, ``False`` otherwise.
-        :rtype: bool
         """
         if not isinstance(col, int):
             col = self.column_names.index(col)
 
         return self.titles[col].unit != ""
 
-    def get_unit(self, col):
+    def get_unit(self, col: Union[int, str]) -> str:
         """
         Get unit of column ``col``.
 
         :param col: Column index or name.
-        :type col: int or str
-
-        :returns: Unit string.
-        :rtype: str
+        :returns: Unit of column.
         """
         if not isinstance(col, int):
             col = self.column_names.index(col)
 
         return self.titles[col].unit
 
-    def set_unit(self, col, unit):
+    def set_unit(self, col: Union[int, str], unit: str) -> None:
         """
         Set unit of column ``col``.
 
         :param col: Column index or name.
-        :type col: int or str
-        :param str unit: Unit string.
+        :param unit: Unit string.
         """
         if not isinstance(col, int):
             col = self.column_names.index(col)
 
         self.titles[col].unit = unit
 
-    def clear_data(self):
+    def clear_data(self) -> None:
         """
         Clears all data.
         """
         self.data = np.array([[]] * self.ncols).transpose()
 
-    def append_row(self, data):
+    def append_row(self, data: Sequence[float]) -> None:
         """
         Appends a single row to the data array.
 
-        :param data: Iterable with the same number of elements as columns in the data
+        :param data: Sequence with the same number of elements as columns in the data
             array.
         """
         if not len(data) == self.ncols:
-            raise ValueError("Length must match number of columns: %s" % self.ncols)
+            raise ValueError(f"Length must match number of columns: {self.ncols}")
 
         self.data = np.append(self.data, [data], 0)
 
-    def append_rows(self, data):
+    def append_rows(self, data: Sequence[float]) -> None:
         """
         Appends multiple rows to the data array.
 
-        :param data: List of lists or numpy array with dimensions matching the data array.
+        :param data: List of lists or numpy array with dimensions matching the data
+            array.
         """
 
         self.data = np.append(self.data, data, 0)
 
-    def append_column(self, data, name, unit=None):
+    def append_column(
+        self, data: Sequence[float], name: str, unit: Optional[str] = None
+    ) -> None:
         """
         Appends a single column to the data array.
 
-        :param data: Iterable with the same number of elements as rows in the data array.
-        :param str name: Name of new column.
-        :param str unit: Unit of values in new column.
+        :param data: Sequence with the same number of elements as rows in the data
+            array.
+        :param name: Name of new column.
+        :param unit: Unit of values in new column.
         """
 
         if self.data.size == 0:
@@ -279,13 +283,18 @@ class ResultTable(object):
 
         self.titles.append(ColumnTitle(name, unit, self.UNIT_FORMAT))
 
-    def append_columns(self, data, column_titles, units=None):
+    def append_columns(
+        self,
+        data: Sequence[float],
+        column_titles: List[str],
+        units: Optional[List[str]] = None,
+    ) -> None:
         """
         Appends multiple columns to data array.
 
-        :param list data: List of columns to append.
-        :param list column_titles: List of column titles (strings).
-        :param list units: List of units for new columns (strings).
+        :param data: List of columns to append.
+        :param column_titles: List of column titles (strings).
+        :param units: List of units for new columns (strings).
         """
         if self.data.size == 0:
             self.data = np.transpose(data)
@@ -295,37 +304,34 @@ class ResultTable(object):
         for name, unit in zip(column_titles, units):
             self.titles.append(ColumnTitle(name, unit, self.UNIT_FORMAT))
 
-    def get_row(self, i):
+    def get_row(self, i: int) -> np.ndarray:
         """
         :returns: Numpy array with data from row ``i``.
-        :rtype: :class:`numpy.ndarray`
         """
         return self.data[i, :]
 
-    def get_column(self, i):
+    def get_column(self, i: int) -> np.ndarray:
         """
         :returns: Numpy array with data from column ``i``.
         :rtype: :class:`numpy.ndarray`
         """
         return self.data[:, i]
 
-    def _column_title_string(self):
+    def _column_title_string(self) -> str:
         """
         Creates column title string.
 
         :returns: String with column titles.
-        :rtype: str
         """
         column_titles = [str(title) for title in self.titles]
         return self.DELIMITER.join(column_titles)
 
-    def _parse_column_title_string(self, title_string):
+    def _parse_column_title_string(self, title_string: str) -> List[ColumnTitle]:
         """
         Parses a column title string.
 
-        :param str title_string: String to parse.
-
-        :returns: List of :class:`ColumnTitle` instances.
+        :param title_string: String to parse.
+        :returns: List of column titles.
         """
 
         title_string = title_string.lstrip(self.COMMENT)
@@ -355,13 +361,12 @@ class ResultTable(object):
 
         return titles
 
-    def _param_string(self):
+    def _param_string(self) -> str:
         """
         Creates string containing all parameters from :attr:`params` as key, value pairs
         in separate lines marked as comments.
 
         :returns: Parameter string.
-        :rtype: str
         """
         lines = []
 
@@ -370,12 +375,11 @@ class ResultTable(object):
 
         return self.LINE_BREAK.join(lines)
 
-    def _parse_param_string(self, header):
+    def _parse_param_string(self, header: str) -> Dict[str, Any]:
         """
         Parses comment section of _header to extract measurement parameters
 
         :returns: Dictionary containing measurement parameters.
-        :rtype: dict
         """
 
         params = {}
@@ -402,13 +406,12 @@ class ResultTable(object):
 
         return params
 
-    def _header(self):
+    def _header(self) -> str:
         """
         Outputs a full _header string with measurement parameters and column titles
         (including units).
 
         :returns: Header as string.
-        :rtype: str
         """
 
         params_string = self._param_string()
@@ -416,14 +419,13 @@ class ResultTable(object):
 
         return self.LINE_BREAK.join([params_string, titles_string])
 
-    def _parse_header(self, header):
+    def _parse_header(self, header: str) -> Tuple[List[ColumnTitle], Dict[str, Any]]:
         """
         Parses a _header string . Returns list of :class:`ColumnTitle` objects and
         measurement parameters in dictionary.
 
         :param str header: Header to parse.
         :returns: Tuple with titles and params.
-        :rtype: tuple(str, str)
         """
         header = header.strip(self.LINE_BREAK)
         last_line = header.split(self.LINE_BREAK)[-1]
@@ -433,7 +435,7 @@ class ResultTable(object):
 
         return titles, params
 
-    def save(self, filename, ext=".txt"):
+    def save(self, filename: str, ext: str = ".txt") -> None:
         """
         Saves the result table to a text file. The file format is:
 
@@ -444,9 +446,9 @@ class ResultTable(object):
         Files are saved with the specified extension (default: '.txt'). The classes
         default delimiters are used to separate columns and rows.
 
-        :param str filename: Path of file to save. Relative paths are interpreted with
+        :param filename: Path of file to save. Relative paths are interpreted with
             respect to the current working directory.
-        :param str ext: File extension. Defaults to '.txt'.
+        :param ext: File extension. Defaults to '.txt'.
         """
 
         base_name = os.path.splitext(filename)[0]
@@ -461,7 +463,7 @@ class ResultTable(object):
             comments=self.COMMENT,
         )
 
-    def save_csv(self, filename):
+    def save_csv(self, filename: str) -> None:
         """
         Saves the result table to a csv file. The file format is:
 
@@ -472,7 +474,7 @@ class ResultTable(object):
         Files are saved with the extension '.csv' and other extensions are
         overwritten.
 
-        :param str filename: Path of file to save. Relative paths are interpreted with
+        :param filename: Path of file to save. Relative paths are interpreted with
             respect to the current working directory.
         """
 
@@ -486,12 +488,12 @@ class ResultTable(object):
         self.DELIMITER = old_delim
         self.LINE_BREAK = old_line_break
 
-    def load(self, filename):
+    def load(self, filename: str) -> None:
         """
         Loads data from csv or tab delimited tex file. The _header is searched for
         measurement parameters.
 
-        :param str filename: Absolute or relative path of file to load.
+        :param filename: Absolute or relative path of file to load.
         """
         old_delim = self.DELIMITER
         old_line_break = self.LINE_BREAK
@@ -517,7 +519,14 @@ class ResultTable(object):
         self.DELIMITER = old_delim
         self.LINE_BREAK = old_line_break
 
-    def plot(self, x_clmn=0, y_clmns=None, func=lambda x: x, live=False, **kwargs):
+    def plot(
+        self,
+        x_clmn: int = 0,
+        y_clmns: Optional[List[str]] = None,
+        func: Callable = lambda x: x,
+        live: bool = False,
+        **kwargs,
+    ) -> "ResultTablePlot":
         """
         Plots the data. This method should not be called from a thread. The column
         containing the x-axis data is specified (defaults to first column), all other data
@@ -530,18 +539,15 @@ class ResultTable(object):
 
         :param x_clmn: Integer or name of column containing the x-axis data.
         :type x_clmn: int or str
-        :param list y_clmns: List of column numbers or column names for y-axis data. If
-            not given, all columns will be plotted against the x-axis column.
-        :param function func: Function to apply to y-data before plotting.
-        :param bool live: If ``True``, update the plot when new data is added (default:
-            ``False``). Plotting will be carried out in the main (GUI) thread, therefore
-            take care not to block the thread. This can be achieved for instance by adding
-            data in a background thread which carries out the measurement, or by calling
+        :param y_clmns: List of column numbers or column names for y-axis data. If not
+            given, all columns will be plotted against the x-axis column.
+        :param func: Function to apply to y-data before plotting.
+        :param live: If ``True``, update the plot when new data is added. Plotting will
+            be carried out in the main (GUI) thread, therefore take care not to block
+            the thread. This can be achieved for instance by adding data in a background
+            thread which carries out the measurement, or by calling
             `matplotlib.pyplot.pause` after adding data to give the GUI time to update.
-
         :returns: :class:`ResultTablePlot` instance with Matplotlib figure.
-        :rtype: :class:`ResultTablePlot`
-
         :raises ImportError: If import of matplotlib fails.
         """
 
@@ -561,13 +567,11 @@ class ResultTable(object):
 
         return plot
 
-    def __repr__(self):
+    def __repr__(self) -> str:
         titles = [str(t) for t in self.titles]
-        return "<{0}(columns={1}, data=array(...))>".format(
-            self.__class__.__name__, str(titles)
-        )
+        return f"<{self.__class__.__name__}(columns={titles}, data=array(...))>"
 
-    def __str__(self):
+    def __str__(self) -> str:
         # print first 7 rows of ResultTable to console
 
         n = min(7, self.nrows)
@@ -593,26 +597,24 @@ class ResultTable(object):
     # table with their names as keys.
     # =============================================================================
 
-    def keys(self):
+    def keys(self) -> List[str]:
         return self.column_names
 
-    def has_key(self, key):
+    def has_key(self, key: str) -> bool:
         return self.__contains__(key)
 
-    def values(self):
+    def values(self) -> List[np.ndarray]:
         return [self.get_column(i) for i in range(self.ncols)]
 
-    def items(self):
+    def items(self) -> Iterable[Tuple[str, np.ndarray]]:
         return zip(self.keys(), self.values())
 
-    def __getitem__(self, key):
+    def __getitem__(self, key: str) -> np.ndarray:
         """
         Gets values in column with name ``key``.
 
-        :param str key: Column name.
-
+        :param key: Column name.
         :returns: Column content as numpy array.
-        :rtype: :class:`numpy.ndarray`
         """
 
         if key not in self.column_names:
@@ -622,12 +624,12 @@ class ResultTable(object):
 
         return self.get_column(self.column_names.index(key))
 
-    def __setitem__(self, key, value):
+    def __setitem__(self, key: str, value: Sequence[float]) -> None:
         """
         Sets values in column with name ``key``.
 
         :param str key: Column name.
-        :param value: Iterable containing column values.
+        :param value: Sequence containing column values.
         """
         if not isinstance(key, str):
             raise TypeError("Key must be of type 'str'.")
@@ -637,7 +639,7 @@ class ResultTable(object):
         else:
             self.data[:, self.column_names.index(key)] = np.transpose(value)
 
-    def __delitem__(self, key):
+    def __delitem__(self, key: str) -> None:
         """
         Deletes column with name ``key``.
 
@@ -647,11 +649,11 @@ class ResultTable(object):
         self.data = np.delete(self.data, i, axis=1)
         self.titles.pop(i)
 
-    def __iter__(self):
+    def __iter__(self) -> "ResultTable":
         self._n = 0
         return self
 
-    def __next__(self):
+    def __next__(self) -> str:
         if self._n + 1 <= self.ncols:
             r = self.column_names[self._n]
             self._n += 1
@@ -659,10 +661,10 @@ class ResultTable(object):
         else:
             raise StopIteration
 
-    def __contains__(self, key):
+    def __contains__(self, key) -> bool:
         return key in self.column_names
 
-    def __len__(self):
+    def __len__(self) -> int:
         return self.ncols
 
 
@@ -674,17 +676,17 @@ class FETResultTable(ResultTable):
     """
 
     @property
-    def sweep_type(self):
+    def sweep_type(self) -> str:
         if "sweep_type" in self.params.keys():
             return self.params["sweep_type"]
         else:
             return ""
 
     @sweep_type.setter
-    def sweep_type(self, sweep_type):
+    def sweep_type(self, sweep_type: str) -> None:
         self.params["sweep_type"] = sweep_type
 
-    def plot(self, *args, **kwargs):
+    def plot(self, *args, **kwargs) -> "ResultTablePlot":
         """
         Plots the transfer or output curves. Overrides :func:`ResultTable.plot`.
         Absolute values are plotted, on a linear scale for output characteristics
@@ -692,8 +694,6 @@ class FETResultTable(ResultTable):
         as :func:`ResultTable.plot`.
 
         :returns: :class:`ResultTablePlot` instance with Matplotlib figure.
-        :rtype: :class:`ResultTablePlot`
-
         :raises ImportError: If import of matplotlib fails.
         """
 
@@ -722,8 +722,8 @@ class ResultTablePlot(object):
     :param y_clmns: List of column numbers or column names for y-axis data. If not given,
         all columns will be plotted against the x-axis column.
     :type y_clmns: list(int or str)
-    :param function func: Function to apply to y-data before plotting.
-    :param bool live: If ``True``, update the plot when new data is added (default:
+    :param func: Function to apply to y-data before plotting.
+    :param live: If ``True``, update the plot when new data is added (default:
         ``False``). Plotting will be carried out in the main (GUI) thread, therefore
         take care not to block the thread. This can be achieved for instance by adding
         data in a background thread which carries out the measurement, or by calling
@@ -732,12 +732,12 @@ class ResultTablePlot(object):
 
     def __init__(
         self,
-        result_table,
-        x_clmn=0,
-        y_clmns=None,
-        func=lambda x: x,
-        live=False,
-        **kwargs
+        result_table: ResultTable,
+        x_clmn: int = 0,
+        y_clmns: List[Union[int, str]] = None,
+        func: Callable = lambda x: x,
+        live: bool = False,
+        **kwargs,
     ):
 
         try:
@@ -803,14 +803,14 @@ class ResultTablePlot(object):
             self._timer.add_callback(self.update)
             self._timer.start(100)
 
-    def show(self):
+    def show(self) -> None:
         """
         Shows the plot.
         """
 
         self.fig.show()
 
-    def update(self):
+    def update(self) -> None:
         """
         Updates the plot with the data of the corresponding :class:`ResultTable`.
         This will be called periodically when :param:``live`` is ``True``.
@@ -829,7 +829,7 @@ class ResultTablePlot(object):
         self.fig.canvas.draw()
         self.fig.canvas.flush_events()
 
-    def _to_column_number(self, c):
+    def _to_column_number(self, c: Union[str, int]) -> int:
 
         if not isinstance(c, int):
             c = self.result_table.column_names.index(c)
