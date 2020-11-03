@@ -474,6 +474,7 @@ class Keithley2600Base(MagicClass):
             self.connection = self.rm.open_resource(self.visa_address, **kwargs)
             self.connection.read_termination = "\n"
             self.connected = True
+            self._dict.clear()  # reset Keithley dict
             logger.debug("Connected to Keithley at %s.", self.visa_address)
         except ValueError:
             self.connection = None
