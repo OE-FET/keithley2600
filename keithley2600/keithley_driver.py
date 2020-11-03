@@ -11,7 +11,6 @@ Core driver with the low level functions.
 # system imports
 import logging
 import re
-import shlex
 import threading
 import numpy as np
 import time
@@ -655,7 +654,7 @@ class Keithley2600Base(KeithleyClass):
             # convert keithley object to string with its name
             return value._name
         elif isinstance(value, str):
-            return '"' + shlex.quote(value).strip("'") + '"'
+            return repr(value)
         elif hasattr(value, "__iter__"):
             # convert some iterables to a TSP type list '{1,2,3,4}'
             return "{" + ", ".join([str(v) for v in value]) + "}"
