@@ -111,13 +111,13 @@ class MagicProperty:
 
     def set(self, value: Any) -> None:
         if self._read_only:
-            raise AttributeError(f"'{self._name}' is read-only")
+            raise AttributeError(f"'{self._name_display}' is read-only")
         value = self._parent._convert_input(value)
         self._parent._write(f"{self._name} = {value}")
 
     def __repr__(self) -> str:
-        local_name = removeprefix(self._name, "_G.")
-        return f"<{self.__class__.__name__}({local_name}, read_only={self._read_only})>"
+        return f"<{self.__class__.__name__}({self._name_display}, " \
+               f"read_only={self._read_only})>"
 
 
 class MagicFunction:
