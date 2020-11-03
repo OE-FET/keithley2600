@@ -2,14 +2,21 @@
 
 This release completely overhauls how Keithley commands are generated. Instead of hard-
 coding available commands for a particular series or model of Keithley, all available
-commands are retrieved on demand from the Keithley itself. This is possible because
-Keithley's TSP scripts use the Lua programming language which allows this introspection.
+commands are retrieved on demand from the Keithley itself. This is possible because the
+Keithley's TSP scripts use the Lua programming language which allows such introspection.
 
 The main disadvantage of this approach is that most Keithley attributes will only be
 generated *after* connecting to an instrument. The main advantage is that all Keithley
 commands of all models which use TSP are supported and support for any future commands
-will be automatic. This also fixes issues with missing constants and attributes that
-were overlooked or models which don't have two SMUs.
+will be automatic. This removes the need to update the driver as the command set evolves,
+barring changes in syntax, and enables automatic support for models with different command
+sets or a different number of SMUs.
+
+Other changes include:
+
+- Type hints are used throughout.
+- The Python syntax has been modernised for Python 3.6.
+- The Keithley no longer beeps at the end of custom sweeps.
 
 #### v1.4.1
 
