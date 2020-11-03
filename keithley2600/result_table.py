@@ -10,7 +10,6 @@ Submodule defining classes to store, plot, and save measurement results.
 """
 
 import os
-import enum
 import re
 import warnings
 from typing import List, Tuple, Union, Optional, Dict, Any, Callable, Sequence, Iterable
