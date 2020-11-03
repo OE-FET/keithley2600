@@ -28,6 +28,7 @@ from keithley2600.result_table import FETResultTable
 
 
 LuaReturnTypes = Union[float, str, bool, None, "_LuaFunction", "_LuaTable"]
+LuaBridgeType = Union["KeithleyFunction", "KeithleyClass", "KeithleyProperty"]
 
 
 formatter = logging.Formatter(
@@ -179,8 +180,10 @@ class KeithleyClass:
         self._name = name
         self._name_display = removeprefix(name, "_G.")
         self._parent = parent
-        self._dict = {}
-        self._lua_type = None
+        self._dict: Dict[str, LuaBridgeType] = {}
+        self._lua_type: Optional[str] = None
+
+    def create_lua_attribute(self, attr_name: str, attr_type: LuaBridgeType, readonly: bool = False) -> None:
 
     def __getattr__(self, attr_name: str) -> Any:
 
