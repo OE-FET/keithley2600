@@ -655,7 +655,7 @@ class Keithley2600Base(KeithleyClass):
             # convert keithley object to string with its name
             return value._name
         elif isinstance(value, str):
-            return shlex.quote(value)
+            return '"' + shlex.quote(value).strip("'") + '"'
         elif hasattr(value, "__iter__"):
             # convert some iterables to a TSP type list '{1,2,3,4}'
             return "{" + ", ".join([str(v) for v in value]) + "}"
