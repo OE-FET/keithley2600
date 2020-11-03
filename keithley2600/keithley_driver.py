@@ -525,22 +525,32 @@ class Keithley2600Base(MagicClass):
         Writes text to Keithley. Input must be a string.
         """
 
+        # only check for error when the query is not fetching the error queue
+        check_for_errors = self.raise_keithley_errors and "errorqueue" not in value
+
         with self._lock:
             logger.debug("write: %s", value)
 
             if self.connection:
 
-                if self.raise_keithley_errors and "errorqueue" not in value:
-                    self.errorqueue.clear()
+                if check_for_errors:
+                    # clear any previous errors
+                    self.connection.write("errorqueue.clear()")
 
-                self.connection.write(value)
+                    # do write and ignore timeouts which can be caused by syntax errors
+                    try:
+                        self.connection.write(value)
+                    except pyvisa.VisaIOError:
+                        pass
 
-                if self.raise_keithley_errors and "errorqueue" not in value:
-                    err = self.errorqueue.next()
-                    if err[0] != 0:
-                        raise KeithleyError(
-                            "Error during command '{0}': {1}".format(value, err[1])
-                        )
+                    # check error queue and raise errors
+                    err = self.connection.query(f"print(errorqueue.next())")
+                    if 'Queue Is Empty' not in err:
+                        raise KeithleyError(f"Error during command '{value}': {err}")
+
+                else:
+                    # do write without error checking
+                    self.connection.write(value)
             else:
                 raise KeithleyIOError(
                     "No connection to keithley present. Try to call 'connect'."
@@ -561,23 +571,31 @@ class Keithley2600Base(MagicClass):
 
                 if check_for_errors:
                     # clear any previous errors
-                    self.errorqueue.clear()
+                    self.connection.write("errorqueue.clear()")
 
-                try:
-                    r = self.connection.query(f"print({value})")
-                    logger.debug("read: %s", r)
-                except XDRError:
-                    r = "nil"
-                    logger.debug("read failed: unpack-error")
+                    # run query and ignore timeouts which can be caused by syntax errors
+                    try:
+                        r = self.connection.query(f"print({value})")
+                        logger.debug("read: %s", r)
+                    except XDRError:
+                        r = "nil"
+                        logger.debug("read failed: unpack-error")
+                    except pyvisa.VisaIOError:
+                        pass
 
-                if check_for_errors:
-                    # read error queue to check for new errors
-                    err = self.errorqueue.next()
-                    if err[0] != 0:
-                        err_msg = err[1].replace("TSP Runtime error at line 1: ", "")
-                        raise KeithleyError(
-                            f"Error during command '{value}': {err_msg}"
-                        )
+                    # check error queue and raise errors
+                    err = self.connection.query(f"print(errorqueue.next())")
+                    if 'Queue Is Empty' not in err:
+                        raise KeithleyError(f"Error during command '{value}': {err}")
+
+                else:
+                    # run query without error checking
+                    try:
+                        r = self.connection.query(f"print({value})")
+                        logger.debug("read: %s", r)
+                    except XDRError:
+                        r = "nil"
+                        logger.debug("read failed: unpack-error")
 
                 return self._parse_response(r)
             else:
