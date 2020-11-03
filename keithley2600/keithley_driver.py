@@ -767,7 +767,7 @@ class Keithley2600(Keithley2600Base):
         return error_list
 
     @staticmethod
-    def readBuffer(buffer) -> List[float]:
+    def readBuffer(buffer: KeithleyClass) -> List[float]:
         """
         Reads buffer values and returns them as a list. This can be done more quickly by
         calling :attr:`buffer.readings` but such a call may fail due to I/O limitations
