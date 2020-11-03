@@ -37,7 +37,6 @@ extensions = [
     "sphinx.ext.intersphinx",  # support for if-clauses in docs
     "sphinx.ext.ifconfig",  # support for linking between documentations
     "autoapi.extension",  # builds API docs from doc strings without importing module
-    "sphinx_click.ext",  # support for click commands
     "m2r",  # convert markdown to rest
 ]
 source_suffix = [".rst", ".md"]
