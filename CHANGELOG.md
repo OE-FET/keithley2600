@@ -1,22 +1,15 @@
-#### v1.4.2.dev
+#### v2.0.0.dev
 
-_Added_:
+This release completely overhauls which how Keithley commands are generated. Instead of
+hard-coding available commands for a particular series or model of Keithley, all available
+commands are retrieved on demand from the Keithley itself. This is possible because
+Keithley's TSP scripts use the Lua programming language which allows this introspection.
 
-- Added support for built-in sweep functions of the Keithley 2600B series.
-
-_Changed_:
-
-- Detect available SMUs when connecting to the Keithley. This improves support for models
-  with a single SMU only.
-- Allow all iterables with numbers as values for sweep lists.
-
-_Fixed_:
-
-- Fixes an issue with our sweep commands which assumed that there are always two SMUs
-  available.
-- Disable automatically setting the current range (autorange) in all sweeps if the SMU is
-  in high-capacitance mode.
-- Added many missing constants to our dictionary for auto-completion. 
+The main disadvantage of this approach is that most Keithley attributes will only be
+generated *after* connecting to an instrument. The main advantage is that all Keithley
+commands of all models which use TSP are supported and support for any future commands
+will be automatic. This also fixes issues with missing constants and attributes that were
+overlooked or models which don't have two SMUs.
 
 #### v1.4.1
 
