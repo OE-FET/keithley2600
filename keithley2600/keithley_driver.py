@@ -168,6 +168,7 @@ class MagicClass:
         "_name_display",
         "_parent",
         "_dict",
+        "_lua_type",
     ]
 
     def __init__(self, name: str, parent: Optional["MagicClass"] = None) -> None:
@@ -175,6 +176,7 @@ class MagicClass:
         self._name_display = removeprefix(name, "_G.")
         self._parent = parent
         self._dict = {}
+        self._lua_type = None
 
     def __getattr__(self, attr_name: str) -> Any:
         """Get attributes from Keithley global namespace"""
@@ -302,6 +304,8 @@ class MagicClass:
                     else:
                         break
 
+            self._lua_type = self._query("mt.luatype")
+
         return attributes
 
     def _write(self, value: str) -> None:
@@ -325,6 +329,11 @@ class MagicClass:
             # will raise KeithleyIOError if not connected
             self._dict = self._iterate_lua_indices()
 
+        if self._lua_type in ("reading_buffer", "synchronous_table") and isinstance(key, int):
+            # bypass verification and support all integer indices for reading buffers
+            return self._query(f"{self._name}[{key}]")
+
+        # raises KeyError if the key does not exist
         accessor = self._dict[key]
 
         if isinstance(accessor, MagicProperty):
@@ -364,7 +373,7 @@ class MagicClass:
         return list(self._dict.keys()) + list(super().__dir__())
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}({self._name_display})>"
+        return f"<{self.__class__.__name__}({self._name_display}, lua_type={self._lua_type})>"
 
 
 class Keithley2600Base(MagicClass):
@@ -734,7 +743,7 @@ class Keithley2600(Keithley2600Base):
         """
         list_out = []
         for i in range(0, int(buffer.n)):
-            list_out.append(buffer.readings[i + 1])
+            list_out.append(buffer.readings.getreading(i + 1))
 
         return list_out
 
