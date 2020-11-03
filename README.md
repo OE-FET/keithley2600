@@ -12,7 +12,7 @@ accompanying GUI is provided by the sister project
 
 ## About
 
-`keithley2600` provides access to base functions and higher level functions such as IV
+This driver provides access to base commands and higher level functions such as IV
 measurements, transfer and output curves, etc. Base commands replicate the functionality
 and syntax from the Keithley's internal TSP Lua functions. This is possible because the
 Lua programming language has a very limited syntax which can be represented by a subset
@@ -20,22 +20,20 @@ of Python syntax.
 
 All Keithley commands are dynamically queried from the Keithley itself after a
 successful connection. This means that essentially all Keithley instruments which use
-TSP commands are supported and any commands introduced in the future will be recognised
+TSP scripting are supported and any commands introduced in the future will be recognised
 automatically (barring changes to the Lua syntax itself). Please refer to the respective
-reference manuals for all commands, for instance the
+reference manuals for a list of commands available on a particular model, for instance the
 [Keithley 2600B reference manual](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8).
 
-This dynamic approach however means that most Keithley commands will not be available
-without a connection.
-
-Several higher level functions for current-voltage sweeps are defined by the driver
-itself and may use functionality which not available with some models. They have been
-tested with the Keithley 2612B dual SMU model.
+This dynamic approach however means that most attributes will only be defined after
+connecting to an instrument. Several higher level functions for current-voltage sweeps 
+are defined by the driver itself and may use functionality which is not available on some 
+models. They have been tested with a Keithley 2612B.
 
 **Warning**: There are currently no checks for allowed arguments by the driver itself.
 Passing invalid arguments to a Keithley command will fail silently in Python but display
-an error on Keithley itself. To enable command checking, set the keyword argument
-`raise_keithley_errors = True` in the constructor. When set, most Keithley will be
+an error message on Keithley itself. To enable command checking, set the keyword argument
+`raise_keithley_errors = True` in the constructor. When set, most Keithley errors will be
 raised as Python errors. This is done by reading the Keithley's error queue after every
 command and will therefore result in some communication overhead.
 
