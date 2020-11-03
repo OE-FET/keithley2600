@@ -1,22 +1,15 @@
-#### v1.4.2.dev
+#### v2.0.0.dev
 
-_Added_:
+This release completely overhauls how Keithley commands are generated. Instead of hard-
+coding available commands for a particular series or model of Keithley, all available
+commands are retrieved on demand from the Keithley itself. This is possible because
+Keithley's TSP scripts use the Lua programming language which allows this introspection.
 
-- Added support for built-in sweep functions of the Keithley 2600B series.
-
-_Changed_:
-
-- Detect available SMUs when connecting to the Keithley. This improves support for models
-  with a single SMU only.
-- Allow all iterables with numbers as values for sweep lists.
-
-_Fixed_:
-
-- Fixes an issue with our sweep commands which assumed that there are always two SMUs
-  available.
-- Disable automatically setting the current range (autorange) in all sweeps if the SMU is
-  in high-capacitance mode.
-- Added many missing constants to our dictionary for auto-completion. 
+The main disadvantage of this approach is that most Keithley attributes will only be
+generated *after* connecting to an instrument. The main advantage is that all Keithley
+commands of all models which use TSP are supported and support for any future commands
+will be automatic. This also fixes issues with missing constants and attributes that
+were overlooked or models which don't have two SMUs.
 
 #### v1.4.1
 
@@ -57,8 +50,8 @@ _Added_:
 _Changed_:
 
 - Remember PyVisa connection settings which are passed as keyword arguments to
-  `Keithley2600`. Previously, calling `Keithley2600.connect(...)` would revert to default
-  settings.
+  `Keithley2600`. Previously, calling `Keithley2600.connect(...)` would revert to
+  default settings.
 
 _Fixed_:
 
@@ -70,15 +63,15 @@ This release drops support for Python 2.7. Only Python 3.6 and higher are suppor
 
 _Fixed_:
 
-- Fixed a bug in `rampToVoltage` where the target voltage would not be set correctly if it was
-  smaller than the step size.
+- Fixed a bug in `rampToVoltage` where the target voltage would not be set correctly if
+  it was smaller than the step size.
 
 #### v1.3.1
 
 _Added:_
 
-- Optional argument `raise_keithley_errors`: If `True`, the Keithley's error queue will be
-  checked after each command and any Keithley errors will be raised as Python errors.
+- Optional argument `raise_keithley_errors`: If `True`, the Keithley's error queue will
+  be checked after each command and any Keithley errors will be raised as Python errors.
   This causes significant communication overhead but facilitates the debugging of faulty
   scripts since an invalid command will raise a descriptive error instead of failing
   silently.
@@ -119,7 +112,7 @@ _Added:_
 
 _Fixed:_
 
-- Fixed a critical error when initializing and appending columns to an emtpy `ResultTable`
+- Fixed a critical error when initializing and appending columns to an empty `ResultTable`
   instance.
 
 #### v1.2.0
@@ -179,12 +172,12 @@ _Changed:_
 
 	- The line with column headers is now  marked as a comment and starts with '#'.
 	- All given measurement parameters are saved in the file's _header. Specifically,
-	  `TrasistorSweepData.load()` expects the parameter `sweep_type` to be present in the
-	  _header and have one of the values: 'transfer' or 'output'.
+	  `TrasistorSweepData.load()` expects the parameter `sweep_type` to be present in
+	  the _header and have one of the values: 'transfer' or 'output'.
 	- Options to read and write in CSV format instead of tab-delimited columns are given.
 
-	As a result, data files created by versions < 1.0.0 need to be modified as follows to
-	be recognized:
+	As a result, data files created by versions < 1.0.0 need to be modified as follows
+	to be recognized:
 
 	- Prepend '#' to the line with column titles.
 	- Add the line '# sweep_type: type' to the _header where type can be 'transfer',
@@ -200,8 +193,8 @@ _Removed:_
 
 _Added:_
 
-- `Keithley2600` methods now accept `Keithley2600` objects as arguments, for instance, one
-  can now write
+- `Keithley2600` methods now accept `Keithley2600` objects as arguments, for instance,
+  one can now write
 
   ```python
   # assume we have a Keithley2600 instance 'k'
@@ -213,17 +206,17 @@ _Added:_
   ```python
   k.smua.measureiv('smua.nvbuffer1', 'smua.nvbuffer2')
   ```
-- Keyword arguments can now be given to `Keithley2600()` and will be passed on to the visa
-  resource (e.g., `baud_rate=9600`).
+- Keyword arguments can now be given to `Keithley2600()` and will be passed on to the
+  visa resource (e.g., `baud_rate=9600`).
 
 _Changed:_
 
 - Code simplifications resulting from the above.
 - `k.readBuffer(buffer)` no longer clears the given buffer.
-- When attempting to create a new instance of `Keithley2600` with the name VISA address as
-  an existing instance, the existing instance is returned instead.
+- When attempting to create a new instance of `Keithley2600` with the name VISA address
+  as an existing instance, the existing instance is returned instead.
 
 _Removed:_
 
-- `k.clearBuffers(...)` now logs a deprecation warning and will be removed in v1.0. Clear
-  the buffers directly with `buffer.clear()` instead.
+- `k.clearBuffers(...)` now logs a deprecation warning and will be removed in v1.0.
+  Clear the buffers directly with `buffer.clear()` instead.

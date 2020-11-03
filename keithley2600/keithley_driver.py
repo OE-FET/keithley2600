@@ -9,35 +9,33 @@ Core driver with the low level functions.
 """
 
 # system imports
-import re
 import logging
+import re
 import threading
 import numpy as np
 import time
+from contextlib import contextmanager
 from threading import RLock
 from xdrlib import Error as XDRError
+from typing import IO, Optional, Any, Dict, Union, List, Tuple, Sequence, Iterable
+
+# external imports
 import pyvisa
 
 # local import
-from keithley2600.keithley_doc import (
-    CONSTANTS,
-    FUNCTIONS,
-    PROPERTIES,
-    CLASSES,
-    PROPERTY_LISTS,
-    ALL_CMDS,
-)
 from keithley2600.result_table import FETResultTable
 
+
+LuaReturnTypes = Union[float, str, bool, None, "_LuaFunction", "_LuaTable"]
 
 logger = logging.getLogger(__name__)
 
 
-def log_to_screen(level=logging.DEBUG):
+def log_to_screen(level: int = logging.DEBUG) -> None:
     log_to_stream(None, level)  # sys.stderr by default
 
 
-def log_to_stream(stream_output, level=logging.DEBUG):
+def log_to_stream(stream_output: Optional[IO], level: int = logging.DEBUG) -> None:
     logger.setLevel(level)
     ch = logging.StreamHandler(stream_output)
     ch.setLevel(level)
@@ -68,60 +66,62 @@ def removeprefix(self: str, prefix: str) -> str:
         return self[:]
 
 
-class MagicPropertyList:
-    """Mimics a Keithley TSP property list
+class KeithleyIOError(Exception):
+    """Raised when no Keithley instrument is connected."""
 
-    Class which mimics a Keithley TSP property list and can be dynamically
-    created. It forwards all calls to the :func:`_read` method of the parent
-    class and assignments to the :func:`_write` method. Arbitrary values can be
-    assigned, as long as :func:`_write` can handle them.
 
-    This class is designed to look like a Keithley TSP "attribute" list,
-    forward function calls to the Keithley, and return the results.
+class KeithleyError(Exception):
+    """Raised for error messages from the Keithley itself."""
 
-    """
 
-    def __init__(self, name, parent):
-        if not isinstance(name, str):
-            raise ValueError("First argument must be of type str.")
+class Nil:
+    def __repr__(self) -> str:
+        return "nil"
+
+
+class _LuaTable:
+    def __init__(self, str_repr: str) -> None:
+        self._repr = str_repr
+
+    def __repr__(self) -> str:
+        return self._repr
+
+
+class _LuaFunction:
+    def __init__(self, str_repr) -> None:
+        self._repr = str_repr
+
+    def __repr__(self) -> str:
+        return self._repr
+
+
+class MagicProperty:
+    """Mimics a Keithley TSP (Lua) bool, number or string"""
+
+    def __init__(
+        self, name: str, parent: "MagicClass", read_only: bool = False
+    ) -> None:
         self._name = name
+        self._name_display = removeprefix(name, "_G.")
         self._parent = parent
+        self._read_only = read_only
 
-    def __getitem__(self, i):
-        """Gets i-th item: query item from parent class
+    def get(self) -> Any:
+        return self._parent._query(self._name)
 
-        :param int i: An integer item number
-
-        :returns: Result from _query call of parent class.
-        """
-        new_name = "%s[%s]" % (self._name, i)
-        return self._parent._query(new_name)
-
-    def __setitem__(self, i, value):
-        """Sets i-th item: set item at parent class
-
-        :param int i: An integer item number
-        :param value: An input object that can be accepted by parent class.
-
-        """
+    def set(self, value: Any) -> None:
+        if self._read_only:
+            raise AttributeError(f"'{self._name_display}' is read-only")
         value = self._parent._convert_input(value)
-        new_name = "%s[%s] = %s" % (self._name, i, value)
-        self._parent._write(new_name)
+        self._parent._write(f"{self._name} = {value}")
 
-    def __iter__(self):
-        return self
-
-    def getdoc(self):
-        """Prevent pydoc from trying to document this class. This could conflict with
-        on-demand creation of attributes."""
-        pass
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}({self._name})>"
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}({self._name_display}, " \
+               f"read_only={self._read_only})>"
 
 
 class MagicFunction:
-    """Mimics a Keithley TSP function
+    """Mimics a Keithley TSP (Lua) function
 
     Class which mimics a function and can be dynamically created. It forwards
     all calls to the :func:`_query` method of the parent class and returns the
@@ -132,13 +132,12 @@ class MagicFunction:
     function calls to the Keithley, and return the results.
     """
 
-    def __init__(self, name, parent):
-        if not isinstance(name, str):
-            raise ValueError("First argument must be of type str.")
+    def __init__(self, name: str, parent: "MagicClass") -> None:
         self._name = name
+        self._name_display = removeprefix(name, "_G.")
         self._parent = parent
 
-    def __call__(self, *args, **kwargs):
+    def __call__(self, *args, **kwargs) -> Any:
         """Pass on calls to :func:`parent._write`, store result in variable.
         Querying results from function calls directly may result in
         a VisaIOError if the function does not return anything."""
@@ -149,192 +148,244 @@ class MagicFunction:
         args_string = str(args).strip("(),").replace("'", "")
 
         # pass on a string representation of the function call to self._parent._query
-        return self._parent._query("%s(%s)" % (self._name, args_string))
+        return self._parent._query(f"{self._name}({args_string})")
 
-    def __repr__(self):
-        return f"<{self.__class__.__name__}({self._name})>"
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}({self._name_display})>"
 
 
 class MagicClass:
-    """Mimics a TSP command group
+    """Mimics a Keithley TSP (Lua) table
 
-    Class which dynamically creates new attributes on access. These can be
-    functions, properties, or other classes.
-
-    Attribute setters and getters are forwarded to :func:`_write` and
-    :func:`_query` functions from the parent class. New functions are created
-    as instances of :class:`MagicFunction`, new classes are created as
-    instances of :class:`MagicClass`.
-
-    MagicClass is designed to mimic a Keithley TSP command group with
-    functions, attributes, and subordinate command groups.
-
-    :Examples:
-
-        >>> inst = MagicClass('keithley')
-        >>> inst.reset()  # Dynamically creates a new attribute 'reset' as an
-        ...               # instance of MagicFunction, then calls it.
-        >>> inst.beeper  # Dynamically creates new attribute 'beeper' and sets
-        ...              # it to a new MagicClass instance.
-        >>> inst.beeper.enable  # Fakes the property 'enable' of 'beeper'
-        ...                     # with _write as setter and _query as getter.
-
+    Class which represents a Keithley TSP / Lua table. Tables act as the equivalent of
+    objects in the Lua scripting language and table indices can be both numbers or
+    strings. Their values are accessible by index notation or as "attributes". For
+    instance, ``table["name"]`` and ``table.name`` will return the same value. If tables
+    have only numeric indices, they practically represent a list / sequence.
     """
 
-    _name = ""
-    _parent = None
+    _protected_attrs = [
+        "_name",
+        "_name_display",
+        "_parent",
+        "_dict",
+        "_lua_type",
+    ]
 
-    def __init__(self, name, parent=None):
+    def __init__(self, name: str, parent: Optional["MagicClass"] = None) -> None:
         self._name = name
-        if parent is not None:
-            self._parent = parent
+        self._name_display = removeprefix(name, "_G.")
+        self._parent = parent
+        self._dict = {}
+        self._lua_type = None
 
-    def __getattr__(self, attr_name):
-        """Custom getter
+    def __getattr__(self, attr_name: str) -> Any:
+        """Get attributes from Keithley global namespace"""
 
-        Get attributes as usual if they exist. Otherwise, fall back to
-        :func:`__get_global_handler`.
-        """
+        if not self._dict:
+            # will raise KeithleyIOError if not connected
+            self._dict = self._iterate_lua_indices()
+
         try:
-            try:
-                # check if attribute already exists. return attr if yes.
-                return super().__getattr__(attr_name)
-            except AttributeError:
-                # check if key already exists. return value if yes.
-                return self.__dict__[attr_name]
-        except KeyError:
-            # handle if not
-            return self.__get_global_handler(attr_name)
+            accessor = self._dict[attr_name]
 
-    def __get_global_handler(self, attr_name):
-        """Custom getter
-
-        Creates an attribute as :class:`MagicClass`, :class:`MagicFunction` or
-        :class:`MagicPropertyList` instance if it is an expected Keithley TSP
-        command group, function or property list. Queries and returns the value
-        if the attribute corresponds to a Keithley TSP constant. Otherwise
-        raises a :class:`AttributeError`.
-
-        :param str attr_name: Attribute name.
-
-        :returns: Instance of :class:`MagicClass`, :class:`MagicFunction` or
-            :class:`MagicPropertyList`.
-
-        :raises: :class:`AttributeError` if attribute is not expected.
-        """
-
-        # create callable sub-class for new attr
-        new_name = "%s.%s" % (self._name, attr_name)
-        new_name = new_name.strip(".")
-
-        if attr_name in FUNCTIONS:
-            handler = MagicFunction(new_name, parent=self)
-            self.__dict__[new_name] = handler
-
-        elif attr_name in PROPERTY_LISTS:
-            handler = MagicPropertyList(new_name, parent=self)
-
-        elif attr_name in PROPERTIES or attr_name in CONSTANTS:
-            if new_name in PROPERTY_LISTS:
-                handler = MagicPropertyList(new_name, parent=self)
+            if isinstance(accessor, MagicProperty):
+                return accessor.get()
             else:
-                handler = self._query(new_name)
+                return accessor
 
-        elif attr_name in CLASSES:
-            handler = MagicClass(new_name, parent=self)
-            self.__dict__[attr_name] = handler
-
-        else:
+        except KeyError:
             raise AttributeError(f"{self} has no attribute '{attr_name}'")
 
-        return handler
+    def __setattr__(self, key: str, value: Any) -> None:
 
-    def __setattr__(self, attr_name, value):
-        """Custom setter
-
-        Forward setting commands to `self._write` for expected Keithley TSP
-        attributes. Otherwise use default setter.
-
-        :param str attr_name: Attribute name.
-        :param value: Value to set.
-
-        :raises: :class:`ValueError` if trying to write a value to read-only
-            Keithley attributes.
-        """
-        if attr_name in PROPERTIES:
-            value = self._convert_input(value)
-            self._write("%s.%s = %s" % (self._name, attr_name, value))
-        elif attr_name in CONSTANTS:
-            raise ValueError("%s.%s is read-only." % (self._name, attr_name))
+        if key in self._protected_attrs:
+            super().__setattr__(key, value)
         else:
-            object.__setattr__(self, attr_name, value)
-            self.__dict__[attr_name] = value
 
-    def _write(self, value):
-        """Forward _write calls to parent class."""
+            if not self._dict:
+                # will raise KeithleyIOError if not connected
+                self._dict = self._iterate_lua_indices()
+
+            if key in self._dict:
+                accessor = self._dict[key]
+
+                if isinstance(accessor, MagicProperty):
+                    accessor.set(value)
+                else:
+                    value = self._convert_input(value)
+                    self._write(f"{self._name}.{key} = {value}")
+            else:
+                super().__setattr__(key, value)
+
+    def _iterate_lua_indices(
+        self,
+    ) -> Dict[str, Union[MagicFunction, "MagicClass", MagicProperty]]:
+        """
+        Get all indices of the table, including those defined through the metatable.
+        """
+
+        var_name = Nil()
+        attributes = {}
+
+        def to_global_name(index):
+            if isinstance(index, int):
+                global_name = f"{self._name}[{index}]"
+            else:
+                global_name = f"{self._name}.{index}"
+
+            return global_name
+
+        # get any immediate indices
+
+        while True:
+
+            # iterate over
+            res = self._query(f"next({self._name}, {var_name!r})")
+
+            if res:
+                var_name, var_value = res
+                full_name = to_global_name(var_name)
+
+                if isinstance(var_value, _LuaFunction):
+                    attributes[var_name] = MagicFunction(full_name, self)
+                elif isinstance(var_value, _LuaTable):
+                    attributes[var_name] = MagicClass(full_name, self)
+                else:
+                    attributes[var_name] = MagicProperty(full_name, self)
+            else:
+                break
+
+        # check for indices set by metatable
+        # all commands defined by Keithley and not native to the Lua scripting language
+        # will manage index access through Getters, Setter and Objects defined on the
+        # metatable
+
+        # get the metatable, if any
+        self._write(f"mt = getmetatable({self._name})")
+
+        if self._query("mt"):
+
+            # get Getters, if any
+            # those will define "immutable objects" (numbers, strings, booleans)
+            if self._query("mt.Getters"):
+
+                var_name = Nil()
+
+                while True:
+
+                    res = self._query(f"next(mt.Getters, {var_name!r})")
+
+                    if res:
+                        var_name, var_value = res
+                        full_name = to_global_name(var_name)
+
+                        # check if we also have a setter
+                        if self._query(f"mt.Setters[{var_name!r}]"):
+                            read_only = False
+                        else:
+                            read_only = True
+                        attributes[var_name] = MagicProperty(full_name, self, read_only)
+                    else:
+                        break
+
+            # get Objects, if any
+            # those will define functions, tables or constants
+            if self._query("mt.Objects"):
+                var_name = Nil()
+
+                while True:
+
+                    res = self._query(f"next(mt.Objects, {var_name!r})")
+
+                    if res:
+                        var_name, var_value = res
+                        full_name = to_global_name(var_name)
+                        if isinstance(var_value, _LuaFunction):
+                            attributes[var_name] = MagicFunction(full_name, self)
+                        elif isinstance(var_value, _LuaTable):
+                            attributes[var_name] = MagicClass(full_name, self)
+                        else:
+                            attributes[var_name] = MagicProperty(
+                                full_name, self, read_only=True
+                            )
+                    else:
+                        break
+
+            self._lua_type = self._query("mt.luatype")
+
+        return attributes
+
+    def _write(self, value: str) -> None:
+        """Forward write calls to parent class."""
         self._parent._write(value)
 
-    def _query(self, value):
-        """Forward _query calls to parent class."""
+    def _query(self, value: str) -> Any:
+        """Forward query calls to parent class."""
         return self._parent._query(value)
 
-    def _convert_input(self, value):
-        """Forward _convert_input calls to parent class."""
+    def _convert_input(self, value: Any) -> str:
+        """Forward convert_input calls to parent class."""
         try:
             return self._parent._convert_input(value)
         except AttributeError:
             return value
 
-    def __getitem__(self, i):
-        """Return new MagicClass instance for every item."""
-        new_name = "%s[%s]" % (self._name, i)
-        new_class = MagicClass(new_name, parent=self)
-        return new_class
+    def __getitem__(self, key: Union[str, int]) -> Any:
 
-    def __iter__(self):
+        if not self._dict:
+            # will raise KeithleyIOError if not connected
+            self._dict = self._iterate_lua_indices()
+
+        if self._lua_type in ("reading_buffer", "synchronous_table") and isinstance(key, int):
+            # bypass verification and support all integer indices for reading buffers
+            return self._query(f"{self._name}[{key}]")
+
+        # raises KeyError if the key does not exist
+        accessor = self._dict[key]
+
+        if isinstance(accessor, MagicProperty):
+            return accessor.get()
+        else:
+            return accessor
+
+    def __setitem__(self, key: Union[str, int], value: Any):
+
+        if not self._dict:
+            # will raise KeithleyIOError if not connected
+            self._dict = self._iterate_lua_indices()
+
+        accessor = self._dict[key]
+
+        if isinstance(accessor, MagicProperty):
+            return accessor.set(value)
+        else:
+            value = self._convert_input(value)
+            self._write(f"{self._name}[{key}] = {value}")
+
+    def __iter__(self) -> "MagicClass":
+
+        if not self._dict:
+            # will raise KeithleyIOError if not connected
+            self._dict = self._iterate_lua_indices()
+
         return self
 
-    def __dir__(self):
-        # look for all commands that start with our own name (= prefix)
-        # and possible subscript indexing
-        prefix = self._name + "." if self._name else ""
-        prefix = re.sub("\[\d\]", "[N]", prefix)
+    def __dir__(self) -> List[str]:
+        if not self._dict:
+            try:
+                self._dict = self._iterate_lua_indices()
+            except KeithleyIOError:
+                pass
 
-        sub_cmds = []
+        return list(self._dict.keys()) + list(super().__dir__())
 
-        for cmd in ALL_CMDS:
-            if cmd.startswith(prefix):
-                # remove prefix from command
-                cmd = removeprefix(cmd, prefix)
-                # remove subscript expressions
-                cmd = cmd.replace("[N]", "")
-                # take the immediate child command
-                cmd = cmd.split(".")[0]
-                # add to dir
-                sub_cmds.append(cmd)
-
-        # retain unique entries only
-        sub_cmds = list(set(sub_cmds))
-
-        # and native (non-Keithley) dir
-        sub_cmds += super().__dir__()
-
-        return sub_cmds
-
-    def __repr__(self):
-        return f"<{self.__class__.__name__}({self._name})>"
-
-
-class KeithleyIOError(Exception):
-    """Raised when no Keithley instrument is connected."""
-
-    pass
-
-
-class KeithleyError(Exception):
-    """Raised for error messages from the Keithley itself."""
-
-    pass
+    def __repr__(self) -> str:
+        if self._lua_type:
+            return f"<{self.__class__.__name__}({self._name_display}, " \
+                   f"lua_type={self._lua_type})>"
+        else:
+            return f"<{self.__class__.__name__}({self._name_display})>"
 
 
 class Keithley2600Base(MagicClass):
@@ -345,36 +396,29 @@ class Keithley2600Base(MagicClass):
     python. Attributes are created on-access if they correspond to Keithley TSP
     type commands.
 
-    :param str visa_address: Visa address of the instrument.
-    :param str visa_library: Path to visa library. Defaults to "@py" for pyvisa-py
-        but another IVI library may be appropriate (NI-VISA, Keysight VISA, R&S VISA,
+    :param visa_address: Visa address of the instrument.
+    :param visa_library: Path to visa library. Defaults to "@py" for pyvisa-py but
+        another IVI library may be appropriate (NI-VISA, Keysight VISA, R&S VISA,
         tekVISA etc.). If an empty string is given, an IVI library will be used if
         installed and pyvisa-py otherwise.
-    :param bool raise_keithley_errors: If ``True``, all Keithley errors will be
-        raised as Python errors instead of being ignored. This causes
-        significant communication overhead because the Keithley's error queue
-        is read after each command. Defaults to ``False``.
-    :param kwargs: Keyword arguments passed on to the visa connection, for
-        instance baude-rate or timeout. If not given, reasonable defaults will
-        be used.
+    :param raise_keithley_errors: If ``True``, all Keithley errors will be raised as
+        Python errors instead of being ignored. This causes significant communication
+        overhead because the Keithley's error queue is read after each command. Defaults
+        to ``False``.
+    :param kwargs: Keyword arguments passed on to the visa connection, for instance
+        baude-rate or timeout. If not given, reasonable defaults will be used.
 
     :cvar connection: Attribute holding a reference to the actual connection.
-    :cvar bool connected: ``True`` if connected to an instrument, ``False``
-        otherwise.
-    :cvar bool busy: ``True`` if a measurement is running, ``False`` otherwise.
-    :cvar int CHUNK_SIZE: Maximum length of lists which can be sent to the
-        Keithley. Longer lists will be transferred in chunks.
+    :cvar connected: ``True`` if connected to an instrument, ``False`` otherwise.
+    :cvar busy: ``True`` if a measurement is running, ``False`` otherwise.
+    :cvar CHUNK_SIZE: Maximum length of lists which can be sent to the Keithley. Longer
+        lists will be transferred in chunks.
 
     .. note::
 
         See the Keithley 2600 reference manual for all available commands and
-        arguments. Almost all Keithley TSP commands can be used with this
-        driver. Not supported are:
-
-         - ``lan.trigger[N].connected``: conflicts with the connected attribute
-         - ``io.output()``: conflicts with ``smuX.source.output``
-         - All Keithley IV sweep commands. We implement our own in
-           :class:`Keithley2600`.
+        arguments. A dictionary of available commands will be loaded on access from the
+        Keithley at runtime, if connected.
 
     :Examples:
 
@@ -384,22 +428,31 @@ class Keithley2600Base(MagicClass):
 
     """
 
-    connection = None
-    connected = False
-    busy = False
+    _lock = RLock()
+    _protected_attrs = [
+        "rm",
+        "connection",
+        "connected",
+        "busy",
+        "visa_address",
+        "visa_library",
+        "_connection_kwargs",
+        "raise_keithley_errors",
+        "CHUNK_SIZE",
+        "_lock",
+        "abort_event",
+    ] + MagicClass._protected_attrs
 
     CHUNK_SIZE = 50
 
-    SMU_LIST = []
-
-    _lock = RLock()
-
     def __init__(
-        self, visa_address, visa_library="@py", raise_keithley_errors=False, **kwargs
-    ):
-
-        MagicClass.__init__(self, name="", parent=self)
-        self._name = ""
+        self,
+        visa_address: str,
+        visa_library: str = "@py",
+        raise_keithley_errors: bool = False,
+        **kwargs,
+    ) -> None:
+        super().__init__(name="_G", parent=self)
 
         self.abort_event = threading.Event()
 
@@ -414,54 +467,49 @@ class Keithley2600Base(MagicClass):
         # connect to keithley
         self.connect(**kwargs)
 
-    def __repr__(self):
-        return "<%s(%s)>" % (type(self).__name__, self.visa_address)
+    def __repr__(self) -> str:
+        return f"<{self.__class__.__name__}({self.visa_address})>"
 
     # =============================================================================
     # Connect to keithley
     # =============================================================================
 
-    def connect(self, **kwargs):
+    def connect(self, **kwargs) -> bool:
         """
         Connects to Keithley.
 
         :param kwargs: Keyword arguments for Visa connection.
-
+        :returns: Whether the connection succeeded.
         """
         kwargs = kwargs or self._connection_kwargs  # use specified or remembered kwargs
         try:
             self.connection = self.rm.open_resource(self.visa_address, **kwargs)
             self.connection.read_termination = "\n"
             self.connected = True
-            logger.debug("Connected to Keithley at %s." % self.visa_address)
+            self._dict.clear()  # reset Keithley dict
+            logger.debug("Connected to Keithley at %s.", self.visa_address)
         except ValueError:
             self.connection = None
             self.connected = False
             raise
         except ConnectionError:
             logger.info(
-                "Connection error. Please check that "
-                + "no other program is connected."
+                "Connection error. Please check that no other program is connected."
             )
             self.connection = None
             self.connected = False
         except AttributeError:
-            logger.info("Invalid VISA address %s." % self.visa_address)
+            logger.info("Invalid VISA address %s.", self.visa_address)
             self.connection = None
             self.connected = False
         except Exception:
-            logger.info("Could not connect to Keithley at %s." % self.visa_address)
+            logger.info("Could not connect to Keithley at %s.", self.visa_address)
             self.connection = None
             self.connected = False
-        else:
-            # get list of SMUs
 
-            for suffix in ("a", "b", "c", "d"):
-                smu_name = f"smu{suffix}"
-                if self._query(smu_name) is not None:
-                    self.SMU_LIST.append(smu_name)
+        return self.connected
 
-    def disconnect(self):
+    def disconnect(self) -> None:
         """
         Disconnects from Keithley.
         """
@@ -471,7 +519,7 @@ class Keithley2600Base(MagicClass):
                 self.connection = None
                 self.connected = False
                 del self.connection
-                logger.debug("Disconnected from Keithley at %s." % self.visa_address)
+                logger.debug("Disconnected from Keithley at %s.", self.visa_address)
             except AttributeError:
                 self.connected = False
                 pass
@@ -480,63 +528,80 @@ class Keithley2600Base(MagicClass):
     # Define I/O
     # =============================================================================
 
-    def _write(self, value):
+    @contextmanager
+    def _error_check(self):
+
+        # clear any previous errors
+        self.connection.write("errorqueue.clear()")
+
+        try:
+            yield
+        finally:
+            # check error queue and raise errors
+            err = self.connection.query(f"print(errorqueue.next())")
+            err = self._parse_response(err)
+            if err[0] != 0:
+                raise KeithleyError(err[1])
+
+    def _write(self, value: str) -> None:
         """
         Writes text to Keithley. Input must be a string.
-        """
-
-        with self._lock:
-            logger.debug("write: %s" % value)
-
-            if self.connection:
-
-                if self.raise_keithley_errors and "errorqueue" not in value:
-                    self.errorqueue.clear()
-
-                self.connection.write(value)
-
-                if self.raise_keithley_errors and "errorqueue" not in value:
-                    err = self.errorqueue.next()
-                    if err[0] != 0:
-                        raise KeithleyError(
-                            "Error during command '{0}': {1}".format(value, err[1])
-                        )
-            else:
-                raise KeithleyIOError(
-                    "No connection to keithley present. Try to call 'connect'."
-                )
-
-    def _query(self, value):
-        """
-        Queries and expects response from Keithley. Input must be a string.
         """
 
         # only check for error when the query is not fetching the error queue
         check_for_errors = self.raise_keithley_errors and "errorqueue" not in value
 
         with self._lock:
-            logger.debug("write: print(%s)" % value)
+            logger.debug("write: %s", value)
+
             if self.connection:
 
                 if check_for_errors:
-                    # clear any previous errors
-                    self.errorqueue.clear()
+                    with self._error_check():
+                        try:
+                            self.connection.write(value)
+                        except pyvisa.VisaIOError:
+                            # ignore VisaIOError which can be caused by syntax errors
+                            pass
+                else:
+                    self.connection.write(value)
+            else:
+                raise KeithleyIOError(
+                    "No connection to keithley present. Try to call 'connect'."
+                )
 
-                try:
-                    r = self.connection.query("print(%s)" % value)
-                    logger.debug("read: %s" % r)
-                except XDRError:
-                    r = "nil"
-                    logger.debug("read failed: unpack-error")
+    def _query(self, value: str) -> Any:
+        """
+        Queries and expects response from Keithley. Input must be a string. Return value
+        will be converted to Python type by :meth:`_parse_response`.
+        """
+
+        # only check for error when the query is not fetching the error queue
+        check_for_errors = self.raise_keithley_errors and "errorqueue" not in value
+
+        with self._lock:
+            logger.debug("write: print(%s)", value)
+            if self.connection:
 
                 if check_for_errors:
-                    # read error queue to check for new errors
-                    err = self.errorqueue.next()
-                    if err[0] != 0:
-                        err_msg = err[1].replace("TSP Runtime error at line 1: ", "")
-                        raise KeithleyError(
-                            "Error during command '{0}': {1}".format(value, err_msg)
-                        )
+                    with self._error_check():
+                        try:
+                            r = self.connection.query(f"print({value})")
+                            logger.debug("read: %s", r)
+                        except XDRError:
+                            r = "nil"
+                            logger.debug("read failed: unpack-error")
+                        except pyvisa.VisaIOError:
+                            # ignore VisaIOError which can be caused by syntax errors
+                            pass
+
+                else:
+                    try:
+                        r = self.connection.query(f"print({value})")
+                        logger.debug("read: %s", r)
+                    except XDRError:
+                        r = "nil"
+                        logger.debug("read failed: unpack-error")
 
                 return self._parse_response(r)
             else:
@@ -545,7 +610,7 @@ class Keithley2600Base(MagicClass):
                 )
 
     @staticmethod
-    def _parse_single_response(string):
+    def _parse_single_response(string: str) -> LuaReturnTypes:
 
         # Dictionary to convert from Keithley TSP to Python types.
         # Note that emtpy strings are converted to `None`. This is necessary
@@ -560,12 +625,18 @@ class Keithley2600Base(MagicClass):
         except ValueError:
             if string in conversion_dict.keys():
                 r = conversion_dict[string]
+            elif string.startswith("function: "):
+                r = _LuaFunction(string)
+            elif string.startswith("table: "):
+                r = _LuaTable(string)
             else:
                 r = string
 
         return r
 
-    def _parse_response(self, string):
+    def _parse_response(
+        self, string: str
+    ) -> Union[LuaReturnTypes, Tuple[LuaReturnTypes, ...]]:
 
         string_list = string.split("\t")
 
@@ -576,11 +647,9 @@ class Keithley2600Base(MagicClass):
         else:
             return converted_tuple
 
-    def _convert_input(self, value):
-        """Convert bool to lower case string and list / tuples to comma
-        delimited string enclosed by curly brackets."""
+    def _convert_input(self, value: Any) -> str:
         if isinstance(value, bool):
-            # convert bool True to string 'true'
+            # convert bool True to string 'true', False to string 'false'
             return str(value).lower()
         elif isinstance(value, MagicClass):
             # convert keithley object to string with its name
@@ -600,22 +669,20 @@ class Keithley2600(Keithley2600Base):
     :class:`Keithley2600Base`. Base commands replicate the functionality and
     syntax of Keithley TSP functions.
 
-    :param str visa_address: Visa address of the instrument.
-    :param str visa_library: Path to visa library. Defaults to "@py" for pyvisa-py
-        but another IVI library may be appropriate (NI-VISA, Keysight VISA, R&S VISA,
+    :param visa_address: Visa address of the instrument.
+    :param visa_library: Path to visa library. Defaults to "@py" for pyvisa-py but
+        another IVI library may be appropriate (NI-VISA, Keysight VISA, R&S VISA,
         tekVISA etc.). If an empty string is given, an IVI library will be used if
         installed and pyvisa-py otherwise.
-    :param bool raise_keithley_errors: If ``True``, all Keithley errors will be
-        raised as Python errors instead of being ignored. This causes
-        significant communication overhead because the Keithley's error queue
-        is read after each command. Defaults to ``False``.
-    :param kwargs: Keyword arguments passed on to the visa connection, for
-        instance baude-rate or timeout. If not given, reasonable defaults will
-        be used.
+    :param raise_keithley_errors: If ``True``, all Keithley errors will be raised as
+        Python errors instead of being ignored. This causes significant communication
+        overhead because the Keithley's error queue is read after each command. Defaults
+        to ``False``.
+    :param kwargs: Keyword arguments passed on to the visa connection, for instance
+        baude-rate or timeout. If not given, reasonable defaults will be used.
 
     :cvar connection: Attribute holding a reference to the actual connection.
-    :cvar bool connected: ``True`` if connected to an instrument, ``False``
-        otherwise.
+    :cvar connected: ``True`` if connected to an instrument, ``False`` otherwise.
     :cvar bool busy: ``True`` if a measurement is running, ``False`` otherwise.
 
     :Examples:
@@ -652,9 +719,15 @@ class Keithley2600(Keithley2600Base):
 
     """
 
+    _protected_attrs = ["busy"] + Keithley2600Base._protected_attrs
+
     def __init__(
-        self, visa_address, visa_library="@py", raise_keithley_errors=False, **kwargs
-    ):
+        self,
+        visa_address: str,
+        visa_library: str = "@py",
+        raise_keithley_errors: bool = False,
+        **kwargs,
+    ) -> None:
         Keithley2600Base.__init__(
             self,
             visa_address,
@@ -663,35 +736,19 @@ class Keithley2600(Keithley2600Base):
             **kwargs,
         )
 
-    def __repr__(self):
-        return "<%s(%s)>" % (type(self).__name__, self.visa_address)
-
-    def _check_smu(self, smu):
-        """
-        Check if selected smu is indeed present.
-
-        :param smu: A keithley smu instance.
-        """
-
-        if self._get_smu_name(smu) not in self.SMU_LIST:
-            raise RuntimeError("The specified SMU does not exist.")
-
-    @staticmethod
-    def _get_smu_name(smu):
-        return smu._name.split(".")[-1]
+        self.busy = False
 
     # =============================================================================
     # Define lower level control functions
     # =============================================================================
 
-    def readErrorQueue(self):
+    def readErrorQueue(self) -> List[Tuple[LuaReturnTypes, ...]]:
         """
         Returns all entries from the Keithley error queue and clears the queue.
 
-        :returns: List of errors from the Keithley error queue. Each entry is a
-            tuple ``(error_code, message, severity, error_node)``. If the queue
-            is empty, an empty list is returned.
-        :rtype: list
+        :returns: List of errors from the Keithley error queue. Each entry is a tuple
+            ``(error_code, message, severity, error_node)``. If the queue is empty, an
+            empty list is returned.
         """
 
         error_list = []
@@ -704,35 +761,30 @@ class Keithley2600(Keithley2600Base):
         return error_list
 
     @staticmethod
-    def readBuffer(buffer):
+    def readBuffer(buffer) -> List[float]:
         """
-        Reads buffer values and returns them as a list. This can be done more
-        quickly by calling :attr:`buffer.readings` but such a call may fail due
-        to I/O limitations of the keithley if the returned list is too long.
+        Reads buffer values and returns them as a list. This can be done more quickly by
+        calling :attr:`buffer.readings` but such a call may fail due to I/O limitations
+        of the keithley if the returned list is too long.
 
         :param buffer: A keithley buffer instance.
-
         :returns: A list with buffer readings.
-        :rtype: list
         """
         list_out = []
         for i in range(0, int(buffer.n)):
-            list_out.append(buffer.readings[i + 1])
+            list_out.append(buffer.readings.getreading(i + 1))
 
         return list_out
 
-    def setIntegrationTime(self, smu, t_int):
+    def setIntegrationTime(self, smu: MagicClass, t_int: float) -> None:
         """
         Sets the integration time of SMU for measurements in sec.
 
         :param smu: A keithley smu instance.
-        :param float t_int: Integration time in sec. Value must be between
-            1/1000 and 25 power line cycles (50Hz or 60 Hz).
-        :raises: :class:`ValueError` for too short or too long integration
-            times.
+        :param t_int: Integration time in sec. Value must be between 1/1000 and 25 power
+            line cycles (50Hz or 60 Hz).
+        :raises: :class:`ValueError` for too short or too long integration times.
         """
-
-        self._check_smu(smu)
 
         # determine number of power-line-cycles used for integration
         freq = self.localnode.linefreq
@@ -741,75 +793,69 @@ class Keithley2600(Keithley2600Base):
         if nplc < 0.001 or nplc > 25:
             raise ValueError(
                 "Integration time must be between 0.001 and 25 "
-                + "power line cycles of 1/(%s Hz)." % freq
+                f"power line cycles of 1/({freq} Hz)."
             )
         smu.measure.nplc = nplc
 
-    def applyVoltage(self, smu, voltage):
+    def applyVoltage(self, smu: MagicClass, voltage: float) -> None:
         """
         Turns on the specified SMU and applies a voltage.
 
         :param smu: A keithley smu instance.
-        :param float voltage: Voltage to apply in Volts.
+        :param voltage: Voltage to apply in Volts.
         """
-
-        self._check_smu(smu)
 
         smu.source.levelv = voltage
         smu.source.func = smu.OUTPUT_DCVOLTS
         smu.source.output = smu.OUTPUT_ON
 
-    def applyCurrent(self, smu, curr):
+    def applyCurrent(self, smu: MagicClass, curr: float) -> None:
         """
         Turns on the specified SMU and sources a current.
 
         :param smu: A keithley smu instance.
-        :param float curr: Current to apply in Ampere.
+        :param curr: Current to apply in Ampere.
         """
-        self._check_smu(smu)
 
         smu.source.leveli = curr
         smu.source.func = smu.OUTPUT_DCAMPS
         smu.source.output = smu.OUTPUT_ON
 
-    def measureVoltage(self, smu):
+    def measureVoltage(self, smu: MagicClass) -> float:
         """
         Measures a voltage at the specified SMU.
 
         :param smu: A keithley smu instance.
-
         :returns: Measured voltage in Volts.
-        :rtype: float
         """
-
-        self._check_smu(smu)
 
         return smu.measure.v()
 
-    def measureCurrent(self, smu):
+    def measureCurrent(self, smu: MagicClass) -> float:
         """
         Measures a current at the specified SMU.
 
         :param smu: A keithley smu instance.
-
         :returns: Measured current in Ampere.
-        :rtype: float
         """
-        self._check_smu(smu)
 
         return smu.measure.i()
 
-    def rampToVoltage(self, smu, target_volt, delay=0.1, step_size=1):
+    def rampToVoltage(
+        self,
+        smu: MagicClass,
+        target_volt: float,
+        delay: float = 0.1,
+        step_size: float = 1,
+    ) -> None:
         """
         Ramps up the voltage of the specified SMU. Beeps when done.
 
         :param smu: A keithley smu instance.
-        :param float target_volt: Target voltage in Volts.
-        :param float step_size: Size of the voltage steps in Volts.
-        :param float delay: Delay between steps in sec.
+        :param target_volt: Target voltage in Volts.
+        :param step_size: Size of the voltage steps in Volts.
+        :param delay: Delay between steps in sec.
         """
-
-        self._check_smu(smu)
 
         smu.source.output = smu.OUTPUT_ON
 
@@ -826,32 +872,34 @@ class Keithley2600(Keithley2600Base):
             time.sleep(delay)
 
         smu.source.levelv = target_volt
-        logger.info("Gate voltage set to Vg = %s V." % round(target_volt))
+        logger.info("Gate voltage set to Vg = %s V.", round(target_volt))
 
         self.beeper.beep(0.3, 2400)
 
-    def voltageSweepSingleSMU(self, smu, smu_sweeplist, t_int, delay, pulsed):
+    def voltageSweepSingleSMU(
+        self,
+        smu: MagicClass,
+        smu_sweeplist: Sequence[float],
+        t_int: float,
+        delay: float,
+        pulsed: bool,
+    ) -> Tuple[List[float], List[float]]:
         """
         Sweeps the voltage through the specified list of steps at the given
         SMU. Measures and returns the current and voltage during the sweep.
 
         :param smu: A keithley smu instance.
-        :param smu_sweeplist: Voltages to sweep through (can be a numpy array,
-             list, tuple or any other iterable with numbers).
-        :param float t_int: Integration time per data point. Must be between
-            0.001 to 25 times the power line frequency (50Hz or 60Hz).
-        :param float delay: Settling delay before each measurement. A value of
-            -1 automatically starts a measurement once the current is stable.
-        :param bool pulsed: Select pulsed or continuous sweep. In a pulsed
-            sweep, the voltage is always reset to zero between data points.
-
+        :param smu_sweeplist: Voltages to sweep through (can be a numpy array, list,
+            tuple or any other iterable of numbers).
+        :param t_int: Integration time per data point. Must be between 0.001 to 25 times
+            the power line frequency (50Hz or 60Hz).
+        :param delay: Settling delay before each measurement. A value of -1
+            automatically starts a measurement once the current is stable.
+        :param pulsed: Select pulsed or continuous sweep. In a pulsed sweep, the voltage
+            is always reset to zero between data points.
         :returns: Lists of voltages and currents measured during the sweep (in
             Volt and Ampere, respectively): ``(v_smu, i_smu)``.
-        :rtype: (list, list)
         """
-
-        # input checks
-        self._check_smu(smu)
 
         # set state to busy
         self.busy = True
@@ -868,7 +916,7 @@ class Keithley2600(Keithley2600Base):
         if len(smu_sweeplist) > self.CHUNK_SIZE:
             self._write("mylist = {}")
             for num in smu_sweeplist:
-                self._write("table.insert(mylist, %s)" % num)
+                self._write(f"table.insert(mylist, {num})")
             smu.trigger.source.listv("mylist")
         else:
             smu.trigger.source.listv(smu_sweeplist)
@@ -1020,34 +1068,35 @@ class Keithley2600(Keithley2600Base):
         return v_smu, i_smu
 
     def voltageSweepDualSMU(
-        self, smu1, smu2, smu1_sweeplist, smu2_sweeplist, t_int, delay, pulsed
-    ):
+        self,
+        smu1: MagicClass,
+        smu2: MagicClass,
+        smu1_sweeplist: Sequence[float],
+        smu2_sweeplist: Sequence[float],
+        t_int: float,
+        delay: float,
+        pulsed: bool,
+    ) -> Tuple[List[float], List[float], List[float], List[float]]:
         """
         Sweeps voltages at two SMUs. Measures and returns current and voltage
         during sweep.
 
         :param smu1: 1st keithley smu instance to be swept.
         :param smu2: 2nd keithley smu instance to be swept.
-        :param smu1_sweeplist: Voltages to sweep at ``smu1`` (can be a numpy
-             array, list, tuple or any other iterable with numbers).
-        :param smu2_sweeplist: Voltages to sweep at ``smu2`` (can be a numpy
-             array, list, tuple or any other iterable with numbers).
-        :param float t_int: Integration time per data point. Must be
-            between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
-        :param float delay: Settling delay before each measurement. A value of
-            -1 automatically starts a measurement once the current is stable.
-        :param bool pulsed: Select pulsed or continuous sweep. In a pulsed
-            sweep, the voltage is always reset to zero between data points.
-
+        :param smu1_sweeplist: Voltages to sweep at ``smu1`` (can be a numpy array,
+            list, tuple or any other iterable with numbers).
+        :param smu2_sweeplist: Voltages to sweep at ``smu2`` (can be a numpy array,
+            list, tuple or any other iterable with numbers).
+        :param t_int: Integration time per data point. Must be between 0.001 to 25 times
+            the power line frequency (50Hz or 60Hz).
+        :param delay: Settling delay before each measurement. A value of -1
+            automatically starts a measurement once the current is stable.
+        :param pulsed: Select pulsed or continuous sweep. In a pulsed sweep, the voltage
+            is always reset to zero between data points.
         :returns: Lists of voltages and currents measured during the sweep (in
             Volt and Ampere, respectively): ``(v_smu1, i_smu1, v_smu2,
             i_smu2)``.
-        :rtype: (list, list, list, list)
         """
-
-        # input checks
-        self._check_smu(smu1)
-        self._check_smu(smu2)
 
         if len(smu1_sweeplist) != len(smu2_sweeplist):
             raise ValueError("Sweep lists must have equal lengths")
@@ -1069,7 +1118,7 @@ class Keithley2600(Keithley2600Base):
         if len(smu1_sweeplist) > self.CHUNK_SIZE:
             self._write("mylist = {}")
             for num in smu1_sweeplist:
-                self._write("table.insert(mylist, %s)" % num)
+                self._write(f"table.insert(mylist, {num})")
             smu1.trigger.source.listv("mylist")
         else:
             smu1.trigger.source.listv(smu1_sweeplist)
@@ -1077,7 +1126,7 @@ class Keithley2600(Keithley2600Base):
         if len(smu2_sweeplist) > self.CHUNK_SIZE:
             self._write("mylist = {}")
             for num in smu2_sweeplist:
-                self._write("table.insert(mylist, %s)" % num)
+                self._write(f"table.insert(mylist, {num})")
             smu2.trigger.source.listv("mylist")
         else:
             smu2.trigger.source.listv(smu2_sweeplist)
@@ -1255,47 +1304,39 @@ class Keithley2600(Keithley2600Base):
 
     def transferMeasurement(
         self,
-        smu_gate,
-        smu_drain,
-        vg_start,
-        vg_stop,
-        vg_step,
-        vd_list,
-        t_int,
-        delay,
-        pulsed,
-    ):
+        smu_gate: MagicClass,
+        smu_drain: MagicClass,
+        vg_start: float,
+        vg_stop: float,
+        vg_step: float,
+        vd_list: Sequence[float],
+        t_int: float,
+        delay: float,
+        pulsed: bool,
+    ) -> FETResultTable:
         """
-        Records a transfer curve with forward and reverse sweeps and returns
-        the results in a :class:`sweep_data.TransistorSweepData` instance.
-
+        Records a transfer curve with forward and reverse sweeps and returns the results
+        in a :class:`sweep_data.TransistorSweepData` instance.
 
         :param smu_gate: Keithley smu attached to gate electrode.
         :param smu_drain: Keithley smu attached to drain electrode.
-        :param float vg_start: Start voltage of transfer sweep in Volt.
-        :param float vg_stop: End voltage of transfer sweep in Volt.
-        :param float vg_step: Voltage step size for transfer sweep in Volt.
-        :param vd_list: List of drain voltage steps in Volt. Can be a numpy
-             array, list, tuple, range / xrange.
-        :param float t_int: Integration time per data point. Must be
-            between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
-        :param float delay: Settling delay before each measurement. A value of
-            -1 automatically starts a measurement once the current is stable.
-        :param bool pulsed: Select pulsed or continuous sweep. In a pulsed
-            sweep, the voltage is always reset to zero between data points.
-
+        :param vg_start: Start voltage of transfer sweep in Volt.
+        :param vg_stop: End voltage of transfer sweep in Volt.
+        :param vg_step: Voltage step size for transfer sweep in Volt.
+        :param vd_list: List of drain voltage steps in Volt. Can be a numpy array, list,
+            tuple, range / xrange.
+        :param t_int: Integration time per data point. Must be between 0.001 to 25 times
+            the power line frequency (50Hz or 60Hz).
+        :param delay: Settling delay before each measurement. A value of -1
+            automatically starts a measurement once the current is stable.
+        :param bool pulsed: Select pulsed or continuous sweep. In a pulsed sweep, the
+            voltage is always reset to zero between data points.
         :returns: Transfer curve data.
-        :rtype: :class:`sweep_data.TransistorSweepData`
-
         """
         self.busy = True
         self.abort_event.clear()
 
-        msg = "Recording transfer curve with Vg from %sV to %sV, Vd = %s V. " % (
-            vg_start,
-            vg_stop,
-            vd_list,
-        )
+        msg = f"Recording transfer curve with Vg from {vg_start}V to {vg_stop}V, Vd = {vd_list}V."
         logger.info(msg)
 
         # create array with gate voltage steps, always include a step >= VgStop
@@ -1344,11 +1385,9 @@ class Keithley2600(Keithley2600Base):
 
             if not self.abort_event.is_set():
                 i_s = np.array(i_d) + np.array(i_g)
-                rt.append_column(
-                    i_s, name="Source current (Vd = %s)" % vdrain, unit="A"
-                )
-                rt.append_column(i_d, name="Drain current (Vd = %s)" % vdrain, unit="A")
-                rt.append_column(i_g, name="Gate current (Vd = %s)" % vdrain, unit="A")
+                rt.append_column(i_s, name=f"Source current (Vd = {vdrain})", unit="A")
+                rt.append_column(i_d, name=f"Drain current (Vd = {vdrain})", unit="A")
+                rt.append_column(i_g, name=f"Gate current (Vd = {vdrain})", unit="A")
 
         self.reset()
         self.beeper.beep(0.3, 2400)
@@ -1358,46 +1397,39 @@ class Keithley2600(Keithley2600Base):
 
     def outputMeasurement(
         self,
-        smu_gate,
-        smu_drain,
-        vd_start,
-        vd_stop,
-        vd_step,
-        vg_list,
-        t_int,
-        delay,
-        pulsed,
-    ):
+        smu_gate: MagicClass,
+        smu_drain: MagicClass,
+        vd_start: float,
+        vd_stop: float,
+        vd_step: float,
+        vg_list: Sequence[float],
+        t_int: float,
+        delay: float,
+        pulsed: bool,
+    ) -> FETResultTable:
         """
-        Records an output curve with forward and reverse sweeps and returns the
-        results in a :class:`sweep_data.TransistorSweepData` instance.
+        Records an output curve with forward and reverse sweeps and returns the results
+        in a :class:`sweep_data.TransistorSweepData` instance.
 
         :param smu_gate: Keithley smu attached to gate electrode.
         :param smu_drain: Keithley smu attached to drain electrode.
         :param float vd_start: Start voltage of output sweep in Volt.
         :param float vd_stop: End voltage of output sweep in Volt.
         :param float vd_step: Voltage step size for output sweep in Volt.
-        :param vg_list: List of gate voltage steps in Volt. Can be a numpy
-             array, list, tuple, range / xrange.
-        :param float t_int: Integration time per data point. Must be
-            between 0.001 to 25 times the power line frequency (50Hz or 60Hz).
-        :param float delay: Settling delay before each measurement. A value of
-            -1 automatically starts a measurement once the current is stable.
-        :param bool pulsed: Select pulsed or continuous sweep. In a pulsed
-            sweep, the voltage is always reset to zero between data points.
-
+        :param vg_list: List of gate voltage steps in Volt. Can be a numpy array, list,
+            tuple, range / xrange.
+        :param float t_int: Integration time per data point. Must be between 0.001 to 25
+            times the power line frequency (50Hz or 60Hz).
+        :param float delay: Settling delay before each measurement. A value of -1
+            automatically starts a measurement once the current is stable.
+        :param bool pulsed: Select pulsed or continuous sweep. In a pulsed sweep, the
+            voltage is always reset to zero between data points.
         :returns: Output curve data.
-        :rtype: :class:`sweep_data.TransistorSweepData`
-
         """
 
         self.busy = True
         self.abort_event.clear()
-        msg = "Recording output curve with Vd from %sV to %sV, Vg = %s V. " % (
-            vd_start,
-            vd_stop,
-            vg_list,
-        )
+        msg = f"Recording output curve with Vd from {vd_start}V to {vd_stop}V, Vg = {vg_list}V."
         logger.info(msg)
 
         # create array with drain voltage steps, always include a step >= VgStop
@@ -1440,9 +1472,9 @@ class Keithley2600(Keithley2600Base):
 
             if not self.abort_event.is_set():
                 i_s = np.array(i_d) + np.array(i_g)
-                rt.append_column(i_s, name="Source current (Vg = %s)" % vgate, unit="A")
-                rt.append_column(i_d, name="Drain current (Vg = %s)" % vgate, unit="A")
-                rt.append_column(i_g, name="Gate current (Vg = %s)" % vgate, unit="A")
+                rt.append_column(i_s, name=f"Source current (Vg = {vgate})", unit="A")
+                rt.append_column(i_d, name=f"Drain current (Vg = {vgate})", unit="A")
+                rt.append_column(i_g, name=f"Gate current (Vg = {vgate})", unit="A")
 
         self.reset()
         self.beeper.beep(0.3, 2400)
@@ -1450,7 +1482,11 @@ class Keithley2600(Keithley2600Base):
         self.busy = False
         return rt
 
-    def playChord(self, notes=("C6", "E6", "G6"), durations=0.3):
+    def playChord(
+        self,
+        notes: Tuple[str, ...] = ("C6", "E6", "G6"),
+        durations: Union[float, Iterable[float]] = 0.3,
+    ) -> None:
         """Plays a chord on the Keithley.
 
         :param list notes: List of notes in scientific pitch notation, for
@@ -1459,7 +1495,6 @@ class Keithley2600(Keithley2600Base):
         :param durations: List of durations for each note in sec. If a single
             float is given, all notes will have the same duration. Defaults to
             0.3 sec.
-        :type durations: float or list
         """
 
         freqs = [self._pitch_to_freq(p) for p in notes]
@@ -1470,7 +1505,7 @@ class Keithley2600(Keithley2600Base):
             self.beeper.beep(d, f)
 
     @staticmethod
-    def _pitch_to_freq(pitch):
+    def _pitch_to_freq(pitch: str) -> float:
 
         A4 = 440
         C4 = A4 * 2.0 ** (-9 / 12)
@@ -1499,22 +1534,28 @@ class Keithley2600(Keithley2600Base):
 
         return freq
 
+    def _get_smu_name(self, smu: MagicClass) -> str:
 
-class Keithley2600Factory(object):
+        if not re.match(r"^_G.smu([a-z])$", smu._name):
+            raise ValueError(f"{smu} is not a valid SMU")
+        return smu._name.split(".")[-1]
 
-    _instances = {}
 
-    def __new__(cls, *args, **kwargs):
+class Keithley2600Factory:
+
+    _instances: Dict[str, Keithley2600] = {}
+
+    def __new__(cls, *args, **kwargs) -> Keithley2600:
         """
         Create new instance for a new visa_address, otherwise return existing
         instance.
         """
         if args[0] in cls._instances:
-            logger.debug("Returning existing instance with address '%s'." % args[0])
+            logger.debug("Returning existing instance with address '%s'.", args[0])
 
             return cls._instances[args[0]]
         else:
-            logger.debug("Creating new instance with address '%s'." % args[0])
+            logger.debug("Creating new instance with address '%s'.", args[0])
             instance = Keithley2600(*args, **kwargs)
             cls._instances[args[0]] = instance
 
