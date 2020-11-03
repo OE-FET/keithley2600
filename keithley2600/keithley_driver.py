@@ -9,6 +9,7 @@ Core driver with the low level functions.
 """
 
 # system imports
+import sys
 import logging
 import re
 import threading
@@ -28,25 +29,26 @@ from keithley2600.result_table import FETResultTable
 
 LuaReturnTypes = Union[float, str, bool, None, "_LuaFunction", "_LuaTable"]
 
+
+formatter = logging.Formatter(
+    "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
+)
+
+_ch = logging.StreamHandler()
+_ch.setFormatter(formatter)
+
 logger = logging.getLogger(__name__)
+logger.addHandler(_ch)
 
 
 def log_to_screen(level: int = logging.DEBUG) -> None:
-    log_to_stream(None, level)  # sys.stderr by default
+    log_to_stream(sys.stderr, level)
 
 
 def log_to_stream(stream_output: Optional[IO], level: int = logging.DEBUG) -> None:
     logger.setLevel(level)
-    ch = logging.StreamHandler(stream_output)
-    ch.setLevel(level)
-
-    formatter = logging.Formatter(
-        "%(asctime)s - %(name)s - %(levelname)s - %(message)s"
-    )
-
-    ch.setFormatter(formatter)
-
-    logger.addHandler(ch)
+    _ch.setStream(stream_output)
+    _ch.setLevel(level)
 
 
 def removeprefix(self: str, prefix: str) -> str:
