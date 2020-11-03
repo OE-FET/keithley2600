@@ -664,7 +664,7 @@ class Keithley2600Base(KeithleyClass):
         elif isinstance(value, (int, float, np.number)) and not isinstance(value, np.complex):
             return str(value)
         else:
-            raise ValueError(f"Unsupported value type {type(value).__name__} of input {value}")
+            raise ValueError(f"Unsupported value type '{type(value).__name__}' of input '{value!r}'")
 
 
 class Keithley2600(Keithley2600Base):
@@ -879,8 +879,6 @@ class Keithley2600(Keithley2600Base):
 
         smu.source.levelv = target_volt
         logger.info("Gate voltage set to Vg = %s V.", round(target_volt))
-
-        self.beeper.beep(0.3, 2400)
 
     def voltageSweepSingleSMU(
         self,
@@ -1396,8 +1394,6 @@ class Keithley2600(Keithley2600Base):
                 rt.append_column(i_g, name=f"Gate current (Vd = {vdrain})", unit="A")
 
         self.reset()
-        self.beeper.beep(0.3, 2400)
-
         self.busy = False
         return rt
 
@@ -1483,8 +1479,6 @@ class Keithley2600(Keithley2600Base):
                 rt.append_column(i_g, name=f"Gate current (Vg = {vgate})", unit="A")
 
         self.reset()
-        self.beeper.beep(0.3, 2400)
-
         self.busy = False
         return rt
 
