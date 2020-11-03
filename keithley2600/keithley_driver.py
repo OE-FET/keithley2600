@@ -373,7 +373,11 @@ class MagicClass:
         return list(self._dict.keys()) + list(super().__dir__())
 
     def __repr__(self) -> str:
-        return f"<{self.__class__.__name__}({self._name_display}, lua_type={self._lua_type})>"
+        if self._lua_type:
+            return f"<{self.__class__.__name__}({self._name_display}, " \
+                   f"lua_type={self._lua_type})>"
+        else:
+            return f"<{self.__class__.__name__}({self._name_display})>"
 
 
 class Keithley2600Base(MagicClass):
