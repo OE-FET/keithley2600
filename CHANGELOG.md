@@ -1,4 +1,4 @@
-#### v2.0.0.dev
+#### v2.0.0
 
 This release completely overhauls how Keithley commands are generated. Instead of hard-
 coding available commands for a particular series or model of Keithley, all available
@@ -9,8 +9,12 @@ The main disadvantage of this approach is that most Keithley attributes will onl
 generated *after* connecting to an instrument. The main advantage is that all Keithley
 commands of all models which use TSP are supported and support for any future commands
 will be automatic. This removes the need to update the driver as the command set evolves,
-barring changes in syntax, and enables automatic support for models with different command
-sets or a different number of SMUs.
+barring changes to the syntax, and enables automatic support for models with different 
+command sets or a different number of SMUs. Furthermore, there have been issues in the 
+past with missing commands and constants due to oversight. Those will no longer occur.
+
+The second major change is a switch from camel-case to snake-case for the public API. For
+example, `Keithley2600.applyVoltage` has been renamed to `Keithley2600.apply_voltage`.
 
 Other changes include:
 
