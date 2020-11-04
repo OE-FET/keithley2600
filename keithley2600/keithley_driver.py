@@ -18,7 +18,18 @@ import time
 from contextlib import contextmanager
 from threading import RLock
 from xdrlib import Error as XDRError
-from typing import IO, Optional, Any, Dict, Union, List, Tuple, Sequence, Iterable
+from typing import (
+    IO,
+    Optional,
+    Any,
+    Dict,
+    Union,
+    List,
+    Tuple,
+    Sequence,
+    Iterable,
+    Iterator,
+)
 
 # external imports
 import pyvisa
@@ -274,7 +285,7 @@ class KeithleyClass:
             else:
                 super().__setattr__(key, value)
 
-    def _to_global_name(self, index):
+    def _to_global_name(self, index: Union[str, int]) -> str:
         if isinstance(index, int):
             global_name = f"{self._name}[{index}]"
         elif isinstance(index, str):
@@ -616,7 +627,7 @@ class Keithley2600Base(KeithleyClass):
     # =============================================================================
 
     @contextmanager
-    def _error_check(self):
+    def _error_check(self) -> Iterator[None]:
         """
         A contextmanager to check if a command resulted in a Keithley error.
         """
