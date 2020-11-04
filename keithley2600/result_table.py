@@ -95,7 +95,7 @@ class ResultTable:
         >>> from  keithley2600 import Keithley2600
         >>> k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
         >>> for v in range(11):  # measure IV characteristics from 0 to 10 V
-        ...     k.applyVoltage(k.smua, 10)
+        ...     k.apply_voltage(k.smua, 10)
         ...     i = k.smua.measure.i()
         ...     rt.append_row([v, i])
         ...     time.sleep(1)

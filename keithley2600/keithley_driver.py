@@ -806,26 +806,26 @@ class Keithley2600(Keithley2600Base):
 
         *New mid-level commands*:
 
-        >>> data = k.readBuffer(k.smua.nvbuffer1)
-        >>> errs = k.readErrorQueue()
-        >>> k.setIntegrationTime(k.smua, 0.001) # in sec
+        >>> data = k.read_buffer(k.smua.nvbuffer1)
+        >>> errs = k.read_error_queue()
+        >>> k.set_integration_time(k.smua, 0.001) # in sec
 
-        >>> k.applyVoltage(k.smua, -60) # applies -60V to smuA
-        >>> k.applyCurrent(k.smub, 0.1) # sources 0.1A from smuB
-        >>> k.rampToVoltage(k.smua, 10, delay=0.1, step_size=1)
+        >>> k.apply_voltage(k.smua, -60) # applies -60V to smuA
+        >>> k.apply_current(k.smub, 0.1) # sources 0.1A from smuB
+        >>> k.ramp_to_voltage(k.smua, 10, delay=0.1, step_size=1)
 
         >>> # voltage sweeps, single and dual SMU
-        >>> k.voltageSweepSingleSMU(smu=k.smua, smu_sweeplist=range(0, 61),
+        >>> k.voltage_sweep_single_smu(smu=k.smua, smu_sweeplist=range(0, 61),
         ...                         t_int=0.1, delay=-1, pulsed=False)
-        >>> k.voltageSweepDualSMU(smu1=k.smua, smu2=k.smub,
+        >>> k.voltage_sweep_dual_smu(smu1=k.smua, smu2=k.smub,
         ...                       smu1_sweeplist=range(0, 61),
         ...                       smu2_sweeplist=range(0, 61),
         ...                       t_int=0.1, delay=-1, pulsed=False)
 
         *New high-level commands*:
 
-        >>> data1 = k.outputMeasurement(...) # records output curve
-        >>> data2 = k.transferMeasurement(...) # records transfer curve
+        >>> data1 = k.output_measurement(...) # records output curve
+        >>> data2 = k.transfer_measurement(...) # records transfer curve
 
     """
 
@@ -852,7 +852,7 @@ class Keithley2600(Keithley2600Base):
     # Define lower level control functions
     # =============================================================================
 
-    def readErrorQueue(self) -> List[Tuple[LuaReturnTypes, ...]]:
+    def read_error_queue(self) -> List[Tuple[LuaReturnTypes, ...]]:
         """
         Returns all entries from the Keithley error queue and clears the queue.
 
@@ -869,7 +869,7 @@ class Keithley2600(Keithley2600Base):
         return error_list
 
     @staticmethod
-    def readBuffer(buffer: KeithleyClass) -> List[float]:
+    def read_buffer(buffer: KeithleyClass) -> List[float]:
         """
         Reads buffer values and returns them as a list. This can be done more quickly by
         calling :attr:`buffer.readings` but such a call may fail due to I/O limitations
@@ -884,7 +884,7 @@ class Keithley2600(Keithley2600Base):
 
         return list_out
 
-    def setIntegrationTime(self, smu: KeithleyClass, t_int: float) -> None:
+    def set_integration_time(self, smu: KeithleyClass, t_int: float) -> None:
         """
         Sets the integration time of SMU for measurements in sec.
 
@@ -905,7 +905,7 @@ class Keithley2600(Keithley2600Base):
             )
         smu.measure.nplc = nplc
 
-    def applyVoltage(self, smu: KeithleyClass, voltage: float) -> None:
+    def apply_voltage(self, smu: KeithleyClass, voltage: float) -> None:
         """
         Turns on the specified SMU and applies a voltage.
 
@@ -917,7 +917,7 @@ class Keithley2600(Keithley2600Base):
         smu.source.func = smu.OUTPUT_DCVOLTS
         smu.source.output = smu.OUTPUT_ON
 
-    def applyCurrent(self, smu: KeithleyClass, curr: float) -> None:
+    def apply_current(self, smu: KeithleyClass, curr: float) -> None:
         """
         Turns on the specified SMU and sources a current.
 
@@ -929,7 +929,7 @@ class Keithley2600(Keithley2600Base):
         smu.source.func = smu.OUTPUT_DCAMPS
         smu.source.output = smu.OUTPUT_ON
 
-    def measureVoltage(self, smu: KeithleyClass) -> float:
+    def measure_voltage(self, smu: KeithleyClass) -> float:
         """
         Measures a voltage at the specified SMU.
 
@@ -939,7 +939,7 @@ class Keithley2600(Keithley2600Base):
 
         return smu.measure.v()
 
-    def measureCurrent(self, smu: KeithleyClass) -> float:
+    def measure_current(self, smu: KeithleyClass) -> float:
         """
         Measures a current at the specified SMU.
 
@@ -949,7 +949,7 @@ class Keithley2600(Keithley2600Base):
 
         return smu.measure.i()
 
-    def rampToVoltage(
+    def ramp_to_voltage(
         self,
         smu: KeithleyClass,
         target_volt: float,
@@ -990,7 +990,7 @@ class Keithley2600(Keithley2600Base):
 
         self._write("*trg")
 
-    def voltageSweepSingleSMU(
+    def voltage_sweep_single_smu(
         self,
         smu: KeithleyClass,
         smu_sweeplist: Sequence[float],
@@ -1039,7 +1039,7 @@ class Keithley2600(Keithley2600Base):
         smu.trigger.source.action = smu.ENABLE
 
         # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
-        self.setIntegrationTime(smu, t_int)
+        self.set_integration_time(smu, t_int)
 
         # CONFIGURE SETTLING TIME FOR GATE VOLTAGE, I-LIMIT, ETC...
         smu.measure.delay = delay
@@ -1169,8 +1169,8 @@ class Keithley2600(Keithley2600Base):
             time.sleep(0.1)
 
         # EXTRACT DATA FROM SMU BUFFERS
-        i_smu = self.readBuffer(smu.nvbuffer1)
-        v_smu = self.readBuffer(smu.nvbuffer2)
+        i_smu = self.read_buffer(smu.nvbuffer1)
+        v_smu = self.read_buffer(smu.nvbuffer2)
 
         smu.nvbuffer1.clear()
         smu.nvbuffer2.clear()
@@ -1182,7 +1182,7 @@ class Keithley2600(Keithley2600Base):
 
         return v_smu, i_smu
 
-    def voltageSweepDualSMU(
+    def voltage_sweep_dual_smu(
         self,
         smu1: KeithleyClass,
         smu2: KeithleyClass,
@@ -1252,8 +1252,8 @@ class Keithley2600(Keithley2600Base):
         smu2.trigger.source.action = smu2.ENABLE
 
         # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
-        self.setIntegrationTime(smu1, t_int)
-        self.setIntegrationTime(smu2, t_int)
+        self.set_integration_time(smu1, t_int)
+        self.set_integration_time(smu2, t_int)
 
         # CONFIGURE SETTLING TIME FOR GATE VOLTAGE, I-LIMIT, ETC...
         smu1.measure.delay = delay
@@ -1400,10 +1400,10 @@ class Keithley2600(Keithley2600Base):
             time.sleep(0.1)
 
         # EXTRACT DATA FROM SMU BUFFERS
-        i_smu1 = self.readBuffer(smu1.nvbuffer1)
-        v_smu1 = self.readBuffer(smu1.nvbuffer2)
-        i_smu2 = self.readBuffer(smu2.nvbuffer1)
-        v_smu2 = self.readBuffer(smu2.nvbuffer2)
+        i_smu1 = self.read_buffer(smu1.nvbuffer1)
+        v_smu1 = self.read_buffer(smu1.nvbuffer2)
+        i_smu2 = self.read_buffer(smu2.nvbuffer1)
+        v_smu2 = self.read_buffer(smu2.nvbuffer2)
 
         # CLEAR BUFFERS
         for smu in [smu1, smu2]:
@@ -1420,7 +1420,7 @@ class Keithley2600(Keithley2600Base):
     # Define higher level control functions
     # =============================================================================
 
-    def transferMeasurement(
+    def transfer_measurement(
         self,
         smu_gate: KeithleyClass,
         smu_drain: KeithleyClass,
@@ -1491,7 +1491,7 @@ class Keithley2600(Keithley2600Base):
                 sweeplist_drain = np.full_like(sweeplist_gate, vdrain)
 
             # conduct sweep
-            v_g, i_g, v_d, i_d = self.voltageSweepDualSMU(
+            v_g, i_g, v_d, i_d = self.voltage_sweep_dual_smu(
                 smu_gate,
                 smu_drain,
                 sweeplist_gate,
@@ -1511,7 +1511,7 @@ class Keithley2600(Keithley2600Base):
         self.busy = False
         return rt
 
-    def outputMeasurement(
+    def output_measurement(
         self,
         smu_gate: KeithleyClass,
         smu_drain: KeithleyClass,
@@ -1576,7 +1576,7 @@ class Keithley2600(Keithley2600Base):
             sweeplist_gate = np.full_like(sweeplist_drain, vgate)
 
             # conduct forward sweep
-            v_d, i_d, v_g, i_g = self.voltageSweepDualSMU(
+            v_d, i_d, v_g, i_g = self.voltage_sweep_dual_smu(
                 smu_drain,
                 smu_gate,
                 sweeplist_drain,
@@ -1596,7 +1596,7 @@ class Keithley2600(Keithley2600Base):
         self.busy = False
         return rt
 
-    def playChord(
+    def play_chord(
         self,
         notes: Tuple[str, ...] = ("C6", "E6", "G6"),
         durations: Union[float, Iterable[float]] = 0.3,

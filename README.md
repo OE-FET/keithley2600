@@ -67,21 +67,21 @@ k.smua.nvbuffer1.clear()  # clears nvbuffer1 of SMUA
 Higher level commands defined in the driver:
 
 ```python
-data = k.readBuffer(k.smua.nvbuffer1)  # reads all entries from nvbuffer1 of SMUA
-errs = k.readErrorQueue()  # gets all entries from error queue
+data = k.read_buffer(k.smua.nvbuffer1)  # reads all entries from nvbuffer1 of SMUA
+errs = k.read_error_queue()  # gets all entries from error queue
 
-k.setIntegrationTime(k.smua, 0.001)  # sets integration time in sec
-k.applyVoltage(k.smua, 10)  # turns on and applies 10V to SMUA
-k.applyCurrent(k.smub, 0.1)  # sources 0.1A from SMUB
-k.rampToVoltage(k.smua, 10, delay=0.1, stepSize=1)  # ramps SMUA to 10V in steps of 1V
+k.set_integration_time(k.smua, 0.001)  # sets integration time in sec
+k.apply_voltage(k.smua, 10)  # turns on and applies 10V to SMUA
+k.apply_current(k.smub, 0.1)  # sources 0.1A from SMUB
+k.ramp_to_voltage(k.smua, 10, delay=0.1, stepSize=1)  # ramps SMUA to 10V in steps of 1V
 
 # sweep commands
-k.voltageSweepSingleSMU(k.smua, range(0, 61), t_int=0.1,
+k.voltage_sweep_single_smu(k.smua, range(0, 61), t_int=0.1,
                         delay=-1, pulsed=False)
-k.voltageSweepDualSMU(smu1=k.smua, smu2=k.smub, smu1_sweeplist=range(0, 61),
+k.voltage_sweep_dual_smu(smu1=k.smua, smu2=k.smub, smu1_sweeplist=range(0, 61),
                       smu2_sweeplist=range(0, 61), t_int=0.1, delay=-1, pulsed=False)
-k.transferMeasurement( ... )
-k.outputMeasurement( ... )
+k.transfer_measurement( ... )
+k.output_measurement( ... )
 ```
 
 *Singleton behaviour:*
@@ -126,7 +126,7 @@ rt.plot(live=True)
 
 # measure some currents
 for v in range(0, 20):
-    k.applyVoltage(k.smua, 10)
+    k.apply_voltage(k.smua, 10)
     i = k.smua.measure.i()
     rt.append_row([v, i])
 
