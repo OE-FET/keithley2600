@@ -183,7 +183,7 @@ class KeithleyClass:
         self._dict: Dict[str, LuaBridgeType] = {}
         self._lua_type: Optional[str] = None
 
-    def create_lua_var(self, name: Union[str, int], value: Any) -> LuaBridgeType:
+    def create_lua_attr(self, name: Union[str, int], value: Any) -> LuaBridgeType:
         """
         Creates an attribute / index of this table with the given type. The initial
         value will be 0 for a KeithleyProperty and an empty table for a KeithleyClass.
@@ -213,7 +213,7 @@ class KeithleyClass:
 
         return self._dict[name]
 
-    def delete_lua_var(self, name: Union[str, int]) -> None:
+    def delete_lua_attr(self, name: Union[str, int]) -> None:
         """
         Deletes an attribute / index of this table.
 
@@ -438,7 +438,7 @@ class KeithleyClass:
         try:
             accessor = self._dict[key]
         except KeyError:
-            self.create_lua_var(key, value)
+            self.create_lua_attr(key, value)
         else:
             if isinstance(accessor, KeithleyProperty):
                 accessor.set(value)
@@ -1017,11 +1017,11 @@ class Keithley2600(Keithley2600Base):
         # setup smu to sweep through list on trigger
         # send sweep_list over in chunks if too long
         if len(smu_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_var("python_driver_list", KeithleyClass)
+            self.create_lua_attr("python_driver_list", KeithleyClass)
             for num in smu_sweeplist:
                 self.table.insert(self.python_driver_list, num)
             smu.trigger.source.listv(self.python_driver_list)
-            self.delete_lua_var("python_driver_list")
+            self.delete_lua_attr("python_driver_list")
         else:
             smu.trigger.source.listv(smu_sweeplist)
 
@@ -1220,20 +1220,20 @@ class Keithley2600(Keithley2600Base):
         # setup smu1 and smu2 to sweep through lists on trigger
         # send sweep_list over in chunks if too long
         if len(smu1_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_var("python_driver_list", KeithleyClass)
+            self.create_lua_attr("python_driver_list", KeithleyClass)
             for num in smu1_sweeplist:
                 self.table.insert(self.python_driver_list, num)
             smu1.trigger.source.listv(self.python_driver_list)
-            self.delete_lua_var("python_driver_list")
+            self.delete_lua_attr("python_driver_list")
         else:
             smu1.trigger.source.listv(smu1_sweeplist)
 
         if len(smu2_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_var("python_driver_list", KeithleyClass)
+            self.create_lua_attr("python_driver_list", KeithleyClass)
             for num in smu2_sweeplist:
                 self.table.insert(self.python_driver_list, num)
             smu2.trigger.source.listv(self.python_driver_list)
-            self.delete_lua_var("python_driver_list")
+            self.delete_lua_attr("python_driver_list")
         else:
             smu2.trigger.source.listv(smu2_sweeplist)
 

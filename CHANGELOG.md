@@ -17,11 +17,12 @@ Other changes include:
 - Type hints are used throughout.
 - The Python syntax has been modernised for Python 3.6.
 - The Keithley no longer beeps at the end of custom sweeps.
-- Added API `Keithley2600.send_trigger` to trigger a pre-programmed sweep.
-- Added API `Keithley2600.create_lua_var` to create a variable in the global Keithley
-  namespace.
-- Added API `Keithley2600.delete_lua_var` to remove a variable in the global Keithley
-  namespace.
+- Added API `Keithley2600.send_trigger` to send a trigger signal to the Keithley. This can
+  be used to manually start a pre-programmed sweep.
+- Added API `KeithleyClass.create_lua_attr` to create a new attribute in the Keithley
+  namespace. Use `Keithley2600.create_lua_attr` to create global variables.
+- Added API `KeithleyClass.delete_lua_attr` to delete an attribute from the Keithley
+  namespace. Use `Keithley2600.delete_lua_attr` to delete global variables.
 
 #### v1.4.1
 
