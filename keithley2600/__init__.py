@@ -28,4 +28,4 @@ from keithley2600.keithley_driver import Keithley2600Factory as Keithley2600
 from keithley2600.keithley_driver import log_to_screen, KeithleyIOError
 
 
-__version__ = "v2.0.0.dev1"
+__version__ = "v2.0.0"
