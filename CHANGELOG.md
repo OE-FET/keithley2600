@@ -23,6 +23,8 @@ Other changes include:
   namespace. Use `Keithley2600.create_lua_attr` to create global variables.
 - Added API `KeithleyClass.delete_lua_attr` to delete an attribute from the Keithley
   namespace. Use `Keithley2600.delete_lua_attr` to delete global variables.
+- `Keithley2600.connect()` now returns `True` if the connection was established and
+  `False` otherwise.
 
 #### v1.4.1
 
