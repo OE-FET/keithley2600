@@ -26,16 +26,17 @@ reference manuals for a list of commands available on a particular model, for in
 [Keithley 2600B reference manual](https://www.tek.com/keithley-source-measure-units/smu-2600b-series-sourcemeter-manual-8).
 
 This dynamic approach however means that most attributes will only be defined after
-connecting to an instrument. Several higher level functions for current-voltage sweeps 
-are defined by the driver itself and may use functionality which is not available on some 
-models. They have been tested with a Keithley 2612B.
+connecting to an instrument. Several higher level functions for current-voltage sweeps
+are defined by the driver itself and may use functionality which is not available on
+some  models. They have been tested with a Keithley 2612B.
 
 **Warning**: There are currently no checks for allowed arguments by the driver itself.
-Passing invalid arguments to a Keithley command will fail silently in Python but display
-an error message on Keithley itself. To enable command checking, set the keyword argument
-`raise_keithley_errors = True` in the constructor. When set, most Keithley errors will be
-raised as Python errors. This is done by reading the Keithley's error queue after every
-command and will therefore result in some communication overhead.
+Passing invalid arguments to a Keithley command will fail silently in Python but will
+display an error message on the Keithley itself. To enable command checking, set the
+keyword argument `raise_keithley_errors = True` in the constructor. When set, most
+Keithley errors will be raised as Python errors. This is done by reading the Keithley's
+error queue after every command and will therefore result in some communication
+overhead.
 
 ## Installation
 
@@ -76,10 +77,13 @@ k.apply_current(k.smub, 0.1)  # sources 0.1A from SMUB
 k.ramp_to_voltage(k.smua, 10, delay=0.1, stepSize=1)  # ramps SMUA to 10V in steps of 1V
 
 # sweep commands
-k.voltage_sweep_single_smu(k.smua, range(0, 61), t_int=0.1,
-                        delay=-1, pulsed=False)
-k.voltage_sweep_dual_smu(smu1=k.smua, smu2=k.smub, smu1_sweeplist=range(0, 61),
-                      smu2_sweeplist=range(0, 61), t_int=0.1, delay=-1, pulsed=False)
+k.voltage_sweep_single_smu(
+	k.smua, range(0, 61), t_int=0.1, delay=-1, pulsed=False
+)
+k.voltage_sweep_dual_smu(
+	smu1=k.smua, smu2=k.smub, smu1_sweeplist=range(0, 61), smu2_sweeplist=range(0, 61),
+	t_int=0.1, delay=-1, pulsed=False
+)
 k.transfer_measurement( ... )
 k.output_measurement( ... )
 ```
@@ -87,10 +91,10 @@ k.output_measurement( ... )
 *Singleton behaviour:*
 
 Once a Keithley2600 instance with a visa address `'address'` has been created, repeated
-calls to `Keithley2600('address')` will return the existing instance instead of creating a
-new one. This prevents the user from opening multiple connections to the same instrument
-simultaneously and allows easy access to a Keithley2600 instance from different parts of a
-program. For example:
+calls to `Keithley2600('address')` will return the existing instance instead of creating
+a new one. This prevents the user from opening multiple connections to the same
+instrument simultaneously and allows easy access to a Keithley2600 instance from
+different parts of a program. For example:
 
 ```python
 >>> from keithley2600 import Keithley2600
@@ -102,9 +106,9 @@ True
 
 *Data structures:*
 
-The methods `voltageSweepSingleSMU` and `voltageSweepDualSMU` return lists with the
-measured voltages and currents. The higher level commands `transferMeasurement` and
-`outputMeasurement` return `ResultTable` objects which are somewhat similar to pandas
+The methods `voltage_sweep_single_smu` and `voltage_sweep_dual_smu` return lists with
+the measured voltages and currents. The higher level commands `transfer_measurement` and
+`output_measurement` return `ResultTable` objects which are somewhat similar to pandas
 dataframes but include support for column units. `ResultTable` stores the measurement
 data internally as a numpy array and provides information about column titles and units.
 It also provides a dictionary-like interface to access columns by name, methods to load
@@ -152,8 +156,8 @@ k = Keithley2600('TCPIP0::192.168.2.121::INSTR', visa_library='/usr/lib/libvisa.
 ```
 
 keithley2600 defaults to using the PyVISA-py backend, selected by `visa_library='@py'`,
-since this is only a pip-install away. If you pass an empty string, keithley2600 will use
-an installed IVI library if it can find one in standard locations and fall back to
+since this is only a pip-install away. If you pass an empty string, keithley2600 will
+use an installed IVI library if it can find one in standard locations or fall back to
 PyVISA-py otherwise.
 
 You can find more information about selecting the backend in the
