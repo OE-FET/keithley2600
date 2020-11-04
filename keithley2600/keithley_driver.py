@@ -18,7 +18,7 @@ import time
 from contextlib import contextmanager
 from threading import RLock
 from xdrlib import Error as XDRError
-from typing import IO, Optional, Any, Dict, Union, List, Tuple, Sequence, Iterable, Type
+from typing import IO, Optional, Any, Dict, Union, List, Tuple, Sequence, Iterable
 
 # external imports
 import pyvisa
@@ -183,6 +183,59 @@ class KeithleyClass:
         self._dict: Dict[str, LuaBridgeType] = {}
         self._lua_type: Optional[str] = None
 
+    def create_lua_var(self, name: Union[str, int], value: Any) -> LuaBridgeType:
+        """
+        Creates an attribute / index of this table with the given type. The initial
+        value will be 0 for a KeithleyProperty and an empty table for a KeithleyClass.
+
+        :param name: Variable name.
+        :param value: Initial value, will be used to infer the type.
+        :returns: The accessor for the created variable.
+        """
+
+        full_name = self._to_global_name(name)
+
+        if isinstance(name, str) and "." in name:
+            raise ValueError("Variable name may not contain periods")
+
+        if self._query(full_name) is not None:
+            raise ValueError("Variable already exists in namespace")
+
+        # create variable on Keithley
+        value_string = self._convert_input(value)
+        self._write(f"{full_name} = {value_string}")
+
+        # add to our own dict
+        try:
+            self._load_lua_attribute(name)
+        except RuntimeError:
+            raise RuntimeError("Variable creation failed")
+
+        return self._dict[name]
+
+    def delete_lua_var(self, name: Union[str, int]) -> None:
+        """
+        Deletes an attribute / index of this table.
+
+        .. warning:: If you delete a Keithley command group, for example ``smua``, it
+            will no longer be available until you power-cycle the Keithley.
+
+        :param name: Attribute name.
+        """
+
+        full_name = self._to_global_name(name)
+
+        if isinstance(name, str) and "." in name:
+            raise ValueError("Variable name may not contain periods")
+
+        self._write(f"{full_name} = nil")
+
+        # confirm deletion
+        if self._query(full_name) is not None:
+            raise RuntimeError("Variable deletion failed")
+
+        del self._dict[name]
+
     def __getattr__(self, attr_name: str) -> Any:
 
         if not self._dict:
@@ -221,6 +274,16 @@ class KeithleyClass:
             else:
                 super().__setattr__(key, value)
 
+    def _to_global_name(self, index):
+        if isinstance(index, int):
+            global_name = f"{self._name}[{index}]"
+        elif isinstance(index, str):
+            global_name = f"{self._name}.{index}"
+        else:
+            raise ValueError(f"Invalid index {index}")
+
+        return global_name
+
     def _load_lua_namespace(self) -> None:
         """
         Get all indices of the "namespace" defined by this table, including those
@@ -235,14 +298,6 @@ class KeithleyClass:
 
         var_name = _Nil()
 
-        def to_global_name(index):
-            if isinstance(index, int):
-                global_name = f"{self._name}[{index}]"
-            else:
-                global_name = f"{self._name}.{index}"
-
-            return global_name
-
         # get any immediate indices
 
         while True:
@@ -252,7 +307,7 @@ class KeithleyClass:
 
             if res:
                 var_name, var_value = res
-                full_name = to_global_name(var_name)
+                full_name = self._to_global_name(var_name)
 
                 if isinstance(var_value, _LuaFunction):
                     self._dict[var_name] = KeithleyFunction(full_name, self)
@@ -285,7 +340,7 @@ class KeithleyClass:
 
                     if res:
                         var_name, var_value = res
-                        full_name = to_global_name(var_name)
+                        full_name = self._to_global_name(var_name)
 
                         # check if we also have a setter
                         if self._query(f"mt.Setters[{var_name!r}]"):
@@ -309,7 +364,7 @@ class KeithleyClass:
 
                     if res:
                         var_name, var_value = res
-                        full_name = to_global_name(var_name)
+                        full_name = self._to_global_name(var_name)
                         if isinstance(var_value, _LuaFunction):
                             self._dict[var_name] = KeithleyFunction(full_name, self)
                         elif isinstance(var_value, _LuaTable):
@@ -322,6 +377,25 @@ class KeithleyClass:
                         break
 
             self._lua_type = self._query("mt.luatype")
+
+    def _load_lua_attribute(self, name: Union[str, int]) -> LuaBridgeType:
+
+        full_name = self._to_global_name(name)
+
+        # add to our own dict
+        var_type = self._query(f"type({full_name})")
+
+        if var_type is None:
+            raise RuntimeError(f"Attribute {full_name} does not exist")
+
+        if var_type == "table":
+            self._dict[name] = KeithleyClass(full_name, self)
+        elif var_type == "function":
+            self._dict[name] = KeithleyFunction(full_name, self)
+        else:
+            self._dict[name] = KeithleyProperty(full_name, self)
+
+        return self._dict[name]
 
     def _write(self, value: str) -> None:
         self._parent._write(value)
@@ -355,19 +429,23 @@ class KeithleyClass:
         else:
             return accessor
 
-    def __setitem__(self, key: Union[str, int], value: Any):
+    def __setitem__(self, key: Union[str, int], value: Any) -> None:
 
         if not self._dict:
             # will raise KeithleyIOError if not connected
             self._load_lua_namespace()
 
-        accessor = self._dict[key]
-
-        if isinstance(accessor, KeithleyProperty):
-            return accessor.set(value)
+        try:
+            accessor = self._dict[key]
+        except KeyError:
+            self.create_lua_var(key, value)
         else:
-            value = self._convert_input(value)
-            self._write(f"{self._name}[{key}] = {value}")
+            if isinstance(accessor, KeithleyProperty):
+                accessor.set(value)
+            else:
+                value = self._convert_input(value)
+                self._write(f"{self._name}[{key}] = {value}")
+                self._load_lua_attribute(key)
 
     def __iter__(self) -> "KeithleyClass":
 
@@ -529,58 +607,6 @@ class Keithley2600Base(KeithleyClass):
             except AttributeError:
                 self.connected = False
                 pass
-
-    def create_lua_var(
-        self, var_name: str, var_type: Type[LuaBridgeType], readonly: bool = False
-    ) -> LuaBridgeType:
-        """
-        Creates an attribute / index of this table with the given type. The initial
-        value will be 0 for a KeithleyProperty and an empty table for a KeithleyClass.
-
-        :param var_name: Attribute name.
-        :param var_type: Attribute type. Only :class:`KeithleyClass` and
-            :class:`KeithleyProperty` are currently supported.
-        :param readonly: If the attribute type is :class:`KeithleyProperty`, this
-            determines whether it will be read-only from Python.
-        :returns: The accessor for the created attribute.
-        """
-
-        full_name = f"{self._name}.{var_name}"
-
-        if "." in var_name:
-            raise ValueError("Variable name may not contain periods")
-
-        if self._query(full_name) is not None:
-            raise ValueError("Variable already exists in global namespace")
-
-        if var_type is KeithleyClass:
-            with self._error_check():
-                self._write(f"{full_name} = {{}}")
-            self._dict[var_name] = var_type(full_name, self)
-        elif var_type is KeithleyProperty:
-            with self._error_check():
-                self._write(f"{full_name} = 0")
-            self._dict[var_name] = var_type(full_name, self, readonly)
-        elif isinstance(var_type, KeithleyFunction):
-            raise ValueError("Creating Lua functions is currently not supported")
-
-        return self._dict[var_name]
-
-    def delete_lua_var(self, var_name: str) -> None:
-        """
-        Deletes an attribute / index of this table.
-
-        .. warning:: If you delete a Keithley command group, for example ``smua``, it
-            will no longer be available until you power-cycle the Keithley.
-
-        :param var_name: Attribute name.
-        """
-
-        if "." in var_name:
-            raise ValueError("Variable name may not contain periods")
-
-        self._write(f"{self._name}.{var_name} = nil")
-        del self._dict[var_name]
 
     # =============================================================================
     # Define I/O
