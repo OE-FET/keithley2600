@@ -462,7 +462,10 @@ class KeithleyClass:
             except KeithleyIOError:
                 pass
 
-        return list(self._dict.keys()) + list(super().__dir__())
+        # remove all keys that are not strings (Lua allows integer keys as well)
+        str_keys = [k for k in self._dict.keys() if isinstance(k, str)]
+
+        return str_keys + list(super().__dir__())
 
     def __repr__(self) -> str:
         if self._lua_type:
