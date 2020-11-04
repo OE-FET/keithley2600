@@ -527,7 +527,6 @@ class Keithley2600Base(KeithleyClass):
 
     """
 
-    _lock = RLock()
     _protected_attrs = [
         "rm",
         "connection",
@@ -554,6 +553,7 @@ class Keithley2600Base(KeithleyClass):
         super().__init__(name="_G", parent=self)
 
         self.abort_event = threading.Event()
+        self._lock = RLock()
 
         self.visa_address = visa_address
         self.visa_library = visa_library
@@ -829,7 +829,7 @@ class Keithley2600(Keithley2600Base):
 
     """
 
-    _protected_attrs = ["busy"] + Keithley2600Base._protected_attrs
+    _protected_attrs = ["_measurement_lock"] + Keithley2600Base._protected_attrs
 
     def __init__(
         self,
@@ -846,7 +846,18 @@ class Keithley2600(Keithley2600Base):
             **kwargs,
         )
 
-        self.busy = False
+        self._measurement_lock = threading.RLock()
+
+    @property
+    def busy(self) -> bool:
+        """True if a measurement is running, False otherwise."""
+
+        gotten = self._measurement_lock.acquire(blocking=False)
+
+        if gotten:
+            self._measurement_lock.release()
+
+        return not gotten
 
     # =============================================================================
     # Define lower level control functions
@@ -1015,172 +1026,170 @@ class Keithley2600(Keithley2600Base):
             Volt and Ampere, respectively): ``(v_smu, i_smu)``.
         """
 
-        # set state to busy
-        self.busy = True
-        # Define lists containing results.
-        # If we abort early, we have something to return.
-        v_smu, i_smu = [], []
+        with self._measurement_lock:
 
-        if self.abort_event.is_set():
-            self.busy = False
+            # Define lists containing results.
+            # If we abort early, we have something to return.
+            v_smu, i_smu = [], []
+
+            if self.abort_event.is_set():
+                self.busy = False
+                return v_smu, i_smu
+
+            # setup smu to sweep through list on trigger
+            # send sweep_list over in chunks if too long
+            if len(smu_sweeplist) > self.CHUNK_SIZE:
+                self.create_lua_attr("python_driver_list", [])
+                for num in smu_sweeplist:
+                    self.table.insert(self.python_driver_list, num)
+                smu.trigger.source.listv(self.python_driver_list)
+                self.delete_lua_attr("python_driver_list")
+            else:
+                smu.trigger.source.listv(smu_sweeplist)
+
+            smu.trigger.source.action = smu.ENABLE
+
+            # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
+            self.set_integration_time(smu, t_int)
+
+            # CONFIGURE SETTLING TIME FOR GATE VOLTAGE, I-LIMIT, ETC...
+            smu.measure.delay = delay
+
+            # enable autorange if not in high capacitance mode
+            if smu.source.highc == smu.DISABLE:
+                smu.measure.autorangei = smu.AUTORANGE_ON
+
+            # smu.trigger.source.limiti = 0.1
+
+            smu.source.func = smu.OUTPUT_DCVOLTS
+
+            # 2-wire measurement (use SENSE_REMOTE for 4-wire)
+            # smu.sense = smu.SENSE_LOCAL
+
+            # clears SMU buffers
+            smu.nvbuffer1.clear()
+            smu.nvbuffer2.clear()
+
+            smu.nvbuffer1.clearcache()
+            smu.nvbuffer2.clearcache()
+
+            # display current values during measurement
+            smu_name = self._get_smu_name(smu)
+            getattr(self.display, smu_name).measure.func = self.display.MEASURE_DCAMPS
+
+            # SETUP TRIGGER ARM AND COUNTS
+            # trigger count = number of data points in measurement
+            # arm count = number of times the measurement is repeated (set to 1)
+
+            npts = len(smu_sweeplist)
+            smu.trigger.count = npts
+
+            # SET THE MEASUREMENT TRIGGER ON BOTH SMU'S
+            # Set measurement to trigger once a change in the gate value on
+            # sweep smu is complete, i.e., a measurement will occur
+            # after the voltage is stepped.
+            # Both channels should be set to trigger on the sweep smu event
+            # so the measurements occur at the same time.
+
+            # enable smu
+            smu.trigger.measure.action = smu.ENABLE
+
+            # measure current and voltage on trigger, store in buffer of smu
+            smu.trigger.measure.iv(smu.nvbuffer1, smu.nvbuffer2)
+
+            # initiate measure trigger when source is complete
+            smu.trigger.measure.stimulus = smu.trigger.SOURCE_COMPLETE_EVENT_ID
+
+            # SET THE ENDPULSE ACTION TO HOLD
+            # Options are SOURCE_HOLD AND SOURCE_IDLE, hold maintains same voltage
+            # throughout step in sweep (typical IV sweep behavior). idle will allow
+            # pulsed IV sweeps.
+
+            if pulsed:
+                end_pulse_action = 0  # SOURCE_IDLE
+            elif not pulsed:
+                end_pulse_action = 1  # SOURCE_HOLD
+            else:
+                raise TypeError("'pulsed' must be of type 'bool'.")
+
+            smu.trigger.endpulse.action = end_pulse_action
+
+            # SET THE ENDSWEEP ACTION TO HOLD IF NOT PULSED
+            # Output voltage will be held after sweep is done!
+
+            smu.trigger.endsweep.action = end_pulse_action
+
+            # SET THE EVENT TO TRIGGER THE SMU'S TO THE ARM LAYER
+            # A typical measurement goes from idle -> arm -> trigger.
+            # The 'trigger.event_id' option sets the transition arm -> trigger
+            # to occur after sending *trg to the instrument.
+
+            smu.trigger.arm.stimulus = self.trigger.EVENT_ID
+
+            # Prepare an event blender (blender #1) that triggers when
+            # the smua enters the trigger layer or reaches the end of a
+            # single trigger layer cycle.
+
+            # triggers when either of the stimuli are true ('or enable')
+            self.trigger.blender[1].orenable = True
+            self.trigger.blender[1].stimulus[1] = smu.trigger.ARMED_EVENT_ID
+            self.trigger.blender[1].stimulus[2] = smu.trigger.PULSE_COMPLETE_EVENT_ID
+
+            # SET THE smu SOURCE STIMULUS TO BE EVENT BLENDER #1
+            # A source measure cycle within the trigger layer will occur when
+            # either the trigger layer is entered (termed 'armed event') for the
+            # first time or a single cycle of the trigger layer is complete (termed
+            # 'pulse complete event').
+
+            smu.trigger.source.stimulus = self.trigger.blender[1].EVENT_ID
+
+            # PREPARE AN EVENT BLENDER (blender #2) THAT TRIGGERS WHEN BOTH SMU'S
+            # HAVE COMPLETED A MEASUREMENT.
+            # This is needed to prevent the next source measure cycle from occurring
+            # before the measurement on both channels is complete.
+
+            self.trigger.blender[2].orenable = True  # triggers when both stimuli are true
+            self.trigger.blender[2].stimulus[1] = smu.trigger.MEASURE_COMPLETE_EVENT_ID
+
+            # SET THE SMU ENDPULSE STIMULUS TO BE EVENT BLENDER #2
+            smu.trigger.endpulse.stimulus = self.trigger.blender[2].EVENT_ID
+
+            # TURN ON smu
+            smu.source.output = smu.OUTPUT_ON
+
+            # INITIATE MEASUREMENT
+            # prepare SMUs to wait for trigger
+            smu.trigger.initiate()
+
+            # send trigger
+            self.send_trigger()
+
+            # CHECK STATUS BUFFER FOR MEASUREMENT TO FINISH
+            # Possible return values:
+            # 6 = smua and smub sweeping
+            # 4 = only smub sweeping
+            # 2 = only smua sweeping
+            # 0 = neither smu sweeping
+
+            # while loop that runs until the sweep begins
+            while self.status.operation.sweeping.condition == 0:
+                time.sleep(0.1)
+
+            # while loop that runs until the sweep ends
+            while self.status.operation.sweeping.condition > 0:
+                time.sleep(0.1)
+
+            # EXTRACT DATA FROM SMU BUFFERS
+            i_smu = self.read_buffer(smu.nvbuffer1)
+            v_smu = self.read_buffer(smu.nvbuffer2)
+
+            smu.nvbuffer1.clear()
+            smu.nvbuffer2.clear()
+
+            smu.nvbuffer1.clearcache()
+            smu.nvbuffer2.clearcache()
+
             return v_smu, i_smu
-
-        # setup smu to sweep through list on trigger
-        # send sweep_list over in chunks if too long
-        if len(smu_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_attr("python_driver_list", [])
-            for num in smu_sweeplist:
-                self.table.insert(self.python_driver_list, num)
-            smu.trigger.source.listv(self.python_driver_list)
-            self.delete_lua_attr("python_driver_list")
-        else:
-            smu.trigger.source.listv(smu_sweeplist)
-
-        smu.trigger.source.action = smu.ENABLE
-
-        # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
-        self.set_integration_time(smu, t_int)
-
-        # CONFIGURE SETTLING TIME FOR GATE VOLTAGE, I-LIMIT, ETC...
-        smu.measure.delay = delay
-
-        # enable autorange if not in high capacitance mode
-        if smu.source.highc == smu.DISABLE:
-            smu.measure.autorangei = smu.AUTORANGE_ON
-
-        # smu.trigger.source.limiti = 0.1
-
-        smu.source.func = smu.OUTPUT_DCVOLTS
-
-        # 2-wire measurement (use SENSE_REMOTE for 4-wire)
-        # smu.sense = smu.SENSE_LOCAL
-
-        # clears SMU buffers
-        smu.nvbuffer1.clear()
-        smu.nvbuffer2.clear()
-
-        smu.nvbuffer1.clearcache()
-        smu.nvbuffer2.clearcache()
-
-        # display current values during measurement
-        smu_name = self._get_smu_name(smu)
-        getattr(self.display, smu_name).measure.func = self.display.MEASURE_DCAMPS
-
-        # SETUP TRIGGER ARM AND COUNTS
-        # trigger count = number of data points in measurement
-        # arm count = number of times the measurement is repeated (set to 1)
-
-        npts = len(smu_sweeplist)
-        smu.trigger.count = npts
-
-        # SET THE MEASUREMENT TRIGGER ON BOTH SMU'S
-        # Set measurement to trigger once a change in the gate value on
-        # sweep smu is complete, i.e., a measurement will occur
-        # after the voltage is stepped.
-        # Both channels should be set to trigger on the sweep smu event
-        # so the measurements occur at the same time.
-
-        # enable smu
-        smu.trigger.measure.action = smu.ENABLE
-
-        # measure current and voltage on trigger, store in buffer of smu
-        smu.trigger.measure.iv(smu.nvbuffer1, smu.nvbuffer2)
-
-        # initiate measure trigger when source is complete
-        smu.trigger.measure.stimulus = smu.trigger.SOURCE_COMPLETE_EVENT_ID
-
-        # SET THE ENDPULSE ACTION TO HOLD
-        # Options are SOURCE_HOLD AND SOURCE_IDLE, hold maintains same voltage
-        # throughout step in sweep (typical IV sweep behavior). idle will allow
-        # pulsed IV sweeps.
-
-        if pulsed:
-            end_pulse_action = 0  # SOURCE_IDLE
-        elif not pulsed:
-            end_pulse_action = 1  # SOURCE_HOLD
-        else:
-            raise TypeError("'pulsed' must be of type 'bool'.")
-
-        smu.trigger.endpulse.action = end_pulse_action
-
-        # SET THE ENDSWEEP ACTION TO HOLD IF NOT PULSED
-        # Output voltage will be held after sweep is done!
-
-        smu.trigger.endsweep.action = end_pulse_action
-
-        # SET THE EVENT TO TRIGGER THE SMU'S TO THE ARM LAYER
-        # A typical measurement goes from idle -> arm -> trigger.
-        # The 'trigger.event_id' option sets the transition arm -> trigger
-        # to occur after sending *trg to the instrument.
-
-        smu.trigger.arm.stimulus = self.trigger.EVENT_ID
-
-        # Prepare an event blender (blender #1) that triggers when
-        # the smua enters the trigger layer or reaches the end of a
-        # single trigger layer cycle.
-
-        # triggers when either of the stimuli are true ('or enable')
-        self.trigger.blender[1].orenable = True
-        self.trigger.blender[1].stimulus[1] = smu.trigger.ARMED_EVENT_ID
-        self.trigger.blender[1].stimulus[2] = smu.trigger.PULSE_COMPLETE_EVENT_ID
-
-        # SET THE smu SOURCE STIMULUS TO BE EVENT BLENDER #1
-        # A source measure cycle within the trigger layer will occur when
-        # either the trigger layer is entered (termed 'armed event') for the
-        # first time or a single cycle of the trigger layer is complete (termed
-        # 'pulse complete event').
-
-        smu.trigger.source.stimulus = self.trigger.blender[1].EVENT_ID
-
-        # PREPARE AN EVENT BLENDER (blender #2) THAT TRIGGERS WHEN BOTH SMU'S
-        # HAVE COMPLETED A MEASUREMENT.
-        # This is needed to prevent the next source measure cycle from occurring
-        # before the measurement on both channels is complete.
-
-        self.trigger.blender[2].orenable = True  # triggers when both stimuli are true
-        self.trigger.blender[2].stimulus[1] = smu.trigger.MEASURE_COMPLETE_EVENT_ID
-
-        # SET THE SMU ENDPULSE STIMULUS TO BE EVENT BLENDER #2
-        smu.trigger.endpulse.stimulus = self.trigger.blender[2].EVENT_ID
-
-        # TURN ON smu
-        smu.source.output = smu.OUTPUT_ON
-
-        # INITIATE MEASUREMENT
-        # prepare SMUs to wait for trigger
-        smu.trigger.initiate()
-
-        # send trigger
-        self.send_trigger()
-
-        # CHECK STATUS BUFFER FOR MEASUREMENT TO FINISH
-        # Possible return values:
-        # 6 = smua and smub sweeping
-        # 4 = only smub sweeping
-        # 2 = only smua sweeping
-        # 0 = neither smu sweeping
-
-        # while loop that runs until the sweep begins
-        while self.status.operation.sweeping.condition == 0:
-            time.sleep(0.1)
-
-        # while loop that runs until the sweep ends
-        while self.status.operation.sweeping.condition > 0:
-            time.sleep(0.1)
-
-        # EXTRACT DATA FROM SMU BUFFERS
-        i_smu = self.read_buffer(smu.nvbuffer1)
-        v_smu = self.read_buffer(smu.nvbuffer2)
-
-        smu.nvbuffer1.clear()
-        smu.nvbuffer2.clear()
-
-        smu.nvbuffer1.clearcache()
-        smu.nvbuffer2.clearcache()
-
-        self.busy = False
-
-        return v_smu, i_smu
 
     def voltage_sweep_dual_smu(
         self,
@@ -1213,208 +1222,208 @@ class Keithley2600(Keithley2600Base):
             i_smu2)``.
         """
 
-        if len(smu1_sweeplist) != len(smu2_sweeplist):
-            raise ValueError("Sweep lists must have equal lengths")
+        with self._measurement_lock:
 
-        # set state to busy
-        self.busy = True
-        # Define lists containing results.
-        # If we abort early, we have something to return.
-        v_smu1, i_smu1, v_smu2, i_smu2 = [], [], [], []
+            if len(smu1_sweeplist) != len(smu2_sweeplist):
+                raise ValueError("Sweep lists must have equal lengths")
 
-        if self.abort_event.is_set():
+            # Define lists containing results.
+            # If we abort early, we have something to return.
+            v_smu1, i_smu1, v_smu2, i_smu2 = [], [], [], []
+
+            if self.abort_event.is_set():
+                self.busy = False
+                return v_smu1, i_smu1, v_smu2, i_smu2
+
+            # Setup smu1/smu2 for sweep measurement.
+
+            # setup smu1 and smu2 to sweep through lists on trigger
+            # send sweep_list over in chunks if too long
+            if len(smu1_sweeplist) > self.CHUNK_SIZE:
+                self.create_lua_attr("python_driver_list", [])
+                for num in smu1_sweeplist:
+                    self.table.insert(self.python_driver_list, num)
+                smu1.trigger.source.listv(self.python_driver_list)
+                self.delete_lua_attr("python_driver_list")
+            else:
+                smu1.trigger.source.listv(smu1_sweeplist)
+
+            if len(smu2_sweeplist) > self.CHUNK_SIZE:
+                self.create_lua_attr("python_driver_list", [])
+                for num in smu2_sweeplist:
+                    self.table.insert(self.python_driver_list, num)
+                smu2.trigger.source.listv(self.python_driver_list)
+                self.delete_lua_attr("python_driver_list")
+            else:
+                smu2.trigger.source.listv(smu2_sweeplist)
+
+            smu1.trigger.source.action = smu1.ENABLE
+            smu2.trigger.source.action = smu2.ENABLE
+
+            # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
+            self.set_integration_time(smu1, t_int)
+            self.set_integration_time(smu2, t_int)
+
+            # CONFIGURE SETTLING TIME FOR GATE VOLTAGE, I-LIMIT, ETC...
+            smu1.measure.delay = delay
+            smu2.measure.delay = delay
+
+            # enable autorange if not in high capacitance mode
+            if smu1.source.highc == smu1.DISABLE:
+                smu1.measure.autorangei = smu1.AUTORANGE_ON
+            if smu2.source.highc == smu2.DISABLE:
+                smu2.measure.autorangei = smu2.AUTORANGE_ON
+
+            # smu1.trigger.source.limiti = 0.1
+            # smu2.trigger.source.limiti = 0.1
+
+            smu1.source.func = smu1.OUTPUT_DCVOLTS
+            smu2.source.func = smu2.OUTPUT_DCVOLTS
+
+            # 2-wire measurement (use SENSE_REMOTE for 4-wire)
+            # smu1.sense = smu1.SENSE_LOCAL
+            # smu2.sense = smu2.SENSE_LOCAL
+
+            # CLEAR BUFFERS
+            for smu in [smu1, smu2]:
+                smu.nvbuffer1.clear()
+                smu.nvbuffer2.clear()
+                smu.nvbuffer1.clearcache()
+                smu.nvbuffer2.clearcache()
+
+            # display current values during measurement
+            for smu in (smu1, smu2):
+                smu_name = self._get_smu_name(smu)
+                getattr(self.display, smu_name).measure.func = self.display.MEASURE_DCAMPS
+
+            # SETUP TRIGGER ARM AND COUNTS
+            # trigger count = number of data points in measurement
+            # arm count = number of times the measurement is repeated (set to 1)
+
+            npts = len(smu1_sweeplist)
+
+            smu1.trigger.count = npts
+            smu2.trigger.count = npts
+
+            # SET THE MEASUREMENT TRIGGER ON BOTH SMU'S
+            # Set measurement to trigger once a change in the gate value on
+            # sweep smu is complete, i.e., a measurement will occur
+            # after the voltage is stepped.
+            # Both channels should be set to trigger on the sweep smu event
+            # so the measurements occur at the same time.
+
+            # enable smu
+            smu1.trigger.measure.action = smu1.ENABLE
+            smu2.trigger.measure.action = smu2.ENABLE
+
+            # measure current and voltage on trigger, store in buffer of smu
+            smu1.trigger.measure.iv(smu1.nvbuffer1, smu1.nvbuffer2)
+            smu2.trigger.measure.iv(smu2.nvbuffer1, smu2.nvbuffer2)
+
+            # initiate measure trigger when source is complete
+            smu1.trigger.measure.stimulus = smu1.trigger.SOURCE_COMPLETE_EVENT_ID
+            smu2.trigger.measure.stimulus = smu1.trigger.SOURCE_COMPLETE_EVENT_ID
+
+            # SET THE ENDPULSE ACTION TO HOLD
+            # Options are SOURCE_HOLD AND SOURCE_IDLE, hold maintains same voltage
+            # throughout step in sweep (typical IV sweep behavior). idle will allow
+            # pulsed IV sweeps.
+
+            if pulsed:
+                end_pulse_action = 0  # SOURCE_IDLE
+            elif not pulsed:
+                end_pulse_action = 1  # SOURCE_HOLD
+            else:
+                raise TypeError("'pulsed' must be of type 'bool'.")
+
+            smu1.trigger.endpulse.action = end_pulse_action
+            smu2.trigger.endpulse.action = end_pulse_action
+
+            # SET THE ENDSWEEP ACTION TO HOLD IF NOT PULSED
+            # Output voltage will be held after sweep is done!
+
+            smu1.trigger.endsweep.action = end_pulse_action
+            smu2.trigger.endsweep.action = end_pulse_action
+
+            # SET THE EVENT TO TRIGGER THE SMU'S TO THE ARM LAYER
+            # A typical measurement goes from idle -> arm -> trigger.
+            # The 'trigger.event_id' option sets the transition arm -> trigger
+            # to occur after sending *trg to the instrument.
+
+            smu1.trigger.arm.stimulus = self.trigger.EVENT_ID
+
+            # Prepare an event blender (blender #1) that triggers when
+            # the smua enters the trigger layer or reaches the end of a
+            # single trigger layer cycle.
+
+            # triggers when either of the stimuli are true ('or enable')
+            self.trigger.blender[1].orenable = True
+            self.trigger.blender[1].stimulus[1] = smu1.trigger.ARMED_EVENT_ID
+            self.trigger.blender[1].stimulus[2] = smu1.trigger.PULSE_COMPLETE_EVENT_ID
+
+            # SET THE smu1 SOURCE STIMULUS TO BE EVENT BLENDER #1
+            # A source measure cycle within the trigger layer will occur when
+            # either the trigger layer is entered (termed 'armed event') for the
+            # first time or a single cycle of the trigger layer is complete (termed
+            # 'pulse complete event').
+
+            smu1.trigger.source.stimulus = self.trigger.blender[1].EVENT_ID
+
+            # PREPARE AN EVENT BLENDER (blender #2) THAT TRIGGERS WHEN BOTH SMU'S
+            # HAVE COMPLETED A MEASUREMENT.
+            # This is needed to prevent the next source measure cycle from occurring
+            # before the measurement on both channels is complete.
+
+            self.trigger.blender[2].orenable = False  # triggers when both stimuli are true
+            self.trigger.blender[2].stimulus[1] = smu1.trigger.MEASURE_COMPLETE_EVENT_ID
+            self.trigger.blender[2].stimulus[2] = smu2.trigger.MEASURE_COMPLETE_EVENT_ID
+
+            # SET THE smu1 ENDPULSE STIMULUS TO BE EVENT BLENDER #2
+            smu1.trigger.endpulse.stimulus = self.trigger.blender[2].EVENT_ID
+
+            # TURN ON smu1 AND smu2
+            smu1.source.output = smu1.OUTPUT_ON
+            smu2.source.output = smu2.OUTPUT_ON
+
+            # INITIATE MEASUREMENT
+            # prepare SMUs to wait for trigger
+            smu1.trigger.initiate()
+            smu2.trigger.initiate()
+
+            # send trigger
+            self.send_trigger()
+
+            # CHECK STATUS BUFFER FOR MEASUREMENT TO FINISH
+            # Possible return values:
+            # 6 = smua and smub sweeping
+            # 4 = only smub sweeping
+            # 2 = only smua sweeping
+            # 0 = neither smu sweeping
+
+            # while loop that runs until the sweep begins
+            while self.status.operation.sweeping.condition == 0:
+                time.sleep(0.1)
+
+            # while loop that runs until the sweep ends
+            while self.status.operation.sweeping.condition > 0:
+                time.sleep(0.1)
+
+            # EXTRACT DATA FROM SMU BUFFERS
+            i_smu1 = self.read_buffer(smu1.nvbuffer1)
+            v_smu1 = self.read_buffer(smu1.nvbuffer2)
+            i_smu2 = self.read_buffer(smu2.nvbuffer1)
+            v_smu2 = self.read_buffer(smu2.nvbuffer2)
+
+            # CLEAR BUFFERS
+            for smu in [smu1, smu2]:
+                smu.nvbuffer1.clear()
+                smu.nvbuffer2.clear()
+                smu.nvbuffer1.clearcache()
+                smu.nvbuffer2.clearcache()
+
             self.busy = False
+
             return v_smu1, i_smu1, v_smu2, i_smu2
-
-        # Setup smu1/smu2 for sweep measurement.
-
-        # setup smu1 and smu2 to sweep through lists on trigger
-        # send sweep_list over in chunks if too long
-        if len(smu1_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_attr("python_driver_list", [])
-            for num in smu1_sweeplist:
-                self.table.insert(self.python_driver_list, num)
-            smu1.trigger.source.listv(self.python_driver_list)
-            self.delete_lua_attr("python_driver_list")
-        else:
-            smu1.trigger.source.listv(smu1_sweeplist)
-
-        if len(smu2_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_attr("python_driver_list", [])
-            for num in smu2_sweeplist:
-                self.table.insert(self.python_driver_list, num)
-            smu2.trigger.source.listv(self.python_driver_list)
-            self.delete_lua_attr("python_driver_list")
-        else:
-            smu2.trigger.source.listv(smu2_sweeplist)
-
-        smu1.trigger.source.action = smu1.ENABLE
-        smu2.trigger.source.action = smu2.ENABLE
-
-        # CONFIGURE INTEGRATION TIME FOR EACH MEASUREMENT
-        self.set_integration_time(smu1, t_int)
-        self.set_integration_time(smu2, t_int)
-
-        # CONFIGURE SETTLING TIME FOR GATE VOLTAGE, I-LIMIT, ETC...
-        smu1.measure.delay = delay
-        smu2.measure.delay = delay
-
-        # enable autorange if not in high capacitance mode
-        if smu1.source.highc == smu1.DISABLE:
-            smu1.measure.autorangei = smu1.AUTORANGE_ON
-        if smu2.source.highc == smu2.DISABLE:
-            smu2.measure.autorangei = smu2.AUTORANGE_ON
-
-        # smu1.trigger.source.limiti = 0.1
-        # smu2.trigger.source.limiti = 0.1
-
-        smu1.source.func = smu1.OUTPUT_DCVOLTS
-        smu2.source.func = smu2.OUTPUT_DCVOLTS
-
-        # 2-wire measurement (use SENSE_REMOTE for 4-wire)
-        # smu1.sense = smu1.SENSE_LOCAL
-        # smu2.sense = smu2.SENSE_LOCAL
-
-        # CLEAR BUFFERS
-        for smu in [smu1, smu2]:
-            smu.nvbuffer1.clear()
-            smu.nvbuffer2.clear()
-            smu.nvbuffer1.clearcache()
-            smu.nvbuffer2.clearcache()
-
-        # display current values during measurement
-        for smu in (smu1, smu2):
-            smu_name = self._get_smu_name(smu)
-            getattr(self.display, smu_name).measure.func = self.display.MEASURE_DCAMPS
-
-        # SETUP TRIGGER ARM AND COUNTS
-        # trigger count = number of data points in measurement
-        # arm count = number of times the measurement is repeated (set to 1)
-
-        npts = len(smu1_sweeplist)
-
-        smu1.trigger.count = npts
-        smu2.trigger.count = npts
-
-        # SET THE MEASUREMENT TRIGGER ON BOTH SMU'S
-        # Set measurement to trigger once a change in the gate value on
-        # sweep smu is complete, i.e., a measurement will occur
-        # after the voltage is stepped.
-        # Both channels should be set to trigger on the sweep smu event
-        # so the measurements occur at the same time.
-
-        # enable smu
-        smu1.trigger.measure.action = smu1.ENABLE
-        smu2.trigger.measure.action = smu2.ENABLE
-
-        # measure current and voltage on trigger, store in buffer of smu
-        smu1.trigger.measure.iv(smu1.nvbuffer1, smu1.nvbuffer2)
-        smu2.trigger.measure.iv(smu2.nvbuffer1, smu2.nvbuffer2)
-
-        # initiate measure trigger when source is complete
-        smu1.trigger.measure.stimulus = smu1.trigger.SOURCE_COMPLETE_EVENT_ID
-        smu2.trigger.measure.stimulus = smu1.trigger.SOURCE_COMPLETE_EVENT_ID
-
-        # SET THE ENDPULSE ACTION TO HOLD
-        # Options are SOURCE_HOLD AND SOURCE_IDLE, hold maintains same voltage
-        # throughout step in sweep (typical IV sweep behavior). idle will allow
-        # pulsed IV sweeps.
-
-        if pulsed:
-            end_pulse_action = 0  # SOURCE_IDLE
-        elif not pulsed:
-            end_pulse_action = 1  # SOURCE_HOLD
-        else:
-            raise TypeError("'pulsed' must be of type 'bool'.")
-
-        smu1.trigger.endpulse.action = end_pulse_action
-        smu2.trigger.endpulse.action = end_pulse_action
-
-        # SET THE ENDSWEEP ACTION TO HOLD IF NOT PULSED
-        # Output voltage will be held after sweep is done!
-
-        smu1.trigger.endsweep.action = end_pulse_action
-        smu2.trigger.endsweep.action = end_pulse_action
-
-        # SET THE EVENT TO TRIGGER THE SMU'S TO THE ARM LAYER
-        # A typical measurement goes from idle -> arm -> trigger.
-        # The 'trigger.event_id' option sets the transition arm -> trigger
-        # to occur after sending *trg to the instrument.
-
-        smu1.trigger.arm.stimulus = self.trigger.EVENT_ID
-
-        # Prepare an event blender (blender #1) that triggers when
-        # the smua enters the trigger layer or reaches the end of a
-        # single trigger layer cycle.
-
-        # triggers when either of the stimuli are true ('or enable')
-        self.trigger.blender[1].orenable = True
-        self.trigger.blender[1].stimulus[1] = smu1.trigger.ARMED_EVENT_ID
-        self.trigger.blender[1].stimulus[2] = smu1.trigger.PULSE_COMPLETE_EVENT_ID
-
-        # SET THE smu1 SOURCE STIMULUS TO BE EVENT BLENDER #1
-        # A source measure cycle within the trigger layer will occur when
-        # either the trigger layer is entered (termed 'armed event') for the
-        # first time or a single cycle of the trigger layer is complete (termed
-        # 'pulse complete event').
-
-        smu1.trigger.source.stimulus = self.trigger.blender[1].EVENT_ID
-
-        # PREPARE AN EVENT BLENDER (blender #2) THAT TRIGGERS WHEN BOTH SMU'S
-        # HAVE COMPLETED A MEASUREMENT.
-        # This is needed to prevent the next source measure cycle from occurring
-        # before the measurement on both channels is complete.
-
-        self.trigger.blender[2].orenable = False  # triggers when both stimuli are true
-        self.trigger.blender[2].stimulus[1] = smu1.trigger.MEASURE_COMPLETE_EVENT_ID
-        self.trigger.blender[2].stimulus[2] = smu2.trigger.MEASURE_COMPLETE_EVENT_ID
-
-        # SET THE smu1 ENDPULSE STIMULUS TO BE EVENT BLENDER #2
-        smu1.trigger.endpulse.stimulus = self.trigger.blender[2].EVENT_ID
-
-        # TURN ON smu1 AND smu2
-        smu1.source.output = smu1.OUTPUT_ON
-        smu2.source.output = smu2.OUTPUT_ON
-
-        # INITIATE MEASUREMENT
-        # prepare SMUs to wait for trigger
-        smu1.trigger.initiate()
-        smu2.trigger.initiate()
-
-        # send trigger
-        self.send_trigger()
-
-        # CHECK STATUS BUFFER FOR MEASUREMENT TO FINISH
-        # Possible return values:
-        # 6 = smua and smub sweeping
-        # 4 = only smub sweeping
-        # 2 = only smua sweeping
-        # 0 = neither smu sweeping
-
-        # while loop that runs until the sweep begins
-        while self.status.operation.sweeping.condition == 0:
-            time.sleep(0.1)
-
-        # while loop that runs until the sweep ends
-        while self.status.operation.sweeping.condition > 0:
-            time.sleep(0.1)
-
-        # EXTRACT DATA FROM SMU BUFFERS
-        i_smu1 = self.read_buffer(smu1.nvbuffer1)
-        v_smu1 = self.read_buffer(smu1.nvbuffer2)
-        i_smu2 = self.read_buffer(smu2.nvbuffer1)
-        v_smu2 = self.read_buffer(smu2.nvbuffer2)
-
-        # CLEAR BUFFERS
-        for smu in [smu1, smu2]:
-            smu.nvbuffer1.clear()
-            smu.nvbuffer2.clear()
-            smu.nvbuffer1.clearcache()
-            smu.nvbuffer2.clearcache()
-
-        self.busy = False
-
-        return v_smu1, i_smu1, v_smu2, i_smu2
 
     # =============================================================================
     # Define higher level control functions
@@ -1451,65 +1460,67 @@ class Keithley2600(Keithley2600Base):
             voltage is always reset to zero between data points.
         :returns: Transfer curve data.
         """
-        self.busy = True
-        self.abort_event.clear()
 
-        msg = f"Recording transfer curve with Vg from {vg_start}V to {vg_stop}V, Vd = {vd_list}V."
-        logger.info(msg)
+        with self._measurement_lock:
 
-        # create array with gate voltage steps, always include a step >= VgStop
-        step = np.sign(vg_stop - vg_start) * abs(vg_step)
-        sweeplist_gate_fwd = np.arange(vg_start, vg_stop + step, step)
-        sweeplist_gate_rvs = np.flip(sweeplist_gate_fwd, 0)
-        sweeplist_gate = np.append(sweeplist_gate_fwd, sweeplist_gate_rvs)
+            self.abort_event.clear()
 
-        # create ResultTable instance
-        params = {
-            "sweep_type": "transfer",
-            "time": time.time(),
-            "time_str": time.strftime("%d/%m/%Y %H:%M"),
-            "t_int": t_int,
-            "delay": delay,
-            "pulsed": pulsed,
-        }
-        rt = FETResultTable(params=params)
-        rt.append_column(sweeplist_gate, name="Gate voltage", unit="V")
+            msg = f"Recording transfer curve with Vg from {vg_start}V to {vg_stop}V, Vd = {vd_list}V."
+            logger.info(msg)
 
-        # record sweeps for every drain voltage step
-        for vdrain in vd_list:
+            # create array with gate voltage steps, always include a step >= VgStop
+            step = np.sign(vg_stop - vg_start) * abs(vg_step)
+            sweeplist_gate_fwd = np.arange(vg_start, vg_stop + step, step)
+            sweeplist_gate_rvs = np.flip(sweeplist_gate_fwd, 0)
+            sweeplist_gate = np.append(sweeplist_gate_fwd, sweeplist_gate_rvs)
 
-            # check for abort event
-            if self.abort_event.is_set():
-                self.reset()
-                self.beeper.beep(0.3, 2400)
-                return rt
+            # create ResultTable instance
+            params = {
+                "sweep_type": "transfer",
+                "time": time.time(),
+                "time_str": time.strftime("%d/%m/%Y %H:%M"),
+                "t_int": t_int,
+                "delay": delay,
+                "pulsed": pulsed,
+            }
+            rt = FETResultTable(params=params)
+            rt.append_column(sweeplist_gate, name="Gate voltage", unit="V")
 
-            # create array with drain voltages
-            if vdrain == "trailing":
-                sweeplist_drain = sweeplist_gate
-            else:
-                sweeplist_drain = np.full_like(sweeplist_gate, vdrain)
+            # record sweeps for every drain voltage step
+            for vdrain in vd_list:
 
-            # conduct sweep
-            v_g, i_g, v_d, i_d = self.voltage_sweep_dual_smu(
-                smu_gate,
-                smu_drain,
-                sweeplist_gate,
-                sweeplist_drain,
-                t_int,
-                delay,
-                pulsed,
-            )
+                # check for abort event
+                if self.abort_event.is_set():
+                    self.reset()
+                    self.beeper.beep(0.3, 2400)
+                    return rt
 
-            if not self.abort_event.is_set():
-                i_s = np.array(i_d) + np.array(i_g)
-                rt.append_column(i_s, name=f"Source current (Vd = {vdrain})", unit="A")
-                rt.append_column(i_d, name=f"Drain current (Vd = {vdrain})", unit="A")
-                rt.append_column(i_g, name=f"Gate current (Vd = {vdrain})", unit="A")
+                # create array with drain voltages
+                if vdrain == "trailing":
+                    sweeplist_drain = sweeplist_gate
+                else:
+                    sweeplist_drain = np.full_like(sweeplist_gate, vdrain)
 
-        self.reset()
-        self.busy = False
-        return rt
+                # conduct sweep
+                v_g, i_g, v_d, i_d = self.voltage_sweep_dual_smu(
+                    smu_gate,
+                    smu_drain,
+                    sweeplist_gate,
+                    sweeplist_drain,
+                    t_int,
+                    delay,
+                    pulsed,
+                )
+
+                if not self.abort_event.is_set():
+                    i_s = np.array(i_d) + np.array(i_g)
+                    rt.append_column(i_s, name=f"Source current (Vd = {vdrain})", unit="A")
+                    rt.append_column(i_d, name=f"Drain current (Vd = {vdrain})", unit="A")
+                    rt.append_column(i_g, name=f"Gate current (Vd = {vdrain})", unit="A")
+
+            self.reset()
+
+            return rt
 
     def output_measurement(
         self,
@@ -1543,58 +1554,60 @@ class Keithley2600(Keithley2600Base):
         :returns: Output curve data.
         """
 
-        self.busy = True
-        self.abort_event.clear()
-        msg = f"Recording output curve with Vd from {vd_start}V to {vd_stop}V, Vg = {vg_list}V."
-        logger.info(msg)
+        with self._measurement_lock:
 
-        # create array with drain voltage steps, always include a step >= VgStop
-        step = np.sign(vd_stop - vd_start) * abs(vd_step)
-        sweeplist_drain_fwd = np.arange(vd_start, vd_stop + step, step)
-        sweeplist_drain_rvs = np.flip(sweeplist_drain_fwd, 0)
-        sweeplist_drain = np.append(sweeplist_drain_fwd, sweeplist_drain_rvs)
+            self.busy = True
+            self.abort_event.clear()
+            msg = f"Recording output curve with Vd from {vd_start}V to {vd_stop}V, Vg = {vg_list}V."
+            logger.info(msg)
 
-        # create ResultTable instance
-        params = {
-            "sweep_type": "output",
-            "time": time.time(),
-            "time_str": time.strftime("%d/%m/%Y %H:%M"),
-            "t_int": t_int,
-            "delay": delay,
-            "pulsed": pulsed,
-        }
-        rt = FETResultTable(params=params)
-        rt.append_column(sweeplist_drain, name="Drain voltage", unit="V")
+            # create array with drain voltage steps, always include a step >= VgStop
+            step = np.sign(vd_stop - vd_start) * abs(vd_step)
+            sweeplist_drain_fwd = np.arange(vd_start, vd_stop + step, step)
+            sweeplist_drain_rvs = np.flip(sweeplist_drain_fwd, 0)
+            sweeplist_drain = np.append(sweeplist_drain_fwd, sweeplist_drain_rvs)
 
-        for vgate in vg_list:
-            if self.abort_event.is_set():
-                self.reset()
-                self.beeper.beep(0.3, 2400)
-                return rt
+            # create ResultTable instance
+            params = {
+                "sweep_type": "output",
+                "time": time.time(),
+                "time_str": time.strftime("%d/%m/%Y %H:%M"),
+                "t_int": t_int,
+                "delay": delay,
+                "pulsed": pulsed,
+            }
+            rt = FETResultTable(params=params)
+            rt.append_column(sweeplist_drain, name="Drain voltage", unit="V")
 
-            # create array with gate voltages
-            sweeplist_gate = np.full_like(sweeplist_drain, vgate)
+            for vgate in vg_list:
+                if self.abort_event.is_set():
+                    self.reset()
+                    self.beeper.beep(0.3, 2400)
+                    return rt
 
-            # conduct forward sweep
-            v_d, i_d, v_g, i_g = self.voltage_sweep_dual_smu(
-                smu_drain,
-                smu_gate,
-                sweeplist_drain,
-                sweeplist_gate,
-                t_int,
-                delay,
-                pulsed,
-            )
+                # create array with gate voltages
+                sweeplist_gate = np.full_like(sweeplist_drain, vgate)
 
-            if not self.abort_event.is_set():
-                i_s = np.array(i_d) + np.array(i_g)
-                rt.append_column(i_s, name=f"Source current (Vg = {vgate})", unit="A")
-                rt.append_column(i_d, name=f"Drain current (Vg = {vgate})", unit="A")
-                rt.append_column(i_g, name=f"Gate current (Vg = {vgate})", unit="A")
+                # conduct forward sweep
+                v_d, i_d, v_g, i_g = self.voltage_sweep_dual_smu(
+                    smu_drain,
+                    smu_gate,
+                    sweeplist_drain,
+                    sweeplist_gate,
+                    t_int,
+                    delay,
+                    pulsed,
+                )
 
-        self.reset()
-        self.busy = False
-        return rt
+                if not self.abort_event.is_set():
+                    i_s = np.array(i_d) + np.array(i_g)
+                    rt.append_column(i_s, name=f"Source current (Vg = {vgate})", unit="A")
+                    rt.append_column(i_d, name=f"Drain current (Vg = {vgate})", unit="A")
+                    rt.append_column(i_g, name=f"Gate current (Vg = {vgate})", unit="A")
+
+            self.reset()
+
+            return rt
 
     def play_chord(
         self,
