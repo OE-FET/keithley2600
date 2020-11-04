@@ -1017,7 +1017,7 @@ class Keithley2600(Keithley2600Base):
         # setup smu to sweep through list on trigger
         # send sweep_list over in chunks if too long
         if len(smu_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_attr("python_driver_list", KeithleyClass)
+            self.create_lua_attr("python_driver_list", [])
             for num in smu_sweeplist:
                 self.table.insert(self.python_driver_list, num)
             smu.trigger.source.listv(self.python_driver_list)
@@ -1220,7 +1220,7 @@ class Keithley2600(Keithley2600Base):
         # setup smu1 and smu2 to sweep through lists on trigger
         # send sweep_list over in chunks if too long
         if len(smu1_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_attr("python_driver_list", KeithleyClass)
+            self.create_lua_attr("python_driver_list", [])
             for num in smu1_sweeplist:
                 self.table.insert(self.python_driver_list, num)
             smu1.trigger.source.listv(self.python_driver_list)
@@ -1229,7 +1229,7 @@ class Keithley2600(Keithley2600Base):
             smu1.trigger.source.listv(smu1_sweeplist)
 
         if len(smu2_sweeplist) > self.CHUNK_SIZE:
-            self.create_lua_attr("python_driver_list", KeithleyClass)
+            self.create_lua_attr("python_driver_list", [])
             for num in smu2_sweeplist:
                 self.table.insert(self.python_driver_list, num)
             smu2.trigger.source.listv(self.python_driver_list)
