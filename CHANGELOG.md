@@ -1,3 +1,8 @@
+#### v2.0.1
+
+Fixes an error where a voltage sweep would end with an AttributeError: cannot set
+property `busy`.
+
 #### v2.0.0
 
 This release completely overhauls how Keithley commands are generated. Instead of hard-
