@@ -1448,7 +1448,9 @@ class Keithley2600(Keithley2600Base):
         :param vg_stop: End voltage of transfer sweep in Volt.
         :param vg_step: Voltage step size for transfer sweep in Volt.
         :param vd_list: List of drain voltage steps in Volt. Can be a numpy array, list,
-            tuple, range / xrange.
+            tuple, range / xrange. Optionally, you can also pass the string
+            ``"trailing"`` for the drain voltage to always follow the gate voltage. This
+            ensures that the FET is always at the edge of "saturation".
         :param t_int: Integration time per data point. Must be between 0.001 to 25 times
             the power line frequency (50Hz or 60Hz).
         :param delay: Settling delay before each measurement. A value of -1
