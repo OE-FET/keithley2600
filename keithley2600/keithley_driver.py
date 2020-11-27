@@ -26,6 +26,7 @@ from typing import (
     Union,
     List,
     Tuple,
+    Set,
     Sequence,
     Iterable,
     Iterator,
@@ -1664,19 +1665,21 @@ class Keithley2600(Keithley2600Base):
 
 class Keithley2600Factory:
 
-    _instances: Dict[str, Keithley2600] = {}
+    _instances: Set[Keithley2600] = set()
 
     def __new__(cls, *args, **kwargs) -> Keithley2600:
         """
         Create new instance for a new visa_address, otherwise return existing instance.
         """
-        if args[0] in cls._instances:
-            logger.debug("Returning existing instance with address '%s'.", args[0])
+        address = args[0]
 
-            return cls._instances[args[0]]
-        else:
-            logger.debug("Creating new instance with address '%s'.", args[0])
-            instance = Keithley2600(*args, **kwargs)
-            cls._instances[args[0]] = instance
+        for instance in cls._instances:
+            if instance.visa_address == address:
+                logger.debug("Returning existing instance with address '%s'.", address)
+                return instance
 
-            return instance
+        logger.debug("Creating new instance with address '%s'.", args[0])
+        instance = Keithley2600(*args, **kwargs)
+        cls._instances.add(instance)
+
+        return instance
