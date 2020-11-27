@@ -25,7 +25,7 @@ autodoc_mock_imports = ["pyvisa"]
 project = "keithley2600"
 copyright = "2019, Sam Schott"
 author = "Sam Schott"
-version = "2.0.1.dev0"
+version = "2.0.1"
 release = version
 
 
