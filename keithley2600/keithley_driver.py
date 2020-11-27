@@ -1033,7 +1033,6 @@ class Keithley2600(Keithley2600Base):
             v_smu, i_smu = [], []
 
             if self.abort_event.is_set():
-                self.busy = False
                 return v_smu, i_smu
 
             # setup smu to sweep through list on trigger
@@ -1232,7 +1231,6 @@ class Keithley2600(Keithley2600Base):
             v_smu1, i_smu1, v_smu2, i_smu2 = [], [], [], []
 
             if self.abort_event.is_set():
-                self.busy = False
                 return v_smu1, i_smu1, v_smu2, i_smu2
 
             # Setup smu1/smu2 for sweep measurement.
@@ -1421,8 +1419,6 @@ class Keithley2600(Keithley2600Base):
                 smu.nvbuffer1.clearcache()
                 smu.nvbuffer2.clearcache()
 
-            self.busy = False
-
             return v_smu1, i_smu1, v_smu2, i_smu2
 
     # =============================================================================
@@ -1556,7 +1552,6 @@ class Keithley2600(Keithley2600Base):
 
         with self._measurement_lock:
 
-            self.busy = True
             self.abort_event.clear()
             msg = f"Recording output curve with Vd from {vd_start}V to {vd_stop}V, Vg = {vg_list}V."
             logger.info(msg)
