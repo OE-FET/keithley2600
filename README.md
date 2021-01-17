@@ -173,7 +173,7 @@ You can find more information about selecting the backend in the
 
 ## System requirements
 
-- Python 3.6 and higher
+- Python 3.6 or higher
 
 ##  Documentation
 
