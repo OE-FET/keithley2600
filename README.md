@@ -78,11 +78,16 @@ k.ramp_to_voltage(k.smua, 10, delay=0.1, stepSize=1)  # ramps SMUA to 10V in ste
 
 # sweep commands
 k.voltage_sweep_single_smu(
-	k.smua, range(0, 61), t_int=0.1, delay=-1, pulsed=False
+    k.smua, range(0, 61), t_int=0.1, delay=-1, pulsed=False
 )
 k.voltage_sweep_dual_smu(
-	smu1=k.smua, smu2=k.smub, smu1_sweeplist=range(0, 61), smu2_sweeplist=range(0, 61),
-	t_int=0.1, delay=-1, pulsed=False
+    smu1=k.smua,
+    smu2=k.smub,
+    smu1_sweeplist=range(0, 61),
+    smu2_sweeplist=range(0, 61),
+    t_int=0.1,
+    delay=-1,
+    pulsed=False,
 )
 k.transfer_measurement( ... )
 k.output_measurement( ... )
@@ -122,8 +127,11 @@ from  keithley2600 import Keithley2600, ResultTable
 k = Keithley2600('TCPIP0::192.168.2.121::INSTR')
 
 # create ResultTable with two columns
-rt = ResultTable(column_titles=['Voltage', 'Current'], units=['V', 'A'],
-                 params={'recorded': time.asctime(), 'sweep_type': 'iv'})
+rt = ResultTable(
+    column_titles=['Voltage', 'Current'],
+    units=['V', 'A'],
+    params={'recorded': time.asctime(), 'sweep_type': 'iv'},
+)
 
 # create live plot which updates as data is added
 rt.plot(live=True)
