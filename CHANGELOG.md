@@ -1,3 +1,7 @@
+#### v2.0.2
+
+Plots of ResultTable data will now show a legend by default.
+
 #### v2.0.1
 
 Fixes an error where a voltage sweep would end with an AttributeError: cannot set
