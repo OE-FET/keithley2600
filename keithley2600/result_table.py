@@ -708,7 +708,7 @@ class FETResultTable(ResultTable):
         return plot
 
 
-class ResultTablePlot(object):
+class ResultTablePlot:
     """
     Plots the data from a given :class:`ResultTable` instance. Axes labels are
     automatically generated from column titles and units. This class requires Matplotlib
@@ -793,7 +793,9 @@ class ResultTablePlot(object):
             label_text = y_label + " " + self.result_table.UNIT_FORMAT.format(y_unit)
         self.ax.set_ylabel(label_text)
 
+        self.ax.legend()
         self.ax.autoscale(enable=True, axis="x", tight=True)
+
         self.fig.tight_layout()
 
         self.fig.show()
