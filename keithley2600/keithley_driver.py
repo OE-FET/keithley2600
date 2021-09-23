@@ -192,7 +192,7 @@ class KeithleyClass:
         self._name = name
         self._name_display = removeprefix(name, "_G.")
         self._parent = parent
-        self._dict: Dict[str, LuaBridgeType] = {}
+        self._dict: Dict[Union[str, int], LuaBridgeType] = {}
         self._lua_type: Optional[str] = None
 
     def create_lua_attr(self, name: Union[str, int], value: Any) -> LuaBridgeType:
