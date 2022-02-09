@@ -568,6 +568,13 @@ class Keithley2600Base(KeithleyClass):
 
     def __repr__(self) -> str:
         return f"<{self.__class__.__name__}({self.visa_address})>"
+        
+    def __enter__(self):
+        self.connection.write("errorqueue.clear()")
+        return self
+
+    def __exit__(self, *args):
+        self.disconnect()
 
     # =============================================================================
     # Connect to keithley
