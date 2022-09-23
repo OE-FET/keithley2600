@@ -570,6 +570,14 @@ class Keithley2600Base(KeithleyClass):
         return f"<{self.__class__.__name__}({self.visa_address})>"
         
     def __enter__(self):
+        """
+        Allows usage in contexts ("with Keithley2600() as kth:")
+
+        - cleaning the error-queue helps with faulty scripts that leave the SMU in a
+          weird state
+        - restarting the script often fails at basic tasks (like accessing keithley.smua)
+          because the TSP-Command-Set wasn't read successfully (or other weird behavior).
+        """
         self.connection.write("errorqueue.clear()")
         return self
 
