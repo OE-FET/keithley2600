@@ -197,8 +197,7 @@ class KeithleyClass:
 
     def create_lua_attr(self, name: Union[str, int], value: Any) -> LuaBridgeType:
         """
-        Creates an attribute / index of this table with the given type. The initial
-        value will be 0 for a KeithleyProperty and an empty table for a KeithleyClass.
+        Creates an attribute / index of this table, initialized to the provided value.
 
         :param name: Variable name.
         :param value: Initial value, will be used to infer the type.
