@@ -199,18 +199,16 @@ class KeithleyClass:
         """
         Creates an attribute / index of this table, initialized to the provided value.
 
+        If the attribute already exists, set it to the provided value.
+
         :param name: Variable name.
         :param value: Initial value, will be used to infer the type.
         :returns: The accessor for the created variable.
         """
-
         full_name = self._to_global_name(name)
 
         if isinstance(name, str) and "." in name:
             raise ValueError("Variable name may not contain periods")
-
-        if self._query(full_name) is not None:
-            raise ValueError("Variable already exists in namespace")
 
         # create variable on Keithley
         value_string = self._convert_input(value)
@@ -1025,7 +1023,6 @@ class Keithley2600(Keithley2600Base):
         :returns: Lists of voltages and currents measured during the sweep (in
             Volt and Ampere, respectively): ``(v_smu, i_smu)``.
         """
-
         with self._measurement_lock:
 
             # Define lists containing results.
@@ -1042,7 +1039,6 @@ class Keithley2600(Keithley2600Base):
                 for num in smu_sweeplist:
                     self.table.insert(self.python_driver_list, num)
                 smu.trigger.source.listv(self.python_driver_list)
-                self.delete_lua_attr("python_driver_list")
             else:
                 smu.trigger.source.listv(smu_sweeplist)
 
@@ -1242,7 +1238,6 @@ class Keithley2600(Keithley2600Base):
                 for num in smu1_sweeplist:
                     self.table.insert(self.python_driver_list, num)
                 smu1.trigger.source.listv(self.python_driver_list)
-                self.delete_lua_attr("python_driver_list")
             else:
                 smu1.trigger.source.listv(smu1_sweeplist)
 
@@ -1251,7 +1246,6 @@ class Keithley2600(Keithley2600Base):
                 for num in smu2_sweeplist:
                     self.table.insert(self.python_driver_list, num)
                 smu2.trigger.source.listv(self.python_driver_list)
-                self.delete_lua_attr("python_driver_list")
             else:
                 smu2.trigger.source.listv(smu2_sweeplist)
 
