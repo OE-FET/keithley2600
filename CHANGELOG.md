@@ -1,3 +1,8 @@
+#### v2.1
+
+* Remove usage of deprecated `np.complex`. Thanks to @jco-c!
+* Made `create_lua_attr` idempotent on attribute existence.
+
 #### v2.0.2
 
 Plots of ResultTable data will now show a legend by default.
