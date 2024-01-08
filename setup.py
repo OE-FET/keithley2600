@@ -3,7 +3,7 @@ from setuptools import setup, find_packages
 
 setup(
     name="keithley2600",
-    version="v2.0.2",
+    version="v2.1.0",
     description="Full Python driver for the Keithley 2600 series.",
     url="https://github.com/OE-FET/keithley2600.git",
     author="Sam Schott",
