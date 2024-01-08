@@ -1,6 +1,5 @@
 [![PyPI Release](https://img.shields.io/pypi/v/keithley2600.svg)](https://pypi.org/pypi/keithley2600/)
 [![Downloads](https://pepy.tech/badge/keithley2600)](https://pepy.tech/project/keithley2600)
-[![Build Status](https://travis-ci.com/OE-FET/keithley2600.svg?branch=master)](https://travis-ci.com/OE-FET/keithley2600)
 [![Documentation Status](https://readthedocs.org/projects/keithley2600/badge/?version=latest)](https://keithley2600.readthedocs.io/en/latest/?badge=latest)
 
 # keithley2600
