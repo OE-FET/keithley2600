@@ -759,9 +759,7 @@ class Keithley2600Base(KeithleyClass):
         elif hasattr(value, "__iter__"):
             # convert some iterables to a TSP type list '{1,2,3,4}'
             return "{" + ", ".join([str(v) for v in value]) + "}"
-        elif isinstance(value, (int, float, np.number)) and not isinstance(
-            value, np.complex
-        ):
+        elif isinstance(value, (int, float, np.number)):
             return str(value)
         else:
             raise ValueError(
