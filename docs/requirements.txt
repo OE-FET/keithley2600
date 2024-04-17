@@ -1,6 +1,6 @@
 pyvisa 
 m2r
-sphinx==7.2.6
+sphinx==7.3.5
 sphinx-autodoc-typehints
 sphinx-autoapi
 sphinx-rtd-theme
