@@ -51,6 +51,7 @@ $ pip install git+https://github.com/OE-FET/keithley2600
 ## Usage
 
 Connect to the Keithley 2600 and perform some base commands:
+
 ```python
 from keithley2600 import Keithley2600
 
@@ -63,6 +64,25 @@ i = k.smua.measure.i()  # measures current at smuA
 
 k.smua.measure.v(k.smua.nvbuffer1)  # measures the voltage, stores the result in buffer
 k.smua.nvbuffer1.clear()  # clears nvbuffer1 of SMUA
+```
+
+Alternatively, the device can be used in a context:
+
+```python
+from keithley2600 import Keithley2600
+
+with Keithley2600('TCPIP0::192.168.2.121::INSTR') as kth:
+    kth.reset()
+    smu = kth.smua
+    smu.sense = smu.SENSE_REMOTE
+    smu.source.limiti = 0.01  # mA
+    smu.source.autorangev = smu.AUTORANGE_ON
+    smu.source.func = smu.OUTPUT_DCVOLTS
+    smu.measure.autozero = smu.AUTOZERO_AUTO
+    smu.measure.autorangei = smu.AUTORANGE_ON
+    smu.measure.nplc = 16
+    smu.source.levelv = 3.3
+    smu.source.output = smu.OUTPUT_ON
 ```
 Higher level commands defined in the driver:
 
