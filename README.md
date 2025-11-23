@@ -4,7 +4,7 @@
 
 # keithley2600
 
-A full Python driver for the Keithley 2600B series of source measurement units. An
+A full Python driver for the Keithley 2600A/B series of source measurement units. An
 accompanying GUI is provided by the sister project
 [keithleygui](https://github.com/OE-FET/keithleygui). Documentation is available at
 [https://keithley2600.readthedocs.io](https://keithley2600.readthedocs.io).
@@ -36,6 +36,10 @@ keyword argument `raise_keithley_errors = True` in the constructor. When set, mo
 Keithley errors will be raised as Python errors. This is done by reading the Keithley's
 error queue after every command and will therefore result in some communication
 overhead.
+
+**Notice**: Full functionality of this driver is only given with Keithley 2600 A or B
+version. None A/B versions lack remote trigger functionality and therefore full
+functionality does not work out of the box.
 
 ## Installation
 
